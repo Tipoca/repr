@@ -13,6 +13,7 @@ use unconst::unconst;
 
 // TODO(rnarkk) Debug specilisation
 // TODO(rnarkk) Seq (class) as `or` for char, &str as `and` for char?
+#[unconst]
 #[derive_const(Clone)]
 #[derive(Eq, PartialEq)]
 pub enum Repr<I: ~const Integral> {
@@ -114,10 +115,12 @@ impl Repr<char> {
 // }
 
 // TODO(rnarkk) Does negative Seq (self.1 < self.0) have use case?
-#[derive(Copy, Eq)]
+#[unconst]
 #[derive_const(Clone, Default, PartialEq, PartialOrd, Ord)]
+#[derive(Copy, Eq)]
 pub struct Seq<I: ~const Integral>(pub I, pub I);
 
+#[unconst]
 impl<I: ~const Integral> Seq<I> {
     pub const fn new(from: I, to: I) -> Self {
         if from <= to {
@@ -273,8 +276,9 @@ pub trait Integral: Copy + ~const Clone + Debug
     fn as_bytes(self, reverse: bool) -> &'static [u8];
 }
 
+// #[unconst]
 /// Unicode scalar values
-impl const Integral for char {
+impl Integral for char {
     // type S = Str<'a>;
     const MIN: Self = '\x00';
     const MAX: Self = '\u{10FFFF}';
@@ -313,6 +317,7 @@ impl<'a> IntoIterator for Str<'a> {
 }
 
 // 24bit
+#[unconst]
 #[derive_const(Clone, PartialEq, PartialOrd, Ord)]
 #[derive(Copy, Debug, Eq)]
 pub enum Range {
@@ -324,6 +329,7 @@ pub enum Range {
     Full(usize, usize),
 }
 
+#[unconst]
 impl Range {
     /// Returns true if and only if this repetition operator makes it possible
     /// to match the empty string.
@@ -348,6 +354,7 @@ impl Range {
 /// The high-level intermediate representation for an anchor assertion.
 ///
 /// A matching anchor assertion is always zero-length.
+#[unconst]
 #[derive_const(Default)]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Zero {
