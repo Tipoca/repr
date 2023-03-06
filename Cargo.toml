@@ -1,0 +1,20 @@
+[package]
+name = "repr"
+version = "0.0.7"
+edition = "2021"
+description = "Regular expressions"
+license = "MIT/Apache-2.0"
+keywords = ["regular-expression"]
+categories = ["regular-expression"]
+homepage = "https://github.com/synthet-ic/repr"
+documentation = "https://docs.rs/repr"
+rust-version = "1.62.0"
+readme = "README.md"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+regex = { version = "1.7", features = ["pattern"] }
+regex-syntax = "0.6"
+unconst = "0"
+# unconst = { git = "https://github.com/synthet-ic/unconst" }
