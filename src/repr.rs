@@ -11,9 +11,8 @@ use core::{
 
 use unconst::unconst;
 
-// TODO(rnarkk) Debug specilisation
-// TODO(rnarkk) Seq (class) as `or` for char, &str as `and` for char?
 #[unconst]
+// TODO(rnarkk) Seq (class) as `or` for char, &str as `and` for char?
 #[derive_const(Clone)]
 #[derive(Eq, PartialEq)]
 pub enum Repr<I: ~const Integral> {
@@ -89,19 +88,6 @@ impl Repr<char> {
     }
 }
 
-// impl<const N: usize, I: ~const Integral> const Into<[I; N]> for Repr<I> {
-//     fn into(self) -> [I; N] {
-//         match self {
-//             Repr::Zero => [],
-//             Repr::Not(repr) => {
-                
-//             }
-//             Repr::Xor(lhs, rhs) => (*lhs).clone().or(*rhs).sub(lhs.and(*rhs)),
-//             _ => unimplemented!()
-//         }
-//     }
-// }
-
 // impl<I: ~const Integral> const IntoIterator for Repr<I> {
 //     type Item = I;
 //     type IntoIter: IntoIter<'a, I>;
@@ -114,8 +100,11 @@ impl Repr<char> {
 //     }
 // }
 
-// TODO(rnarkk) Does negative Seq (self.1 < self.0) have use case?
 #[unconst]
+// TODO(rnarkk) Does negative Seq (self.1 < self.0) have use case?
+// TODO(rnarkk) check if I..I always yield valid characters
+/// A character class, regardless of its character type, is represented by a
+/// sequence of non-overlapping non-adjacent ranges of characters.
 #[derive_const(Clone, Default, PartialEq, PartialOrd, Ord)]
 #[derive(Copy, Eq)]
 pub struct Seq<I: ~const Integral>(pub I, pub I);
@@ -202,14 +191,28 @@ impl<I: ~const Integral> Seq<I> {
         (other.0 <= self.0 && self.0 <= other.1)
         && (other.0 <= self.1 && self.1 <= other.1)
     }
-    
-//     /// Apply Unicode simple case folding to this character class, in place.
-//     /// The character class will be expanded to include all simple case folded
-//     /// character variants.
-//     ///
-//     /// If this is a byte oriented character class, then this will be limited
-//     /// to the ASCII ranges `A-Z` and `a-z`.
-//     pub fn case_fold_simple(&mut self);
+
+    // /// Negate this interval set.
+    // ///
+    // /// For all `x` where `x` is any element, if `x` was in this set, then it
+    // /// will not be in this set after negation.
+    // pub const fn not(self) -> Self {
+    //     if self.is_empty() {
+    //         return Seq(I::MIN, I::MAX);
+    //     }
+
+    //     // So just append
+    //     // the negation to the end of this range, and then drain it before
+    //     // we're done.
+    //     // We do checked arithmetic below because of the canonical ordering
+    //     // invariant.
+    //     if self.0 < I::MIN {
+    //         Seq(I::MIN, self.0.pred())
+    //     }
+    //     if self.1 < I::MAX {
+    //         Seq(self.1.succ(), I::MAX)
+    //     }
+    // }
 }
 
 impl Seq<char> {
@@ -240,26 +243,6 @@ impl Debug for Seq<char> {
     }
 }
 
-// TODO(rnarkk) check if I..I always yield valid characters
-/// A single character, where a character is either
-/// defined by a Unicode scalar value or an arbitrary byte. Unicode characters
-/// are preferred whenever possible. In particular, a `Byte` variant is only
-/// ever produced when it could match invalid UTF-8.
-/// ==========================================================================
-/// Type of characters. A character is either
-/// defined by a Unicode scalar value or a byte. Unicode characters are used
-/// by default, while bytes are used when Unicode mode (via the `u` flag) is
-/// disabled.
-///
-/// A character class, regardless of its character type, is represented by a
-/// sequence of non-overlapping non-adjacent ranges of characters.
-///
-/// Note that unlike [`Literal`](enum.Literal.html), a `Bytes` variant may
-/// be produced even when it exclusively matches valid UTF-8. This is because
-/// a `Bytes` variant represents an intention by the author of the regular
-/// expression to disable Unicode mode, which in turn impacts the semantics of
-/// case insensitive matching. For example, `(?i)k` and `(?i-u)k` will not
-/// match the same set of strings.
 #[unconst]
 #[const_trait]
 pub trait Integral: Copy + ~const Clone + Debug
@@ -272,13 +255,12 @@ pub trait Integral: Copy + ~const Clone + Debug
     const MAX: Self;
     fn succ(self) -> Self;
     fn pred(self) -> Self;
-    // (rnarkk) use this in crate::literal
-    fn as_bytes(self, reverse: bool) -> &'static [u8];
+    // // (rnarkk) use this in crate::literal
+    // fn as_bytes(self, reverse: bool) -> &'static [u8];
 }
 
-// #[unconst]
-/// Unicode scalar values
-impl Integral for char {
+#[unconst]
+impl const Integral for char {
     // type S = Str<'a>;
     const MIN: Self = '\x00';
     const MAX: Self = '\u{10FFFF}';
@@ -294,15 +276,15 @@ impl Integral for char {
             c => char::from_u32((c as u32).checked_sub(1).unwrap()).unwrap(),
         }
     }
-    fn as_bytes(self, reverse: bool) -> &'static [u8] {
-        let mut buf = [0u8; 4];
-        let len = self.encode_utf8(&mut buf).len();
-        let buf = &mut buf[..len];
-        if reverse {
-            buf.reverse();
-        }
-        &buf
-    }
+    // fn as_bytes(self, reverse: bool) -> &'static [u8] {
+    //     let mut buf = [0u8; 4];
+    //     let len = self.encode_utf8(&mut buf).len();
+    //     let buf = &mut buf[..len];
+    //     if reverse {
+    //         buf.reverse();
+    //     }
+    //     buf
+    // }
 }
 
 pub struct Str<'a>(&'a str);

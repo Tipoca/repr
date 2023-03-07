@@ -16,5 +16,5 @@ readme = "README.md"
 [dependencies]
 regex = { version = "1.7", features = ["pattern"] }
 regex-syntax = "0.6"
-unconst = "0"
-# unconst = { git = "https://github.com/synthet-ic/unconst" }
+# unconst = "0"
+unconst = { git = "https://github.com/synthet-ic/unconst", branch = "verbatim", features = [] }

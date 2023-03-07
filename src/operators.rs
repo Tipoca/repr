@@ -1,7 +1,10 @@
 use core::ops::{BitOr, BitAnd, BitXor, Range, Mul, RangeBounds};
 
+use unconst::unconst;
+
 use crate::repr::{Repr, Seq, Integral};
 
+#[unconst]
 impl<I: ~const Integral> const BitAnd<Self> for Repr<I> {
     type Output = Self;
 
@@ -10,6 +13,7 @@ impl<I: ~const Integral> const BitAnd<Self> for Repr<I> {
     }
 }
 
+#[unconst]
 impl<I: ~const Integral> const BitAnd<I> for Repr<I> {
     type Output = Self;
 
@@ -17,15 +21,6 @@ impl<I: ~const Integral> const BitAnd<I> for Repr<I> {
         self.and(Repr::One(rhs))
     }
 }
-
-// impl<I: ~const Integral> const BitAnd<S> for Repr<I>
-// {
-//     type Output = Self;
-
-//     fn bitand(self, rhs: T) -> Self {
-//         self.and(rhs)
-//     }
-// }
 
 // impl const BitAnd<Repr<char>> for &str {
 //     type Output = Repr<char>;
@@ -43,6 +38,7 @@ impl<I: ~const Integral> const BitAnd<I> for Repr<I> {
 //     }
 // }
 
+#[unconst]
 impl<I: ~const Integral> const BitAnd<Range<I>> for Repr<I> {
     type Output = Self;
 
@@ -59,6 +55,7 @@ impl<I: ~const Integral> const BitAnd<Range<I>> for Repr<I> {
 //     }
 // }
 
+#[unconst]
 impl<I: ~const Integral> const BitOr<Self> for Repr<I> {
     type Output = Self;
 
@@ -67,6 +64,7 @@ impl<I: ~const Integral> const BitOr<Self> for Repr<I> {
     }
 }
 
+#[unconst]
 impl<I: ~const Integral> const BitOr<I> for Repr<I> {
     type Output = Self;
     
@@ -91,6 +89,7 @@ impl<I: ~const Integral> const BitOr<I> for Repr<I> {
 //     }
 // }
 
+#[unconst]
 impl<I: ~const Integral> const BitOr<Range<I>> for Repr<I> {
     type Output = Self;
 
@@ -107,14 +106,16 @@ impl<I: ~const Integral> const BitOr<Range<I>> for Repr<I> {
 //     }
 // }
 
-// impl<R: RangeBounds<usize>, I: ~const Integral> const Mul<R> for Repr<I> {
-//     type Output = Self;
+#[unconst]
+impl<R: RangeBounds<usize>, I: ~const Integral> const Mul<R> for Repr<I> {
+    type Output = Self;
 
-//     fn mul(self, rhs: R) -> Self {
-//         Self::Exp(box self, rhs.into())
-//     }
-// }
+    fn mul(self, rhs: R) -> Self {
+        Self::Exp(box self, rhs.into())
+    }
+}
 
+#[unconst]
 impl<I: ~const Integral> const BitAnd<Self> for Seq<I> {
     type Output = Option<Self>;
 
@@ -123,6 +124,7 @@ impl<I: ~const Integral> const BitAnd<Self> for Seq<I> {
     }
 }
 
+#[unconst]
 impl<I: ~const Integral> const BitOr<Self> for Seq<I> {
     type Output = Option<Self>;
 
@@ -131,6 +133,7 @@ impl<I: ~const Integral> const BitOr<Self> for Seq<I> {
     }
 }
 
+#[unconst]
 impl<I: ~const Integral> const BitXor<Self> for Seq<I> {
     type Output = (Option<Self>, Option<Self>);
 

@@ -22,7 +22,7 @@ let re = (wh | '.') * 1.. & '@' & (wh * 1.. & '.') * 1.. & wh * 2..4;
 */
 
 #![feature(pattern)]
-// #![feature(once_cell)]
+#![feature(once_cell)]
 #![feature(const_trait_impl)]
 #![feature(box_syntax)]
 #![feature(try_trait_v2)]
@@ -39,6 +39,7 @@ let re = (wh | '.') * 1.. & '@' & (wh * 1.. & '.') * 1.. & wh * 2..4;
 #![feature(const_option)]
 #![feature(const_refs_to_cell)]
 #![feature(const_heap)]
+#![feature(const_convert)]
 #![feature(core_intrinsics)]
 // #![feature(const_iter)]
 // #![feature(negative_impls)]
@@ -57,7 +58,7 @@ pub mod consts;
 pub mod macros;
 pub mod repr;
 
-pub use consts::{DIGIT, SPACE, WORD};
+pub use consts::{DIGIT, WORD};
 pub use repr::{Repr, Seq, Range};
 
 // #[test]

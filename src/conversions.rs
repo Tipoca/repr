@@ -1,7 +1,10 @@
 use core::ops::{self, RangeBounds, Bound};
 
+use unconst::unconst;
+
 use crate::repr::{Repr, Seq, Range, Integral};
 
+#[unconst]
 impl<I: ~const Integral> const From<I> for Repr<I> {
     fn from(value: I) -> Repr<I> {
         Self::One(value)
@@ -15,12 +18,14 @@ impl<I: ~const Integral> const From<I> for Repr<I> {
 // }
 
 // TODO(rnarkk) Is ther any use to generalise it to R: RangeBounds<usize>?
+#[unconst]
 impl<I: ~const Integral> const From<ops::Range<I>> for Seq<I> {
     fn from(range: ops::Range<I>) -> Self {
         Seq(range.start, range.end)
     }
 }
 
+#[unconst]
 impl<I: ~const Integral> const From<ops::Range<I>> for Repr<I> {
     fn from(range: ops::Range<I>) -> Self {
         Repr::Seq(range.into())
@@ -33,6 +38,7 @@ impl<I: ~const Integral> const From<ops::Range<I>> for Repr<I> {
 //     }
 // }
 
+#[unconst]
 impl<R: ~const RangeBounds<usize>> const From<R> for Range {
     fn from(range: R) -> Self {
         use Bound::*;
