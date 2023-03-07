@@ -20,7 +20,8 @@
 
 | regex | linear logic | repr |
 | - | - | - |
-| `` ( empty/ε) | | `Zero` |
+| (empty/ε) | | `Zero` |
+| `a` | `a` | `One(a)` |
 | `ab` (concatenation) | `a` & `b` (additive conjunction) | `And(a, b)` |
 | `a\|b` (alternation) | `a` ⊕ `b` (additive disjuction) | `Or(a, b)` |
 | `a*` (kleen star) | `a` | `Exp(a, Range::From(0))` |
