@@ -47,13 +47,14 @@ impl<I: ~const Integral> const BitAnd<Range<I>> for Repr<I> {
     }
 }
 
-// impl<S, I: ~const Integral, T: Into<Self>> const BitAnd<[T; 1]> for Repr<I> {
-//     type Output = Self;
+#[unconst]
+impl<I: ~const Integral, T: Into<Self>> const BitAnd<[T; 1]> for Repr<I> {
+    type Output = Self;
 
-//     fn bitand(self, rhs: [T; 1]) -> Self::Output {
-//         self.and(Repr::from(rhs) * ..)
-//     }
-// }
+    fn bitand(self, rhs: [T; 1]) -> Self::Output {
+        self.and(Repr::from(rhs) * ..)
+    }
+}
 
 #[unconst]
 impl<I: ~const Integral> const BitOr<Self> for Repr<I> {
@@ -98,13 +99,14 @@ impl<I: ~const Integral> const BitOr<Range<I>> for Repr<I> {
     }
 }
 
-// impl<S, I: ~const Integral, T: Into<Self>> const BitOr<[T; 1]> for Repr<I> {
-//     type Output = Self;
+#[unconst]
+impl<I: ~const Integral, T: Into<Self>> const BitOr<[T; 1]> for Repr<I> {
+    type Output = Self;
 
-//     fn bitor(self, rhs: [T; 1]) -> Self {
-//         self.or(Repr::from(rhs) * ..)
-//     }
-// }
+    fn bitor(self, rhs: [T; 1]) -> Self {
+        self.or(Repr::from(rhs) * ..)
+    }
+}
 
 #[unconst]
 impl<R: RangeBounds<usize>, I: ~const Integral> const Mul<R> for Repr<I> {
