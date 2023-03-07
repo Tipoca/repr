@@ -18,15 +18,16 @@
 
 **Comparisons**
 
-| name | regex | op | kfl (exp.) |
+| name | regex | linear logic | repr |
 | - | - | - | - |
-| concat | `ab` | `a & b` | `and { a b }` |
-| alternation | `a\|b` | `a \| b` | `or { a b }` |
-| kleen star | `a*` | `[a]` | `star { a }`
-| optional | `a?` | `a?` | `opt { a }` |
-| repetition | `a{n,m}` | `a * (n..m)` | `mul n m { a }` |
-| class | `[a-z]` | `'a'..'z'` | `seq a z` |
-| negation | `[^a-z]` | !`'a'..'z'` | `not { seq { a z } }` |
+| concatenation | `ab` | `a` & `b` (additive conjunction) | `And(a, b)` |
+| alternation | `a\|b` | `a` ⊕ `b` (additive disjuction) | `Or(a, b)` |
+| kleen star | `a*` | `a` | `Exp(a, Range::From(0))` |
+| optional | `a?` | `a` | `Exp(a, Range::Full(0, 1))` |
+| repetition | `a{n,m}` | `a` | `Exp(a, Range::Full(n, m))` |
+| class | `[a-z]` | - | `Seq(a, z)` |
+| negation | `[^a-z]` | - | `Not(a)` |
+| negative lookahead | | | |
 
 **Targets**
 
