@@ -16,20 +16,24 @@
 
 - Case insensitivity
 
+**`Rev`** (?)
+
 **Comparisons**
 
-| regex | linear logic | repr |
-| - | - | - |
-| (empty/ε) | | `Zero` |
-| `a` | `a` | `One(a)` |
-| `ab` (concatenation) | `a` & `b` (additive conjunction) | `And(a, b)` |
-| `a\|b` (alternation) | `a` ⊕ `b` (additive disjuction) | `Or(a, b)` |
+| regex | linear logic | repr | op |
+| - | - | - | - |
+| (empty/ε) | | `Zero` | |
+| `a` | `a` | `One(a)` | |
+| `ab` (concatenation) | `a` & `b` (additive conjunction) | `And(a, b)` | `&` |
+| `a\|b` (alternation) | `a` ⊕ `b` (additive disjuction) | `Or(a, b)` | `\|` |
 | `a*` (kleen star) | `a` | `Exp(a, Range::From(0))` |
 | `a?` () | `a` | `Exp(a, Range::Full(0, 1))` |
 | `a{n,m}` (repetition) | `a` | `Exp(a, Range::Full(n, m))` |
-| `[a-z]` (class) | - | `Seq(a, z)` |
-| `[^a-z]` (negation) | - | `Not(a)` |
-| (negative lookahead) | | |
+| `[a-z]` (class) | - | `Seq(a, z)` | `..` |
+| `[^a-z]` (negation) | - | `Not(a)` | `!` |
+| (negative lookahead) | | | |
+| reverse? | | | `-` |
+| RegexSet | | `Add(a, b)` | `+` |
 
 **Targets**
 
