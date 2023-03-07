@@ -18,17 +18,17 @@
 
 **Comparisons**
 
-| name | regex | linear logic | repr |
-| - | - | - | - |
-| empty (ε) | `` | | `Zero` |
-| concatenation | `ab` | `a` & `b` (additive conjunction) | `And(a, b)` |
-| alternation | `a\|b` | `a` ⊕ `b` (additive disjuction) | `Or(a, b)` |
-| kleen star | `a*` | `a` | `Exp(a, Range::From(0))` |
-| optional | `a?` | `a` | `Exp(a, Range::Full(0, 1))` |
-| repetition | `a{n,m}` | `a` | `Exp(a, Range::Full(n, m))` |
-| class | `[a-z]` | - | `Seq(a, z)` |
-| negation | `[^a-z]` | - | `Not(a)` |
-| negative lookahead | | | |
+| regex | linear logic | repr |
+| - | - | - |
+| `` ( empty/ε) | | `Zero` |
+| `ab` (concatenation) | `a` & `b` (additive conjunction) | `And(a, b)` |
+| `a\|b` (alternation) | `a` ⊕ `b` (additive disjuction) | `Or(a, b)` |
+| `a*` (kleen star) | `a` | `Exp(a, Range::From(0))` |
+| `a?` () | `a` | `Exp(a, Range::Full(0, 1))` |
+| `a{n,m}` (repetition) | `a` | `Exp(a, Range::Full(n, m))` |
+| `[a-z]` (class) | - | `Seq(a, z)` |
+| `[^a-z]` (negation) | - | `Not(a)` |
+| (negative lookahead) | | |
 
 **Targets**
 
