@@ -31,24 +31,6 @@
 **Targets**
 
 ```rust
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum AssertionKind {
-    /// `^`,  `(?m:^)`
-    StartLine,
-    /// `$`, `(?m:$)`
-    EndLine,
-    /// `\A`
-    StartText,
-    /// `\z`
-    EndText,
-    /// `\b`, `(?-u:\b)`
-    WordBoundary,
-    /// `\B`, `(?-u:\B)`
-    NotWordBoundary,
-}
-```
-
-```rust
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Flag {
     /// `i`
@@ -63,29 +45,6 @@ pub enum Flag {
     Unicode,
     /// `x`
     IgnoreWhitespace,
-}
-```
-
-```rust
-/// A word boundary assertion, which may or may not be Unicode aware. A
-/// word boundary assertion match always has zero length.
-/// The high-level intermediate representation for a word-boundary assertion.
-///
-/// A matching word boundary assertion is always zero-length.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum WordBoundary {
-    /// Match a Unicode-aware word boundary. That is, this matches a position
-    /// where the left adjacent character and right adjacent character
-    /// correspond to a word and non-word or a non-word and word character.
-    Unicode,
-    /// Match a Unicode-aware negation of a word boundary.
-    UnicodeNegate,
-    /// Match an ASCII-only word boundary. That is, this matches a position
-    /// where the left adjacent character and right adjacent character
-    /// correspond to a word and non-word or a non-word and word character.
-    Ascii,
-    /// Match an ASCII-only negation of a word boundary.
-    AsciiNegate,
 }
 ```
 

@@ -317,24 +317,48 @@ impl Range {
 /// The high-level intermediate representation for an anchor assertion.
 ///
 /// A matching anchor assertion is always zero-length.
+/// 
+/// A word boundary assertion, which may or may not be Unicode aware. A
+/// word boundary assertion match always has zero length.
+/// The high-level intermediate representation for a word-boundary assertion.
+///
+/// A matching word boundary assertion is always zero-length.
 #[unconst]
 #[derive_const(Default)]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Zero {
     #[default]
     Any,
+    /// `^`,  `(?m:^)`
     /// Match the beginning of a line or the beginning of text. Specifically,
     /// this matches at the starting position of the input, or at the position
     /// immediately following a `\n` character.
     StartLine,
+    /// `$`, `(?m:$)`
     /// Match the end of a line or the end of text. Specifically,
     /// this matches at the end position of the input, or at the position
     /// immediately preceding a `\n` character.
     EndLine,
+    /// `\A`
     /// Match the beginning of text. Specifically, this matches at the starting
     /// position of the input.
     StartText,
+    /// `\z`
     /// Match the end of text. Specifically, this matches at the ending
     /// position of the input.
     EndText,
+    /// `\b`, `(?-u:\b)`
+    /// Match a Unicode-aware word boundary. That is, this matches a position
+    /// where the left adjacent character and right adjacent character
+    /// correspond to a word and non-word or a non-word and word character.
+    WordBoundary,
+    /// `\B`, `(?-u:\B)`
+    /// Match a Unicode-aware negation of a word boundary.
+    NotWordBoundary,
+    /// Match an ASCII-only word boundary. That is, this matches a position
+    /// where the left adjacent character and right adjacent character
+    /// correspond to a word and non-word or a non-word and word character.
+    WordBoundaryAscii,
+    /// Match an ASCII-only negation of a word boundary.
+    NotWordBoundaryAscii,
 }

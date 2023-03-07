@@ -59,7 +59,7 @@ pub mod macros;
 pub mod repr;
 
 pub use consts::{DIGIT, WORD};
-pub use repr::{Repr, Seq, Range};
+pub use repr::{Repr, Integral, Seq, Range, Zero};
 
 // #[test]
 // fn datetime() {
