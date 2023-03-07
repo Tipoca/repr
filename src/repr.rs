@@ -13,7 +13,7 @@ use unconst::unconst;
 
 #[unconst]
 // TODO(rnarkk) Seq (class) as `or` for char, &str as `and` for char?
-#[derive_const(Clone)]
+#[derive_const(Clone, Debug)]
 #[derive(Eq, PartialEq)]
 pub enum Repr<I: ~const Integral> {
     Zero(Zero),
@@ -105,7 +105,7 @@ impl Repr<char> {
 // TODO(rnarkk) check if I..I always yield valid characters
 /// A character class, regardless of its character type, is represented by a
 /// sequence of non-overlapping non-adjacent ranges of characters.
-#[derive_const(Clone, Default, PartialEq, PartialOrd, Ord)]
+#[derive_const(Clone, Debug, Default, PartialEq, PartialOrd, Ord)]
 #[derive(Copy, Eq)]
 pub struct Seq<I: ~const Integral>(pub I, pub I);
 
@@ -221,25 +221,6 @@ impl Seq<char> {
     /// if and only if this class contains a non-ASCII codepoint.
     pub fn is_all_ascii(&self) -> bool {
         self.1 <= '\x7F'
-    }
-}
-
-impl Debug for Seq<char> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let start = if !self.0.is_whitespace() && !self.0.is_control() {
-            self.0.to_string()
-        } else {
-            format!("0x{:X}", self.0 as u32)
-        };
-        let end = if !self.1.is_whitespace() && !self.1.is_control() {
-            self.1.to_string()
-        } else {
-            format!("0x{:X}", self.1 as u32)
-        };
-        f.debug_struct("Seq<char>")
-            .field("0", &start)
-            .field("1", &end)
-            .finish()
     }
 }
 
