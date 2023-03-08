@@ -49,11 +49,14 @@
 **Laws**
 
 | formula | title |
+| - | - |
 | Or(a, Or(b, c)) = Or(Or(a, b), c) | Or-associativity |
 | | |
 | Or(a, a) = a | Or-idempotence |
 | Or(a, Zero) = Or(Zero, a) = a | Zero, Or-unit |
-| And(a, One('')) = And(One(''), a) = a | One, And-unit |
+| Mul(a, One('')) = Mul(One(''), a) = a | One, Mul-unit |
+| Mul(Or(a, b), c) = Or(Mul(a, c), Mul(b, c)) | right distributivity |
+| Mul(a, Or(b, c)) = Or(Mul(a, b), Mul(a, c)) | left distributivity |
 | Rev(One(a)) = One(a) | |
 | Rev(Mul(a, b)) = Mul(Rev(b), Rev(a)) | |
 
