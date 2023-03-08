@@ -7,16 +7,6 @@
 
 - The functional equivalent to grouping and capturing. 
 
-**`Zero`**
-
-- `Zero` acts as both an additive and multiplicative unit?
-
-**`Div`** (quotients)
-
-- Case insensitivity
-
-**`Rev`** (?)
-
 **`Rem`** (partial match)
 
 **`Sh`** (shift position?)
@@ -40,11 +30,11 @@
 | `a` / `b` (right quotient) | | `Div(a, b)` | `/` | len(a) - len(b) |
 | `a` \ `b` (left quotient) | | `Div(a, b)` | `/` |
 | RegexSet | `a` ⅋ `b` (multiplicative disjunction/par) | `Add(a, b)` | `+` |
-| `a` ∩ `b` (intersection) | `a` ⊗ `b` (multiplicative conjunction/times) | `And(a, b)` | `&` |
-| `a(?=b)` (positive lookahead) | | `And(a, b)` | |
-| `a(?!b)` (negative lookahead) | | `And(a, Not(b))` | |
-| `(?<=a)b` (positive lookbehind) | | `And(a, b)` | |
-| `(?<!a)b` (negative lookbehind) | | `And(a, b)` | |
+| `a` ∩ `b` (intersection) | `a` ⊗ `b` (multiplicative conjunction/times) | `And(a, b)` | `&` | |
+| `a(?=b)` (positive lookahead) | | `And(a, b)` | | |
+| `a(?!b)` (negative lookahead) | | `And(a, Not(b))` | | |
+| `(?<=a)b` (positive lookbehind) | | `And(a, b)` | | |
+| `(?<!a)b` (negative lookbehind) | | `And(a, b)` | | |
 
 **Laws**
 
