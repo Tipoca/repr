@@ -31,11 +31,14 @@
 | `a{n,m}` (repetition) | `a` | `Or(Mul(a, Mul(a, ..)), Or(..))` |
 | `[a-z]` (class) | - | `Seq(a, z)` | `..` |
 | `[^a-z]` (negation) | - | `Not(a)` | `!` |
-| (negative lookahead) | | | |
 | reverse? | | `Rev(a)` | `-` |
 | quotient | | `Div(a, b)` | `/` |
 | RegexSet | `a` ⅋ `b` (multiplicative disjunction/par) | `Add(a, b)` | `+` |
 | intersection | `a` ⊗ `b` (multiplicative conjunction/times) | `And(a, b)` | `&` |
+| `(?=...)` (positive lookahead) | | `And(a, b)` | |
+| `(?!...)` (negative lookahead) | | `And(a, b)` | |
+| `(?<=...)` (positive lookbehind) | | `And(a, b)` | |
+| `(?<!...)` (negative lookbehind) | | `And(a, b)` | |
 
 **Rules**
 
