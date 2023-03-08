@@ -51,23 +51,13 @@
 - Rev(One(a)) = One(a)
 - Rev(Mul(a, b)) = Mul(Rev(b), Rev(a))
 
-**Targets**
-
-```rust
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum Flag {
-    /// `i`
-    CaseInsensitive,
-    /// `m`
-    MultiLine,
-    /// `s`
-    DotMatchesNewLine,
-    /// `U`
-    SwapGreed,
-    /// `u`
-    Unicode,
-    /// `x`
-    IgnoreWhitespace,
+**Flags (TODO)**
+- `i`, CaseInsensitive
+- `m`, MultiLine
+- `s`, DotMatchesNewLine
+- `U`, SwapGreed
+- `u`, Unicode
+- `x`, IgnoreWhitespace
 }
 ```
 
