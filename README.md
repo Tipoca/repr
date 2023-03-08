@@ -48,8 +48,14 @@
 
 **Laws**
 
-- Rev(One(a)) = One(a)
-- Rev(Mul(a, b)) = Mul(Rev(b), Rev(a))
+| formula | title |
+| Or(a, Or(b, c)) = Or(Or(a, b), c) | Or-associativity |
+| | |
+| Or(a, a) = a | Or-idempotence |
+| Or(a, Zero) = Or(Zero, a) = a | Zero, Or-unit |
+| And(a, One('')) = And(One(''), a) = a | One, And-unit |
+| Rev(One(a)) = One(a) | |
+| Rev(Mul(a, b)) = Mul(Rev(b), Rev(a)) | |
 
 **Flags (TODO)**
 - `i`, CaseInsensitive
