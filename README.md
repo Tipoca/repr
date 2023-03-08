@@ -24,7 +24,7 @@
 | - | - | - | - |
 | (empty/ε) | | `Zero` | |
 | `a` | `a` | `One(a)` | |
-| `ab` (concatenation) | `a` & `b` (additive conjunction/with) | `And(a, b)` | `&` |
+| `ab` (concatenation) | `a` & `b` (additive conjunction/with) | `Mul(a, b)` | `*` |
 | `a\|b` (alternation) | `a` ⊕ `b` (additive disjuction/plus) | `Or(a, b)` | `\|` |
 | `a*` (kleen star) | `a` | `Exp(a, Range::From(0))` |
 | `a?` () | `a` | `Exp(a, Range::Full(0, 1))` |
@@ -32,9 +32,15 @@
 | `[a-z]` (class) | - | `Seq(a, z)` | `..` |
 | `[^a-z]` (negation) | - | `Not(a)` | `!` |
 | (negative lookahead) | | | |
-| reverse? | | | `-` |
+| reverse? | | `Rev(a)` | `-` |
+| quotient | | `Div(a, b)` | `/` |
 | RegexSet | `a` ⅋ `b` (multiplicative disjunction/par) | `Add(a, b)` | `+` |
-| intersection | `a` ⊗ `b` (multiplicative conjunction/times) | `Mul(a, b)` | `*` |
+| intersection | `a` ⊗ `b` (multiplicative conjunction/times) | `And(a, b)` | `&` |
+
+**Rules**
+
+- `Rev(One(a))` = `One(a)`
+- `Rev(Mul(a, b))` = `Mul(Rev(b), Rev(a))`
 
 **Targets**
 
