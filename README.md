@@ -23,21 +23,21 @@
 
 **Comparisons**
 
-| regex | linear logic | repr | op |
+| regex | linear logic | repr | op | len |
 | - | - | - | - |
 | ∅ | | `Zero` | |
-| `a` | `a` | `One(a)` | |
-| ε (empty) | | `One('')` |
-| `ab`/`a` · `b` (concatenation) | `a` & `b` (additive conjunction/with) | `Mul(a, b)` | `*` |
-| `a\|b` (alternation) | `a` ⊕ `b` (additive disjuction/plus) | `Or(a, b)` | `\|` |
+| `a` | `a` | `One(a)` | | len(a) |
+| ε (empty) | | `One('')` | 0 |
+| `ab`/`a` · `b` (concatenation) | `a` & `b` (additive conjunction/with) | `Mul(a, b)` | `*` | len(a) + len(b) |
+| `a\|b` (alternation) | `a` ⊕ `b` (additive disjuction/plus) | `Or(a, b)` | `\|` | max(len(a), len(b))
 | `a*` (kleen star) | `!a` (of course) | `Exp(a)` |
 | `a*?` (non greedy) | `?a` (why not) | `Exp(a)` |
 | `a?` () | `a` | `Or(Zero, a)` |
 | `a{n,m}` (repetition) | `a` | `Or(Mul(a, Mul(a, ..)), Or(..))` |
 | `[a-z]` (class) | | `Seq(a, z)` | `..` |
 | `[^a-z]` (negation) | | `Not(a)` | `!` |
-| `a`<sup>†</sup> (reverse) | | `Rev(a)` | `-` |
-| `a` / `b` (right quotient) | | `Div(a, b)` | `/` |
+| `a`<sup>†</sup> (reverse) | | `Rev(a)` | `-` | len(a) |
+| `a` / `b` (right quotient) | | `Div(a, b)` | `/` | len(a) - len(b) |
 | `a` \ `b` (left quotient) | | `Div(a, b)` | `/` |
 | RegexSet | `a` ⅋ `b` (multiplicative disjunction/par) | `Add(a, b)` | `+` |
 | `a` ∩ `b` (intersection) | `a` ⊗ `b` (multiplicative conjunction/times) | `And(a, b)` | `&` |
