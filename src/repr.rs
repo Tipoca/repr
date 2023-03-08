@@ -19,16 +19,20 @@ pub enum Repr<I: ~const Integral> {
     Zero(Zero),
     One(I),  // TODO(rnarkk)  Seq(I, I)
     Seq(Seq<I>),  // TODO(rnarkk)
-    Not(Box<Repr<I>>),
-    Or(Box<Repr<I>>, Box<Repr<I>>),
+    /// a & b (additive conjunction/with)
     And(Box<Repr<I>>, Box<Repr<I>>),
-    Xor(Box<Repr<I>>, Box<Repr<I>>),
-    Add(Box<Repr<I>>, Box<Repr<I>>),
-    Sub(Box<Repr<I>>, Seq<I>),  // TODO(rnarkk)
-    // Mul(Box<Repr<I>>, Box<Repr<I>>),  // TODO(rnarkk) intersection
-    // Div(Box<Repr<I>>, Box<Repr<I>>),
+    /// a ⊕ b (additive disjuction/plus)
+    Or(Box<Repr<I>>, Box<Repr<I>>),
+    // Xor(Box<Repr<I>>, Box<Repr<I>>),
+    // Sub(Box<Repr<I>>, Seq<I>),  // TODO(rnarkk)
+    Div(Box<Repr<I>>, Box<Repr<I>>),
     Exp(Box<Repr<I>>, Range),
+    Not(Box<Repr<I>>),
     Rev(Box<Repr<I>>),
+    /// a ⅋ b (multiplicative disjunction/par)
+    Add(Box<Repr<I>>, Box<Repr<I>>),
+    /// a ⊗ b (multiplicative conjunction/times)
+    Mul(Box<Repr<I>>, Box<Repr<I>>),
     // Map(Box<Repr<I>>, Fn(Box<Repr<I>>), Fn(Box<Repr<I>>))
 }
 
