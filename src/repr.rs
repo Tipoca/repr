@@ -69,6 +69,10 @@ impl<I: ~const Integral> Repr<I> {
     pub const fn mul(self, range: Range) -> Self {
         Self::Exp(box self, range)
     }
+    
+    pub const fn rev(self) -> Self {
+        Self::Rev(self)
+    }
 }
 
 #[unconst]
@@ -88,6 +92,14 @@ impl Repr<char> {
         Self::Seq(Seq('\0', '\u{10FFFF}'))
     }
 }
+
+/*
+#[unconst]
+pub struct Iter<'a, I: ~const Integral> {
+    repr: &'a Repr<I>,
+    left: 
+}
+*/
 
 // impl<I: ~const Integral> const IntoIterator for Repr<I> {
 //     type Item = I;
