@@ -14,7 +14,7 @@
 **Comparisons**
 
 | regex | linear logic | repr | op | len |
-| - | - | - | - |
+| - | - | - | - | - |
 | ∅ | | `Zero` | | |
 | `a` | `a` | `One(a)` | | len(a) |
 | ε (empty) | | `One('')` | 0 |
