@@ -20,6 +20,8 @@
 
 **`Rem`** (partial match)
 
+**`Sh`** (shift position?)
+
 **Comparisons**
 
 | regex | linear logic | repr | op |
