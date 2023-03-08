@@ -29,9 +29,9 @@
 | `a*` (kleen star) | `a` | `Exp(a)` |
 | `a?` () | `a` | `Or(Zero, a)` |
 | `a{n,m}` (repetition) | `a` | `Or(Mul(a, Mul(a, ..)), Or(..))` |
-| `[a-z]` (class) | - | `Seq(a, z)` | `..` |
-| `[^a-z]` (negation) | - | `Not(a)` | `!` |
-| reverse? | | `Rev(a)` | `-` |
+| `[a-z]` (class) | | `Seq(a, z)` | `..` |
+| `[^a-z]` (negation) | | `Not(a)` | `!` |
+| `a`<sup>†</sup> (reverse) | | `Rev(a)` | `-` |
 | `a` / `b` (right quotient) | | `Div(a, b)` | `/` |
 | `a` \ `b` (left quotient) | | `Div(a, b)` | `/` |
 | RegexSet | `a` ⅋ `b` (multiplicative disjunction/par) | `Add(a, b)` | `+` |
@@ -41,9 +41,9 @@
 | `(?<=a)b` (positive lookbehind) | | `And(a, b)` | |
 | `(?<!a)b` (negative lookbehind) | | `And(a, b)` | |
 
-**Rules**
+**Laws**
 
-- `Rev(One(a))` = `One(a)`
+- Rev(One(a)) = One(a)
 - `Rev(Mul(a, b))` = `Mul(Rev(b), Rev(a))`
 
 **Targets**
