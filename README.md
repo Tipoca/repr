@@ -26,8 +26,9 @@
 
 | regex | linear logic | repr | op |
 | - | - | - | - |
-| (empty/ε) | | `Zero` | |
+| ∅ | | `Zero` | |
 | `a` | `a` | `One(a)` | |
+| ε (empty) | | `One('')` |
 | `ab`/`a` · `b` (concatenation) | `a` & `b` (additive conjunction/with) | `Mul(a, b)` | `*` |
 | `a\|b` (alternation) | `a` ⊕ `b` (additive disjuction/plus) | `Or(a, b)` | `\|` |
 | `a*` (kleen star) | `!a` (of course) | `Exp(a)` |
