@@ -20,7 +20,7 @@ pub enum Repr<I: ~const Integral> {
     One(I),  // TODO(rnarkk)  Seq(I, I)
     Seq(Seq<I>),  // TODO(rnarkk)
     /// a & b (additive conjunction/with)
-    And(Box<Repr<I>>, Box<Repr<I>>),
+    Mul(Box<Repr<I>>, Box<Repr<I>>),
     /// a ⊕ b (additive disjuction/plus)
     Or(Box<Repr<I>>, Box<Repr<I>>),
     // Xor(Box<Repr<I>>, Box<Repr<I>>),
@@ -32,7 +32,7 @@ pub enum Repr<I: ~const Integral> {
     /// a ⅋ b (multiplicative disjunction/par)
     Add(Box<Repr<I>>, Box<Repr<I>>),
     /// a ⊗ b (multiplicative conjunction/times)
-    Mul(Box<Repr<I>>, Box<Repr<I>>),
+    And(Box<Repr<I>>, Box<Repr<I>>),
     // Map(Box<Repr<I>>, Fn(Box<Repr<I>>), Fn(Box<Repr<I>>))
 }
 
