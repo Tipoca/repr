@@ -26,9 +26,9 @@
 | `a` | `a` | `One(a)` | |
 | `ab`/`a` · `b` (concatenation) | `a` & `b` (additive conjunction/with) | `Mul(a, b)` | `*` |
 | `a\|b` (alternation) | `a` ⊕ `b` (additive disjuction/plus) | `Or(a, b)` | `\|` |
-| `a*` (kleen star) | `a` | `Exp(a, Range::From(0))` |
-| `a?` () | `a` | `Exp(a, Range::Full(0, 1))` |
-| `a{n,m}` (repetition) | `a` | `Exp(a, Range::Full(n, m))` |
+| `a*` (kleen star) | `a` | `Exp(a)` |
+| `a?` () | `a` | `Or(Zero, a)` |
+| `a{n,m}` (repetition) | `a` | `Or(Mul(a, Mul(a, ..)), Or(..))` |
 | `[a-z]` (class) | - | `Seq(a, z)` | `..` |
 | `[^a-z]` (negation) | - | `Not(a)` | `!` |
 | (negative lookahead) | | | |
