@@ -24,12 +24,12 @@
 | `a*?` (non greedy) | `?a` (why not) | `Exp(a)` | |
 | `a?` () | `a` | `Or(Zero, a)` | |
 | `a{n,m}` (repetition) | `a` | `Or(Mul(a, Mul(a, ..)), Or(..))` | |
-| `[a-z]` (class) | | `Seq(a, z)` | `..` |
-| `[^a-z]` (negation) | | `Not(a)` | `!` |
+| `[a-z]` (class) | | `Seq(a, z)` | `..` | |
+| `[^a-z]` (negation) | | `Not(a)` | `!` | |
 | `a`<sup>†</sup> (reverse) | | `Rev(a)` | `-` | len(a) |
 | `a` / `b` (right quotient) | | `Div(a, b)` | `/` | len(a) - len(b) |
-| `a` \ `b` (left quotient) | | `Div(a, b)` | `/` |
-| RegexSet | `a` ⅋ `b` (multiplicative disjunction/par) | `Add(a, b)` | `+` |
+| `a` \ `b` (left quotient) | | `Div(a, b)` | `/` | |
+| RegexSet | `a` ⅋ `b` (multiplicative disjunction/par) | `Add(a, b)` | `+` | |
 | `a` ∩ `b` (intersection) | `a` ⊗ `b` (multiplicative conjunction/times) | `And(a, b)` | `&` | |
 | `a(?=b)` (positive lookahead) | | `And(a, b)` | | |
 | `a(?!b)` (negative lookahead) | | `And(a, Not(b))` | | |
@@ -44,7 +44,7 @@
 | | |
 | Or(a, a) = a | Or-idempotence |
 | Or(a, Zero) = Or(Zero, a) = a | Zero, Or-unit |
-| Mul(a, One('')) = Mul(One(''), a) = a | One, Mul-unit |
+| Mul(a, One('')) = Mul(One(''), a) = a | One(''), Mul-unit |
 | Mul(a, Zero) = Mul(Zero, a) = Zero | Zero, Mul-zero |
 | Mul(Or(a, b), c) = Or(Mul(a, c), Mul(b, c)) | right distributivity |
 | Mul(a, Or(b, c)) = Or(Mul(a, b), Mul(a, c)) | left distributivity |
