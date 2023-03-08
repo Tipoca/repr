@@ -26,7 +26,8 @@
 | `a` | `a` | `One(a)` | |
 | `ab`/`a` · `b` (concatenation) | `a` & `b` (additive conjunction/with) | `Mul(a, b)` | `*` |
 | `a\|b` (alternation) | `a` ⊕ `b` (additive disjuction/plus) | `Or(a, b)` | `\|` |
-| `a*` (kleen star) | `a` | `Exp(a)` |
+| `a*` (kleen star) | `!a` (of course) | `Exp(a)` |
+| `a*?` (non greedy) | `?a` (why not) | `Exp(a)` |
 | `a?` () | `a` | `Or(Zero, a)` |
 | `a{n,m}` (repetition) | `a` | `Or(Mul(a, Mul(a, ..)), Or(..))` |
 | `[a-z]` (class) | | `Seq(a, z)` | `..` |
@@ -44,7 +45,7 @@
 **Laws**
 
 - Rev(One(a)) = One(a)
-- `Rev(Mul(a, b))` = `Mul(Rev(b), Rev(a))`
+- Rev(Mul(a, b)) = Mul(Rev(b), Rev(a))
 
 **Targets**
 
