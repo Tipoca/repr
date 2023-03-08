@@ -58,7 +58,6 @@
 - `U`, SwapGreed
 - `u`, Unicode
 - `x`, IgnoreWhitespace
-}
 ```
 
 - Recouse non-greedy pattern to _
