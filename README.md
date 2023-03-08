@@ -60,6 +60,7 @@
 | Mul(a, Or(b, c)) = Or(Mul(a, b), Mul(a, c)) | left distributivity |
 | Rev(One(a)) = One(a) | |
 | Rev(Mul(a, b)) = Mul(Rev(b), Rev(a)) | |
+| Mul(One(a), One(b)) = One(ab) | |
 
 **Flags (TODO)**
 - `i`, CaseInsensitive
