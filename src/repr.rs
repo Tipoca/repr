@@ -28,6 +28,7 @@ pub enum Repr<I: ~const Integral> {
     // Mul(Box<Repr<I>>, Box<Repr<I>>),  // TODO(rnarkk) intersection
     // Div(Box<Repr<I>>, Box<Repr<I>>),
     Exp(Box<Repr<I>>, Range),
+    Rev(Box<Repr<I>>),
     // Map(Box<Repr<I>>, Fn(Box<Repr<I>>), Fn(Box<Repr<I>>))
 }
 
