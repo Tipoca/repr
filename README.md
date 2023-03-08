@@ -18,6 +18,8 @@
 
 **`Rev`** (?)
 
+**`Rem`** (partial match)
+
 **Comparisons**
 
 | regex | linear logic | repr | op |
