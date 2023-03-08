@@ -32,7 +32,8 @@
 | `[a-z]` (class) | - | `Seq(a, z)` | `..` |
 | `[^a-z]` (negation) | - | `Not(a)` | `!` |
 | reverse? | | `Rev(a)` | `-` |
-| quotient | | `Div(a, b)` | `/` |
+| `a` / `b` (right quotient) | | `Div(a, b)` | `/` |
+| `a` \ `b` (left quotient) | | `Div(a, b)` | `/` |
 | RegexSet | `a` ⅋ `b` (multiplicative disjunction/par) | `Add(a, b)` | `+` |
 | intersection | `a` ⊗ `b` (multiplicative conjunction/times) | `And(a, b)` | `&` |
 | `a(?=b)` (positive lookahead) | | `And(a, b)` | |
