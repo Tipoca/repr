@@ -35,10 +35,10 @@
 | quotient | | `Div(a, b)` | `/` |
 | RegexSet | `a` ⅋ `b` (multiplicative disjunction/par) | `Add(a, b)` | `+` |
 | intersection | `a` ⊗ `b` (multiplicative conjunction/times) | `And(a, b)` | `&` |
-| `(?=...)` (positive lookahead) | | `And(a, b)` | |
-| `(?!...)` (negative lookahead) | | `And(a, b)` | |
-| `(?<=...)` (positive lookbehind) | | `And(a, b)` | |
-| `(?<!...)` (negative lookbehind) | | `And(a, b)` | |
+| `a(?=b)` (positive lookahead) | | `And(a, b)` | |
+| `a(?!b)` (negative lookahead) | | `And(a, Not(b))` | |
+| `(?<=a)b` (positive lookbehind) | | `And(a, b)` | |
+| `(?<!a)b` (negative lookbehind) | | `And(a, b)` | |
 
 **Rules**
 
