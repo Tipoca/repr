@@ -24,7 +24,7 @@
 | - | - | - | - |
 | (empty/ε) | | `Zero` | |
 | `a` | `a` | `One(a)` | |
-| `ab` (concatenation) | `a` & `b` (additive conjunction/with) | `Mul(a, b)` | `*` |
+| `ab`/`a` · `b` (concatenation) | `a` & `b` (additive conjunction/with) | `Mul(a, b)` | `*` |
 | `a\|b` (alternation) | `a` ⊕ `b` (additive disjuction/plus) | `Or(a, b)` | `\|` |
 | `a*` (kleen star) | `a` | `Exp(a, Range::From(0))` |
 | `a?` () | `a` | `Exp(a, Range::Full(0, 1))` |
