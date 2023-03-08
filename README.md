@@ -1,12 +1,11 @@
 **TODO**
 
-- Can `ignore` be represented by Map?
-- Can flags, infos and assertions be represented by Map?
-- Derivatives and lookaheads
+- `ignore`, or lookahead/behind
+- Derivatives
 
 **`Map`**
 
-- Capturing/grouping
+- The functional equivalent to grouping and capturing. 
 
 **`Zero`**
 
