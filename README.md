@@ -77,6 +77,5 @@ exp(a + b) = exp(a) * exp(b)
 - `U`, SwapGreed
 - `u`, Unicode
 - `x`, IgnoreWhitespace
-```
 
 - Recouse non-greedy pattern to _
