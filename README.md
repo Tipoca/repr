@@ -26,7 +26,7 @@
 | `a{n,m}` (repetition) | `a` | `Or(Mul(a, Mul(a, ..)), Or(..))` | |
 | `[a-z]` (class) | | `Seq(a, z)` | `..` | |
 | `[^a-z]` (negation) | | `Neg(a)` | `-` | |
-| `a`<sup>†</sup> (reverse) | | `Rev(a)` | | len(a) |
+| `a`<sup>†</sup> (reverse) | right law vs left law | `Rev(a)` | | len(a) |
 | `a` / `b` (right quotient) | | `Div(a, b)` | `/` | len(a) - len(b) |
 | `a` \ `b` (left quotient) | | `Div(a, b)` | `/` | |
 | RegexSet | `a` ⅋ `b` (multiplicative disjunction/par) | `Add(a, b)` | `+` | |
