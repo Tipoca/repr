@@ -38,19 +38,19 @@
 
 **Laws**
 
-| formula | title |
-| - | - |
-| Or(a, Or(b, c)) = Or(Or(a, b), c) | Or-associativity |
+| linear logic | repr | title |
+| - | - | - |
+| | Or(a, Or(b, c)) = Or(Or(a, b), c) | Or-associativity |
 | | |
-| Or(a, a) = a | Or-idempotence |
-| Or(a, Zero) = Or(Zero, a) = a | Zero, Or-unit |
-| Mul(a, One('')) = Mul(One(''), a) = a | One(''), Mul-unit |
-| Mul(a, Zero) = Mul(Zero, a) = Zero | Zero, Mul-zero |
-| Mul(Or(a, b), c) = Or(Mul(a, c), Mul(b, c)) | right distributivity |
-| Mul(a, Or(b, c)) = Or(Mul(a, b), Mul(a, c)) | left distributivity |
-| Rev(One(a)) = One(a) | |
-| Rev(Mul(a, b)) = Mul(Rev(b), Rev(a)) | |
-| Mul(One(a), One(b)) = One(ab) | |
+| | Or(a, a) = a | Or-idempotence |
+| a ⊕ 0 = 0 ⊕ a = a| Or(a, Zero) = Or(Zero, a) = a | Zero, Or-unit |
+| a & ⊤ = ⊤ & a = a | Mul(a, One('')) = Mul(One(''), a) = a | One(''), Mul-unit |
+| | Mul(a, Zero) = Mul(Zero, a) = Zero | Zero, Mul-zero |
+| | Mul(Or(a, b), c) = Or(Mul(a, c), Mul(b, c)) | right distributivity |
+| | Mul(a, Or(b, c)) = Or(Mul(a, b), Mul(a, c)) | left distributivity |
+| | Rev(One(a)) = One(a) | |
+| | Rev(Mul(a, b)) = Mul(Rev(b), Rev(a)) | |
+| | Mul(One(a), One(b)) = One(ab) | |
 
 **Flags (TODO)**
 - `i`, CaseInsensitive
