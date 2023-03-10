@@ -2,6 +2,7 @@
 
 - `ignore`, or lookahead/behind
 - Derivatives
+- `One` → `True` or sorts
 
 **`Or`**
 
