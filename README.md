@@ -15,7 +15,7 @@
 
 | regex | linear logic | repr | op | len |
 | - | - | - | - | - |
-| ∅ | | `Zero` | | |
+| ∅ | 0 | `Zero` | | |
 | `a` | `a` | `One(a)` | | len(a) |
 | ε (empty) | | `One('')` | | 0 |
 | `ab`/`a` · `b` (concatenation) | `a` & `b` (additive conjunction/with) | `Mul(a, b)` | `*` | len(a) + len(b) |
