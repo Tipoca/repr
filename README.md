@@ -3,6 +3,10 @@
 - `ignore`, or lookahead/behind
 - Derivatives
 
+**`Or`**
+
+- Can we optimise by assuring lhs and rhs of Or always have no common prefix?
+
 **`Map`**
 
 - The functional equivalent to grouping and capturing. 
