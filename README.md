@@ -43,6 +43,15 @@
 | `(?<=a)b` (positive lookbehind) | | `And(a, b)` | | |
 | `(?<!a)b` (negative lookbehind) | | `And(a, b)` | | |
 
+**about symbols**
+
+Symbols are gropued and assigned primarily by positive/negative distinciton. They are corresponding to whether computation exits or rather continues.
+
+| | additive | multiplicative | exponential |
+| - | - | - | - |
+| positive/external | ⊕ 0	| ⊗ 1	| ! |
+| negative/internal |	& ⊤	| ⅋ ⊥ | ? |	
+
 **Laws**
 
 | linear logic | repr | title |
