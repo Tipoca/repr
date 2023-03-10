@@ -18,7 +18,7 @@
 | a ∈ L (match) | `a` : `A` (judgement) | | |
 | ∅ | 0 | `Zero` | | |
 | `a` | `a` | `One(a)` | | len(a) |
-| ε (empty) | ⊤ | `One('')` | | 0 |
+| ε (empty) | `*`, ⊤ | `One('')` | | 0 |
 | `ab`/`a` · `b` (concatenation) | `a` & `b` (additive conjunction/with) | `Mul(a, b)` | `*` | len(a) + len(b) |
 | `a\|b` (alternation) | `a` ⊕ `b` (additive disjuction/plus) | `Or(a, b)` | `\|` | max(len(a), len(b))
 | `a*` (kleen star) | `!a` (of course) | `Exp(a)` | |
