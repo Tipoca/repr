@@ -59,6 +59,8 @@
 | | Rev(Mul(a, b)) = Mul(Rev(b), Rev(a)) | |
 | | Mul(One(a), One(b)) = One(ab) | |
 
+exp(a + b) = exp(a) + exp(b)
+
 **Flags (TODO)**
 - `i`, CaseInsensitive
 - `m`, MultiLine
