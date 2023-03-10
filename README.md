@@ -45,7 +45,7 @@
 
 **about symbols**
 
-Symbols are gropued and assigned primarily by positive/negative distinciton. They are corresponding to whether computation exits or rather continues.
+Symbols are gropued and assigned primarily by positive/negative distinciton. They are corresponding to whether computation exits or rather continues; though concatenation `&` has conjunction semantics, computation doesn't complete/exit at not satisfying one criterion (backtracking). Though RegexSet has disjunction semantics, computation doesn't complete/exit at satisfying one criterion to compute which regex has match.
 
 | | additive | multiplicative | exponential |
 | - | - | - | - |
