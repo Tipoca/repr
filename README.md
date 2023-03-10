@@ -15,7 +15,7 @@
 
 **`Xor`**
 
-- lookahead/behind
+- lookahead/behind, multiple futures, communication and discard
 
 **`Rem`** (partial match)
 
