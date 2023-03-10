@@ -15,6 +15,7 @@
 
 | regex | linear logic | repr | op | len |
 | - | - | - | - | - |
+| a ∈ L (match) | `a` : `A` (judgement) | | |
 | ∅ | 0 | `Zero` | | |
 | `a` | `a` | `One(a)` | | len(a) |
 | ε (empty) | ⊤ | `One('')` | | 0 |
