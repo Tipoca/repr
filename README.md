@@ -5,7 +5,7 @@
 
 **`Or`**
 
-- Can we optimise by assuring lhs and rhs of Or always have no common prefix?
+- Can we optimise it by assuring its lhs and rhs always have no common prefix?
 
 **`Map`**
 
