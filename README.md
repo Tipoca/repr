@@ -45,7 +45,7 @@
 | | Or(a, a) = a | Or-idempotence |
 | a ⊕ 0 = 0 ⊕ a = a| Or(a, Zero) = Or(Zero, a) = a | Zero, Or-unit |
 | a & ⊤ = ⊤ & a = a | Mul(a, One('')) = Mul(One(''), a) = a | One(''), Mul-unit |
-| | Mul(a, Zero) = Mul(Zero, a) = Zero | Zero, Mul-zero |
+| a & 0 = 0 & a = 0 | Mul(a, Zero) = Mul(Zero, a) = Zero | Zero, Mul-zero |
 | | Mul(Or(a, b), c) = Or(Mul(a, c), Mul(b, c)) | right distributivity |
 | | Mul(a, Or(b, c)) = Or(Mul(a, b), Mul(a, c)) | left distributivity |
 | | Rev(One(a)) = One(a) | |
