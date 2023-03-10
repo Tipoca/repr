@@ -13,6 +13,10 @@
 
 - The functional equivalent to grouping and capturing. 
 
+**`Xor`**
+
+- lookahead/behind
+
 **`Rem`** (partial match)
 
 **`Sh`** (shift position?)
