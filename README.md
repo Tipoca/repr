@@ -1,6 +1,6 @@
 **TODO**
 
-- Interpretation of `match, is it a judgement `a : A` or divisible (quotient is equal to zero) `a / b`?
+- Interpretation of `match`, is it a judgement `a : A` or divisible (quotient is equal to zero) `a / b`?
 - `ignore`, or lookahead/behind
 - Derivatives
 - `One` → `True` or sorts
