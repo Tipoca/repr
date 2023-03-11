@@ -61,8 +61,8 @@ Symbols are gropued and assigned primarily by positive/negative distinciton. The
 
 | | additive | multiplicative | exponential |
 | - | - | - | - |
-| positive/external | ⊕ 0	| ⊗ 1	| ! |
-| negative/internal |	& ⊤	| ⅋ ⊥ | ? |	
+| positive/extensional | ⊕ 0 | ⊗ 1 | ! |
+| negative/intensional | & ⊤ | ⅋ ⊥ | ? |
 
 **Laws**
 
