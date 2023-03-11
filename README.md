@@ -64,7 +64,7 @@ Symbols are gropued and assigned primarily by positive/negative distinciton. The
 
 **Laws**
 
-| linear logic | repr | title |
+| linear logic/quantale | repr | title |
 | - | - | - |
 | | Or(a, Or(b, c)) = Or(Or(a, b), c) | Or-associativity |
 | | |
