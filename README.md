@@ -1,3 +1,7 @@
+**Caveats**
+
+- Regular-expression-as-linear-logic interpretation is not fully general as it has decidability condition. For example, RegexSet-as-multiplicative-disjunction interpretaiton differs from ordinal resource interpretation in that when regexset has match we know where the match comes from (which regex(es) of regexset have(has) match).
+
 **TODO**
 
 - Arbitrary one character `.` vs `Seq(MIN, MAX)` vs `⊤` (meaning we don't define such token)
