@@ -11,6 +11,7 @@
 - Derivatives
 - Rename `One` → `True` or sorts
 - Equational reasoning
+- Spherical conic
 
 **`Or`**
 
