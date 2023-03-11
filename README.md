@@ -80,6 +80,8 @@ exp(a + b) = exp(a) * exp(b)
 - d(Or(a, b)) = Or(d(a), d(b))
 - d(Mul(a, b)) = Or(Mul(d(a), b), Mul(a, d(b))  *
 - d(Exp(a)) = Mul(d(a), Exp(a))
+- a : D(a)
+- 
 
 **Flags (TODO)**
 - `i`, CaseInsensitive
