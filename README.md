@@ -115,3 +115,7 @@ Linearity (which)
 **Algorithms (TODO)**
 
 - Bit-pararell
+
+**Semantics (TODO)**
+
+- Coherent space
