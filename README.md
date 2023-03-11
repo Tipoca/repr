@@ -10,6 +10,7 @@
 - `ignore`, or lookahead/behind
 - Derivatives
 - Rename `One` → `True` or sorts
+- Equational reasoning
 
 **`Or`**
 
