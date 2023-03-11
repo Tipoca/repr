@@ -66,8 +66,8 @@ impl<I: ~const Integral> Repr<I> {
         Self::Add(box self, box other)
     }
     
-    pub const fn sub(self, seq: Seq<I>) -> Self {
-        Self::Sub(box self, seq)
+    pub const fn div(self, seq: Self) -> Self {
+        Self::Div(box self, box other)
     }
     
     pub const fn mul(self, range: Range) -> Self {
