@@ -1,6 +1,6 @@
 **TODO**
 
-- Arbitrary one character `.` vs `Seq(MIN, MAX)` vs `⊤`
+- Arbitrary one character `.` vs `Seq(MIN, MAX)` vs `⊤` (meaning we don't define such token)
 - Interpretation of `match`, is it a judgement `a : A` or a test that one is divisible by another (quotient is equal to zero) `a / b`?
 - `ignore`, or lookahead/behind
 - Derivatives
