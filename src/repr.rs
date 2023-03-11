@@ -255,12 +255,15 @@ impl Seq<char> {
     }
 }
 
+/// - `Copy` + `Clone`: possibility of `!` exponentiation
+/// - `PartialEq` + `Eq`: decidability
 #[unconst]
 #[const_trait]
-pub trait Integral: Copy + ~const Clone + Debug
+pub trait Integral: Copy + ~const Clone
                     + ~const PartialEq + Eq
                     + ~const PartialOrd + ~const Ord
                     + ~const Destruct
+                    + Debug
 {
     // type S: ~const IntoIterator<Item = Self>;
     const MIN: Self;
