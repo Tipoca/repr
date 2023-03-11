@@ -109,3 +109,7 @@ Linearity (which)
 **Interpretations**
 
 - By regarding matching as an assignment of occurrences of strings to each part of an expression, regular expressions are resource (limited occurrences of strings) consumption (exclusive assignment/matching of them).
+
+**Algorithms (TODO)**
+
+- Bit-pararell
