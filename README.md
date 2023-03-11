@@ -74,6 +74,13 @@ Symbols are gropued and assigned primarily by positive/negative distinciton. The
 
 exp(a + b) = exp(a) * exp(b)
 
+**Derivative (TODO)**
+
+- d(Zero) = Zero
+- d(Or(a, b)) = Or(d(a), d(b))
+- d(Mul(a, b)) = Or(Mul(d(a), b), Mul(a, d(b))  *
+- d(Exp(a)) = Mul(d(a), Exp(a))
+
 **Flags (TODO)**
 - `i`, CaseInsensitive
 - `m`, MultiLine
