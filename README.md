@@ -39,8 +39,8 @@
 | ε (empty) | `*`, ⊤ | `One('')` | | 0 |
 | `ab`/`a` · `b` (concatenation) | `a` & `b` (additive conjunction/with) | `Mul(a, b)`/`a * b` | × (product) | len(a) + len(b) |
 | `a\|b` (alternation) | `a` ⊕ `b` (additive disjuction/plus) | `Or(a, b)`/`a \| b` | + (coproduct) | max(len(a), len(b))
-| `a*` (kleen star) | `!a` (of course, exponential conjunction) | `Exp(a)` | |
-| `a*?` (non greedy) | `?a` (why not, exponential disjunction) | `Exp(a)` | |
+| `a*` (kleen star) | `!a` (of course, exponential conjunction) | `Exp(a)` | □ (necessity) |
+| `a*?` (non greedy) | `?a` (why not, exponential disjunction) | `Exp(a)` | ◊ (possibility) |
 | `a?` () | `a` | `Or(Zero, a)` | |
 | `a{n,m}` (repetition) | `a` | `Or(Mul(a, Mul(a, ..)), Or(..))` | |
 | `[a-z]` (class) | | `Seq(a, z)`/`a..z` | | |
