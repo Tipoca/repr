@@ -83,3 +83,7 @@ exp(a + b) = exp(a) * exp(b)
 - `x`, IgnoreWhitespace
 
 - Recouse non-greedy pattern to _
+
+**Interpretations**
+
+- By regarding matching as an assignment of occurrences of strings to each part of an expression, regular expressions are resource (limited occurrences of strings) consumption (exclusive assignment/matching of them).
