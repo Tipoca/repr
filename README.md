@@ -8,7 +8,7 @@
 - Interpretation of `match`, is it a judgement `a : A` or a test that one is divisible by another (quotient is equal to zero) `a / b`?
 - `ignore`, or lookahead/behind
 - Derivatives
-- `One` → `True` or sorts
+- Rename `One` → `True` or sorts
 
 **`Or`**
 
