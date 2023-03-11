@@ -71,7 +71,7 @@ impl<I: ~const Integral> Repr<I> {
         Self::Div(box self, box other)
     }
     
-    pub const fn mul(self, range: Range) -> Self {
+    pub const fn exp(self, range: Range) -> Self {
         Self::Exp(box self, range)
     }
     

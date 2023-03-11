@@ -50,6 +50,7 @@ extern crate alloc;
 mod conversions;
 mod interval;
 mod operators;
+mod regex;
 mod wrappers;
 
 pub mod char;
