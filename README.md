@@ -26,6 +26,7 @@
 **`Xor`**
 
 - lookahead/behind, multiple futures, communication and discard
+- Split, subspace
 
 **`Rem`** (partial match)
 
