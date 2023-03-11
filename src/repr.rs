@@ -75,7 +75,7 @@ impl<I: ~const Integral> Repr<I> {
     }
     
     pub const fn rev(self) -> Self {
-        Self::Rev(self)
+        Self::Rev(box self)
     }
 }
 
