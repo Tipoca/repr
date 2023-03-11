@@ -68,7 +68,7 @@ Symbols are gropued and assigned primarily by positive/negative distinciton. The
 | - | - | - |
 | | Or(a, Or(b, c)) = Or(Or(a, b), c) | Or-associativity |
 | | |
-| | Or(a, a) = a | Or-idempotence |
+| a ⊕ a = a | Or(a, a) = a | Or-idempotence |
 | a ⊕ 0 = 0 ⊕ a = a| Or(a, Zero) = Or(Zero, a) = a | Zero, Or-unit |
 | a & ⊤ = ⊤ & a = a | Mul(a, One('')) = Mul(One(''), a) = a | One(''), Mul-unit |
 | (a ⊕ b) & c = (a & c) ⊕ (b & c) | Mul(Or(a, b), c) = Or(Mul(a, c), Mul(b, c)) | right distributivity |
