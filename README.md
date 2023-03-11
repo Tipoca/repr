@@ -1,7 +1,7 @@
 **Caveats**
 
 - Regular-expression-as-linear-logic interpretation is not fully general as it has decidability condition. For example, RegexSet-as-multiplicative-disjunction interpretaiton differs from ordinal resource interpretation in that when regexset has match we know where the match comes from (which regex(es) of regexset have(has) match).
-- The assignment of the symbol groups (`Mul`/`*`, `Or`/`|`) and (`Add`/`+`, `And`/`&`) may be exchanged witg one another in the future.
+- The assignment of the symbol groups (`Mul`/`*`, `Or`/`|`) and (`Add`/`+`, `And`/`&`) may be exchanged with one another in the future.
 
 **TODO**
 
