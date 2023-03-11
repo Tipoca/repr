@@ -25,6 +25,7 @@ pub enum Repr<I: ~const Integral> {
     Or(Box<Repr<I>>, Box<Repr<I>>),
     // Xor(Box<Repr<I>>, Box<Repr<I>>),
     // Sub(Box<Repr<I>>, Seq<I>),  // TODO(rnarkk)
+    /// a ⊸ b (linear implication)
     Div(Box<Repr<I>>, Box<Repr<I>>),
     Exp(Box<Repr<I>>, Range),
     Not(Box<Repr<I>>),
