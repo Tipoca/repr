@@ -43,7 +43,7 @@
 | `a?` () | `a` | `Or(Zero, a)` | |
 | `a{n,m}` (repetition) | `a` | `Or(Mul(a, Mul(a, ..)), Or(..))` | |
 | `[a-z]` (class) | | `Seq(a, z)`/`a..z` | | |
-| `[^a-z]` (negation) | | `Neg(a)`/`-a` | | |
+| `[^a-z]` (negation) | TODO this is complementary op | `Neg(a)`/`-a` | | |
 | `a`<sup>†</sup> (reverse) | right law vs left law | `Rev(a)` | | len(a) |
 | `a` / `b` (right quotient) | `a` ⊸ `b` | `Div(a, b)`/`a / b` | | len(a) - len(b) |
 | `a` \ `b` (left quotient) | | `Div(a, b)` | | |
