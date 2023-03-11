@@ -1,6 +1,6 @@
 use alloc::{
     boxed::Box,
-    vec::Vec
+//     vec::Vec
 };
 use core::{
     cmp::{max, min},
@@ -58,15 +58,15 @@ impl<I: ~const Integral> Repr<I> {
         Self::Or(box self, box other)
     }
     
-    pub const fn xor(self, other: Self) -> Self {
-        Self::Xor(box self, box other)
-    }
+//     pub const fn xor(self, other: Self) -> Self {
+//         Self::Xor(box self, box other)
+//     }
     
     pub const fn add(self, other: Self) -> Self {
         Self::Add(box self, box other)
     }
     
-    pub const fn div(self, seq: Self) -> Self {
+    pub const fn div(self, other: Self) -> Self {
         Self::Div(box self, box other)
     }
     
