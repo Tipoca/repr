@@ -11,7 +11,7 @@
 - Derivatives
 - Rename `One` → `True` or sorts
 - Equational reasoning
-- Spherical conic
+- Algebraic topology of spherical conic
 
 **`Or`**
 
