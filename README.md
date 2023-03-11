@@ -34,8 +34,8 @@
 | ∅ | 0 | `Zero` | | |
 | `a` | `a` | `One(a)` | | len(a) |
 | ε (empty) | `*`, ⊤ | `One('')` | | 0 |
-| `ab`/`a` · `b` (concatenation) | `a` & `b` (additive conjunction/with) | `Mul(a, b)`/`a * b` | × | len(a) + len(b) |
-| `a\|b` (alternation) | `a` ⊕ `b` (additive disjuction/plus) | `Or(a, b)`/`a \| b` | + | max(len(a), len(b))
+| `ab`/`a` · `b` (concatenation) | `a` & `b` (additive conjunction/with) | `Mul(a, b)`/`a * b` | × (product) | len(a) + len(b) |
+| `a\|b` (alternation) | `a` ⊕ `b` (additive disjuction/plus) | `Or(a, b)`/`a \| b` | + (coproduct) | max(len(a), len(b))
 | `a*` (kleen star) | `!a` (of course, exponential conjunction) | `Exp(a)` | |
 | `a*?` (non greedy) | `?a` (why not, exponential disjunction) | `Exp(a)` | |
 | `a?` () | `a` | `Or(Zero, a)` | |
@@ -45,8 +45,8 @@
 | `a`<sup>†</sup> (reverse) | right law vs left law | `Rev(a)` | | len(a) |
 | `a` / `b` (right quotient) | `a` ⊸ `b` | `Div(a, b)`/`a / b` | | len(a) - len(b) |
 | `a` \ `b` (left quotient) | | `Div(a, b)` | | |
-| RegexSet | `a` ⅋ `b` (multiplicative disjunction/par) | `Add(a, b)`/`a + b` | | |
-| `a` ∩ `b` (intersection) | `a` ⊗ `b` (multiplicative conjunction/times) | `And(a, b)`/`a & b` | ⊗ | |
+| RegexSet | `a` ⅋ `b` (multiplicative disjunction/par) | `Add(a, b)`/`a + b` | ⊕ (direct sum) | |
+| `a` ∩ `b` (intersection) | `a` ⊗ `b` (multiplicative conjunction/times) | `And(a, b)`/`a & b` | ⊗ (tensor product) | |
 | `a(?=b)` (positive lookahead) | | `And(a, b)` | | |
 | `a(?!b)` (negative lookahead) | | `And(a, Not(b))` | | |
 | `(?<=a)b` (positive lookbehind) | | `And(a, b)` | | |
