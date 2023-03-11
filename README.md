@@ -72,7 +72,15 @@ Symbols are gropued and assigned primarily by positive/negative distinciton. The
 | | Rev(Mul(a, b)) = Mul(Rev(b), Rev(a)) | |
 | | Mul(One(a), One(b)) = One(ab) | |
 
-exp(a + b) = exp(a) * exp(b)
+Relationship among additive, multiplicative and exponential
+
+- exp(a + b) = exp(a) * exp(b)
+
+Linearity (which)
+
+- f(a + b) = f(a) + f(b)
+- (a → b) + (b → a)
+- functions take only one argument
 
 **Derivative (TODO)**
 
