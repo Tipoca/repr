@@ -2,7 +2,7 @@
 name = "repr"
 version = "0.0.7"
 edition = "2021"
-description = "Regular expressions"
+description = "The regular-expression-as-linear-logic interpretation and its implementation"
 license = "MIT/Apache-2.0"
 keywords = ["regular-expression"]
 categories = ["regular-expression"]
