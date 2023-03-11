@@ -1,5 +1,6 @@
 **TODO**
 
+- Arbitrary one character `.` vs `Seq(MIN, MAX)` vs `⊤`
 - Interpretation of `match`, is it a judgement `a : A` or a test that one is divisible by another (quotient is equal to zero) `a / b`?
 - `ignore`, or lookahead/behind
 - Derivatives
@@ -65,7 +66,6 @@ Symbols are gropued and assigned primarily by positive/negative distinciton. The
 | | Or(a, a) = a | Or-idempotence |
 | a ⊕ 0 = 0 ⊕ a = a| Or(a, Zero) = Or(Zero, a) = a | Zero, Or-unit |
 | a & ⊤ = ⊤ & a = a | Mul(a, One('')) = Mul(One(''), a) = a | One(''), Mul-unit |
-| TODO a & 0 = 0 & a = 0 | Mul(a, Zero) = Mul(Zero, a) = Zero | Zero, Mul-zero |
 | | Mul(Or(a, b), c) = Or(Mul(a, c), Mul(b, c)) | right distributivity |
 | | Mul(a, Or(b, c)) = Or(Mul(a, b), Mul(a, c)) | left distributivity |
 | | Rev(One(a)) = One(a) | |
