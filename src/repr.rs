@@ -77,6 +77,20 @@ impl<I: ~const Integral> Repr<I> {
     pub const fn rev(self) -> Self {
         Self::Rev(box self)
     }
+
+    pub const fn is_anchored_start(&self) -> bool {
+        match self {
+            Self::Zero(Zero::StartText) => true,
+            _ => false
+        }
+    }
+
+    pub const fn is_anchored_end(&self) -> bool {
+        match self {
+            Self::Zero(Zero::EndText) => true,
+            _ => false
+        }
+    }
 }
 
 #[unconst]
