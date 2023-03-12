@@ -26,6 +26,11 @@ impl<I: ~const Integral> Seq<I> {
         Seq(vec![i])
     }
 
+    pub const fn mul(self, other: Self) -> Self {
+        self.0.extend(other);
+        self
+    }
+
     pub const fn rev(self) -> Self {
         Seq(self.0.into_iter().rev().collect())
     }
@@ -43,5 +48,15 @@ impl<I: ~const Integral> const Deref for Seq<I> {
     type Target = Vec<I>;
     fn deref(&self) -> &Vec<I> {
         &self.0
+    }
+}
+
+#[unconst]
+impl<I: ~const Integral> const IntoIterator for Seq<I> {
+    type Item = I;
+    type IntoIter = <Vec<I> as IntoIterator>::IntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
     }
 }

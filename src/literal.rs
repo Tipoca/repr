@@ -153,7 +153,7 @@ impl<I: ~const Integral> Literals<I> {
         for lit in &self.lits[1..] {
             len = cmp::min(
                 len,
-                lit.iter().zip(lit0).take_while(|&(a, b)| a == b).count(),
+                (lit.v.deref()).iter().zip(*lit0).take_while(|(a, b)| a == &b).count(),
             );
         }
         &self.lits[0][..len]
@@ -358,7 +358,7 @@ impl<I: ~const Integral> Literals<I> {
         }
         for lit in lits.literals() {
             for mut self_lit in base.clone() {
-                self_lit.extend(&**lit);
+                self_lit.v.mul(lit.v);
                 self_lit.cut = lit.cut;
                 self.lits.push(self_lit);
             }
