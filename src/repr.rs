@@ -87,6 +87,11 @@ impl<I: ~const Integral> Repr<I> {
         Self::And(box self, box other)
     }
     
+    pub const fn le(&self, other: &Self) -> bool {
+        match self {
+        }
+    }
+    
     pub const fn rev(self) -> Self {
         match self {
             Self::Zero(zero) => Self::Zero(zero),
