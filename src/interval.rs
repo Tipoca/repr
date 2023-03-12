@@ -138,6 +138,19 @@ impl<I: ~const Integral> Interval<I> {
     pub const fn not(self) -> (Option<Self>, Option<Self>) {
         Self::full().sub(self)
     }
+
+    pub const fn len(&self) -> usize {
+        let mut output = 0;
+        let mut current = self.0;
+        while current != self.1 {
+            output += 1;
+            current = current.succ();
+            if output > u32::MAX as usize {
+                panic!();
+            }
+        }
+        1 + output
+    }
 }
 
 impl Interval<char> {

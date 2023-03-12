@@ -439,7 +439,7 @@ impl<I: ~const Integral> Literals<I> {
     ///
     /// Returns false if the Interval was too big to add.
     pub fn add_seq(&mut self, seq: &Interval<I>, reverse: bool) -> bool {
-        if self.class_exceeds_limits(seq_count(seq)) {
+        if self.class_exceeds_limits(seq.len()) {
             return false;
         }
         let mut base = self.remove_complete();
@@ -864,11 +864,6 @@ const fn escape_byte(byte: u8) -> String {
 
     let escaped: Vec<u8> = escape_default(byte).collect();
     String::from_utf8_lossy(&escaped).into_owned()
-}
-
-#[unconst]
-const fn seq_count<I: ~const Integral>(seq: &Interval<I>) -> usize {
-    (1 + (seq.1 as u32) - (seq.0 as u32)) as usize
 }
 
 // #[cfg(test)]
