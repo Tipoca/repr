@@ -10,9 +10,10 @@
 - Interpretation of `match`, is it a judgement `a : A` or a test that one is divisible by another (quotient is equal to zero) `a / b`?
 - `ignore`, or lookahead/behind
 - Derivatives
-- Rename `One` → `True` or sorts
+- Rename `One` → `Seq` or sorts
 - Equational reasoning
 - Induction
+- `True(I, Box<Repr<I>>)` (assertions, dependent types)
 - Spherical conic (tennis ball)
 
 **`Or`**
