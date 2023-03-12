@@ -107,6 +107,10 @@ Linearity (which)
 - a : D(a)
 - 
 
+**True**
+
+- And(True, a) -> 
+
 **Flags (TODO)**
 - `i`, CaseInsensitive
 - `m`, MultiLine
