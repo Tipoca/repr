@@ -13,7 +13,7 @@ use super::compile::Compiler;
 #[cfg(feature = "perf-dfa")]
 use super::dfa;
 use super::error::Error;
-use super::input::CharInput;
+use super::input::Input;
 use super::literal::LiteralSearcher;
 use super::pikevm;
 use super::pool::{Pool, PoolGuard};
@@ -312,7 +312,7 @@ impl<I: Integral> ExecBuilder<I> {
 
 #[unconst]
 impl<'c, I: ~const Integral> RegularExpression for ExecNoSync<'c, I> {
-    type Text = [u8];
+    type Text = Input<I>;
 
     /// Returns the end of a match location, possibly occurring before the
     /// end location of the correct leftmost-first match.
@@ -809,7 +809,7 @@ impl<'c, I: Integral> ExecNoSync<'c, I> {
             self.cache.value(),
             matches,
             quit_after_match,
-            CharInput::new(text),
+            Input::new(text),
             start,
             end,
         )
@@ -827,7 +827,7 @@ impl<'c, I: Integral> ExecNoSync<'c, I> {
             &self.ro.nfa,
             self.cache.value(),
             matches,
-            CharInput::new(text),
+            Input::new(text),
             start,
             end,
         )

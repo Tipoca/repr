@@ -20,7 +20,7 @@ use std::mem;
 use crate::repr::Integral;
 
 use super::exec::ProgramCache;
-use super::input::{Input, InputAt};
+use super::input::Input;
 use super::prog::{InstPtr, Program};
 use super::sparse::SparseSet;
 
@@ -35,7 +35,7 @@ pub struct Fsm<'r, I: Integral> {
     /// borrowed from the cache.)
     stack: &'r mut Vec<FollowEpsilon>,
     /// The input to search.
-    input: I,
+    input: Input<I>,
 }
 
 /// A cached allocation that can be reused on each execution.
@@ -71,17 +71,17 @@ impl Cache {
     }
 }
 
-impl<'r, I: Integral + Input> Fsm<'r, I> {
+impl<'r, I: Integral> Fsm<'r, I> {
     /// Execute the NFA matching engine.
     ///
     /// If there's a match, `exec` returns `true` and populates the given
     /// captures accordingly.
     pub fn exec(
         prog: &'r Program<I>,
-        cache: &ProgramCache,
+        cache: &ProgramCache<I>,
         matches: &mut [bool],
         quit_after_match: bool,
-        input: I,
+        input: Input<I>,
         start: usize,
         end: usize,
     ) -> bool {
@@ -89,7 +89,7 @@ impl<'r, I: Integral + Input> Fsm<'r, I> {
         let cache = &mut cache.pikevm;
         cache.clist.resize(prog.len());
         cache.nlist.resize(prog.len());
-        let at = input.at(start);
+        let at = input[start];
         Fsm { prog, stack: &mut cache.stack, input }.exec_(
             &mut cache.clist,
             &mut cache.nlist,
@@ -106,7 +106,7 @@ impl<'r, I: Integral + Input> Fsm<'r, I> {
         mut nlist: &mut Threads,
         matches: &mut [bool],
         quit_after_match: bool,
-        mut at: InputAt<I>,
+        mut at: I,
         end: usize,
     ) -> bool {
         let mut matched = false;
@@ -125,10 +125,7 @@ impl<'r, I: Integral + Input> Fsm<'r, I> {
                 //
                 // 2. If the expression starts with a '^' we can terminate as
                 //    soon as the last thread dies.
-                if (matched && matches.len() <= 1)
-                    || all_matched
-                    || (!at.is_start() && self.prog.is_anchored_start)
-                {
+                if (matched && matches.len() <= 1) || all_matched {
                     break;
                 }
 
@@ -155,7 +152,7 @@ impl<'r, I: Integral + Input> Fsm<'r, I> {
             // before the current character. For stepping through the machine,
             // we can to look at the current character, so we advance the
             // input.
-            let at_next = self.input.at(at.next_pos());
+            let at_next = self.input[at + 1];
             for i in 0..clist.set.len() {
                 let ip = clist.set[i];
                 if self.step(
@@ -212,8 +209,8 @@ impl<'r, I: Integral + Input> Fsm<'r, I> {
         nlist: &mut Threads,
         matches: &mut [bool],
         ip: usize,
-        at: InputAt<I>,
-        at_next: InputAt<I>,
+        at: I,
+        at_next: I,
     ) -> bool {
         use super::prog::Inst::*;
         match self.prog[ip] {
@@ -245,7 +242,7 @@ impl<'r, I: Integral + Input> Fsm<'r, I> {
         &mut self,
         nlist: &mut Threads,
         ip: usize,
-        at: InputAt<I>,
+        at: I,
     ) {
         self.stack.push(FollowEpsilon::IP(ip));
         while let Some(frame) = self.stack.pop() {
@@ -262,7 +259,7 @@ impl<'r, I: Integral + Input> Fsm<'r, I> {
         &mut self,
         nlist: &mut Threads,
         mut ip: usize,
-        at: InputAt<I>,
+        at: I,
     ) {
         // Instead of pushing and popping to the stack, we mutate ip as we
         // traverse the set of states. We only push to the stack when we

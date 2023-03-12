@@ -414,7 +414,7 @@ impl Cache {
     /// Create new empty cache for the DFA engine.
     pub fn new<I: Integral>(prog: &Program<I>) -> Self {
         // We add 1 to account for the special EOF byte.
-        let num_byte_classes = (prog.byte_classes[255] as usize + 1) + 1;
+        let num_byte_classes = 2;
         let starts = vec![STATE_UNKNOWN; 256];
         let mut cache = Cache {
             inner: CacheInner {
@@ -447,7 +447,7 @@ impl<'a, I: Integral> Fsm<'a, I> {
     #[cfg_attr(feature = "perf-inline", inline(always))]
     pub fn forward(
         prog: &'a Program<I>,
-        cache: &ProgramCache,
+        cache: &ProgramCache<I>,
         quit_after_match: bool,
         text: &[u8],
         at: usize,
@@ -477,7 +477,7 @@ impl<'a, I: Integral> Fsm<'a, I> {
     #[cfg_attr(feature = "perf-inline", inline(always))]
     pub fn reverse(
         prog: &'a Program<I>,
-        cache: &ProgramCache,
+        cache: &ProgramCache<I>,
         quit_after_match: bool,
         text: &[u8],
         at: usize,
@@ -507,7 +507,7 @@ impl<'a, I: Integral> Fsm<'a, I> {
     #[cfg_attr(feature = "perf-inline", inline(always))]
     pub fn forward_many(
         prog: &'a Program<I>,
-        cache: &ProgramCache,
+        cache: &ProgramCache<I>,
         matches: &mut [bool],
         text: &[u8],
         at: usize,
@@ -875,7 +875,7 @@ impl<'a, I: Integral> Fsm<'a, I> {
         // retrieved from the transition table, which ensures they are correct.
         debug_assert!(i < text.len());
         let b = *text.get_unchecked(i);
-        debug_assert!((b as usize) < self.prog.byte_classes.len());
+        debug_assert!((b as usize) < 2);
         let cls = *self.prog.byte_classes.get_unchecked(b as usize);
         self.cache.trans.next_unchecked(si, cls as usize)
     }
@@ -1506,7 +1506,7 @@ impl<'a, I: Integral> Fsm<'a, I> {
     /// invariant: num_byte_classes() == len(State.next)
     fn num_byte_classes(&self) -> usize {
         // We add 1 to account for the special EOF byte.
-        (self.prog.byte_classes[255] as usize + 1) + 1
+        2
     }
 
     /// Given an input byte or the special EOF sentinel, return its

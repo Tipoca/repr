@@ -19,7 +19,7 @@
 use crate::repr::Integral;
 
 use super::exec::ProgramCache;
-use super::input::{Input, InputAt};
+use super::input::Input;
 use super::prog::{InstPtr, Program};
 
 type Bits = u32;
@@ -44,7 +44,7 @@ pub fn should_exec(num_insts: usize, text_len: usize) -> bool {
 #[derive(Debug)]
 pub struct Bounded<'a, 'm, 'r, I: Integral> {
     prog: &'r Program<I>,
-    input: I,
+    input: Input<I>,
     matches: &'m mut [bool],
     m: &'a mut Cache<I>,
 }
@@ -71,9 +71,9 @@ impl<I: Integral> Cache<I> {
 /// engine must keep track of old capture group values. We use the explicit
 /// stack to do it.
 #[derive(Clone, Copy, Debug)]
-struct Job<I: Integral> { ip: InstPtr, at: InputAt<I> }
+struct Job<I: Integral> { ip: InstPtr, at: I }
 
-impl<'a, 'm, 'r, I: Integral + Input> Bounded<'a, 'm, 'r, I> {
+impl<'a, 'm, 'r, I: Integral> Bounded<'a, 'm, 'r, I> {
     /// Execute the backtracking matching engine.
     ///
     /// If there's a match, `exec` returns `true` and populates the given
@@ -88,7 +88,7 @@ impl<'a, 'm, 'r, I: Integral + Input> Bounded<'a, 'm, 'r, I> {
     ) -> bool {
         let mut cache = cache.borrow_mut();
         let cache = &mut cache.backtrack;
-        let start = input.at(start);
+        let start = input[start];
         let mut b = Bounded { prog, input, matches, m: cache };
         b.exec_(start, end)
     }
@@ -127,12 +127,12 @@ impl<'a, 'm, 'r, I: Integral + Input> Bounded<'a, 'm, 'r, I> {
 
     /// Start backtracking at the given position in the input, but also look
     /// for literal prefixes.
-    fn exec_(&mut self, mut at: InputAt<I>, end: usize) -> bool {
+    fn exec_(&mut self, mut at: usize, end: usize) -> bool {
         self.clear();
         // If this is an anchored regex at the beginning of the input, then
         // we're either already done or we only need to try backtracking once.
         if self.prog.is_anchored_start {
-            return if !at.is_start() { false } else { self.backtrack(at) };
+            return self.backtrack(at);
         }
         let mut matched = false;
         loop {
@@ -146,22 +146,22 @@ impl<'a, 'm, 'r, I: Integral + Input> Bounded<'a, 'm, 'r, I> {
             if matched && self.prog.matches.len() == 1 {
                 return true;
             }
-            if at.pos() >= end {
+            if at >= end {
                 break;
             }
-            at = self.input.at(at.next_pos());
+            at = self.input[at + 1];
         }
         matched
     }
 
     /// The main backtracking loop starting at the given input position.
-    fn backtrack(&mut self, start: InputAt<I>) -> bool {
+    fn backtrack(&mut self, at: I) -> bool {
         // N.B. We use an explicit stack to avoid recursion.
         // To avoid excessive pushing and popping, most transitions are handled
         // in the `step` helper function, which only pushes to the stack when
         // there's a capture or a branch.
         let mut matched = false;
-        self.m.jobs.push(Job::Inst { ip: 0, at: start });
+        self.m.jobs.push(Job::Inst { ip: 0, at });
         while let Some(job) = self.m.jobs.pop() {
             match job {
                 Job::Inst { ip, at } => {
@@ -180,7 +180,7 @@ impl<'a, 'm, 'r, I: Integral + Input> Bounded<'a, 'm, 'r, I> {
         matched
     }
 
-    fn step(&mut self, mut ip: InstPtr, mut at: InputAt<I>) -> bool {
+    fn step(&mut self, mut ip: InstPtr, mut at: usize, c: I) -> bool {
         use super::prog::Inst::*;
         loop {
             // This loop is an optimization to avoid constantly pushing/popping
@@ -209,17 +209,17 @@ impl<'a, 'm, 'r, I: Integral + Input> Bounded<'a, 'm, 'r, I> {
                     }
                 }
                 One(ref inst) => {
-                    if inst.c == at.char() {
+                    if inst.c == c {
                         ip = inst.goto;
-                        at = self.input.at(at.next_pos());
+                        at = self.input[at + 1];
                     } else {
                         return false;
                     }
                 }
                 Interval(ref inst) => {
-                    if inst.matches(at.char()) {
+                    if inst.matches(c) {
                         ip = inst.goto;
-                        at = self.input.at(at.next_pos());
+                        at = self.input[at + 1];
                     } else {
                         return false;
                     }
@@ -228,8 +228,8 @@ impl<'a, 'm, 'r, I: Integral + Input> Bounded<'a, 'm, 'r, I> {
         }
     }
 
-    fn has_visited(&mut self, ip: InstPtr, at: InputAt<I>) -> bool {
-        let k = ip * (self.input.len() + 1) + at.pos();
+    fn has_visited(&mut self, ip: InstPtr, at: usize) -> bool {
+        let k = ip * (self.input.len() + 1) + at;
         let k1 = k / BIT_SIZE;
         let k2 = usize_to_u32(1 << (k & (BIT_SIZE - 1)));
         if self.m.visited[k1] & k2 == 0 {

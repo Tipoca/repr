@@ -7,7 +7,7 @@ use crate::repr::{Integral, Repr};
 use super::find_byte::find_byte;
 
 use super::error::Error;
-use super::exec::Exec;
+use super::exec::{Exec, ExecNoSync};
 use super::re_builder::RegexBuilder;
 use super::re_trait::{self, RegularExpression};
 

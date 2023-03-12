@@ -184,6 +184,7 @@ pub trait Integral: Copy + ~const Clone
                     + Step
                     + ~const Destruct
                     + Debug
+                    + Send
 {
     const MIN: Self;
     const MAX: Self;

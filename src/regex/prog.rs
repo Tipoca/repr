@@ -41,7 +41,7 @@ pub struct Program<I: Integral> {
     /// Whether this program contains a Unicode word boundary instruction.
     pub has_unicode_word_boundary: bool,
     /// A possibly empty machine for very quickly matching prefix literals.
-    pub prefixes: LiteralSearcher,
+    pub prefixes: LiteralSearcher<I>,
     /// A limit on the size of the cache that the DFA is allowed to use while
     /// matching.
     ///
