@@ -71,8 +71,8 @@ Symbols are grouped and assigned primarily by positive/negative distinciton. The
 
 TODO:
 
-- `Seq::empty()` - can be empty because negative
-- `Interval::full()` - can't be empty because positive
+- `Seq::empty()`
+- `Interval::full()`
 
 | linear logic/quantale | repr | title |
 | - | - | - |
