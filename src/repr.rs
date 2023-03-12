@@ -19,8 +19,8 @@ use crate::seq::Seq;
 #[derive(Eq, PartialEq)]
 pub enum Repr<I: ~const Integral> {
     Zero(Zero),
-    One(Seq<I>),  // TODO(rnarkk)  Interval(I, I)
-    Interval(Interval<I>),  // TODO(rnarkk)
+    One(Seq<I>),
+    Interval(Interval<I>),
     /// a & b (additive conjunction/with)
     Mul(Box<Repr<I>>, Box<Repr<I>>),
     /// a ⊕ b (additive disjuction/plus)
