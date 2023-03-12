@@ -1,16 +1,27 @@
-/// The available ASCII character classes.
+//! The available ASCII character classes.
+
+use unconst::unconst;
+
+use crate::repr::Repr;
+
+#[unconst]
+/// `[0-9A-Za-z]`, `[:alnum:]`
+pub const ALNUM: Repr<char> = Repr::;
+#[unconst]
+/// `[A-Za-z]`, `[:alpha:]`
+pub const ALPHA: Repr<char> = Repr::;
+#[unconst]
+/// `[\x00-\x7F]`, `[:ascii:]`
+pub const ASCII: Repr<char> = Repr::;
+#[unconst]
+/// `[ \t]`, `[:blank:]`
+pub const BLANK: Repr<char> = Repr::;
+#[unconst]
+/// `[\x00-\x1F\x7F]`, `[:cntrl:]`
+pub const CNTRL: Repr<char> = Repr::;
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ClassAsciiKind {
-    /// `[0-9A-Za-z]`
-    Alnum,
-    /// `[A-Za-z]`
-    Alpha,
-    /// `[\x00-\x7F]`
-    Ascii,
-    /// `[ \t]`
-    Blank,
-    /// `[\x00-\x1F\x7F]`
-    Cntrl,
     /// `[0-9]`
     Digit,
     /// `[!-~]`
@@ -64,16 +75,8 @@ impl ClassAsciiKind {
 fn fmt_class_ascii(&mut self, ast: &ast::ClassAscii) -> fmt::Result {
     use crate::ast::ClassAsciiKind::*;
     match ast.kind {
-        Alnum if ast.negated => self.wtr.write_str("[:^alnum:]"),
-        Alnum => self.wtr.write_str("[:alnum:]"),
-        Alpha if ast.negated => self.wtr.write_str("[:^alpha:]"),
-        Alpha => self.wtr.write_str("[:alpha:]"),
-        Ascii if ast.negated => self.wtr.write_str("[:^ascii:]"),
-        Ascii => self.wtr.write_str("[:ascii:]"),
-        Blank if ast.negated => self.wtr.write_str("[:^blank:]"),
-        Blank => self.wtr.write_str("[:blank:]"),
         Cntrl if ast.negated => self.wtr.write_str("[:^cntrl:]"),
-        Cntrl => self.wtr.write_str("[:cntrl:]"),
+        Cntrl => self.wtr.write_str(""),
         Digit if ast.negated => self.wtr.write_str("[:^digit:]"),
         Digit => self.wtr.write_str("[:digit:]"),
         Graph if ast.negated => self.wtr.write_str("[:^graph:]"),
