@@ -46,6 +46,10 @@ impl<I: ~const Integral> Repr<I> {
     pub const fn empty() -> Self {
         Self::Zero(Default::default())
     }
+
+    pub const fn one(i: I) -> Self {
+        Self::One(i)
+    }
     
     pub const fn not(self) -> Self {
         Self::Not(box self)
@@ -79,6 +83,22 @@ impl<I: ~const Integral> Repr<I> {
         Self::Rev(box self)
     }
 
+    pub const fn prod<M: ~const Iterator<Item = Self>>(reprs: M) -> Self {
+        reprs.reduce(|acc, e| Repr::Mul(box acc, box e)).unwrap()
+    }
+
+    pub const fn any<M: ~const Iterator<Item = Self>>(reprs: M) -> Self {
+        reprs.reduce(|acc, e| Repr::Or(box acc, box e)).unwrap()
+    }
+
+    pub const fn sum<M: ~const Iterator<Item = Self>>(reprs: M) -> Self {
+        reprs.reduce(|acc, e| Repr::Add(box acc, box e)).unwrap()
+    }
+
+    pub const fn all<M: ~const Iterator<Item = Self>>(reprs: M) -> Self {
+        reprs.reduce(|acc, e| Repr::And(box acc, box e)).unwrap()
+    }
+
     pub const fn is_anchored_start(&self) -> bool {
         match self {
             Self::Zero(Zero::StartText) => true,
@@ -104,12 +124,12 @@ impl Repr<char> {
                  box Self::Seq(Seq('\x0B', '\u{10FFFF}')))
     }
 
-    /// `(?s).` expression that matches any character, including `\n`. To build an
-    /// expression that matches any character except for `\n`, then use the
-    /// `dot` method.
-    pub const fn any() -> Self {
-        Self::Seq(Seq('\0', '\u{10FFFF}'))
-    }
+    // /// `(?s).` expression that matches any character, including `\n`. To build an
+    // /// expression that matches any character except for `\n`, then use the
+    // /// `dot` method.
+    // pub const fn any() -> Self {
+    //     Self::Seq(Seq('\0', '\u{10FFFF}'))
+    // }
 }
 
 /*

@@ -696,8 +696,7 @@ const fn repeat_range_literals<S, I, F>(
           F: FnMut(&Repr<I>, &mut Literals<I>)
 {
     let n = cmp::min(lits.limit_size, min as usize);
-    let es = iter::repeat(e.clone()).take(n).collect();
-    f(&Repr::concat(es), lits);
+    f(&Repr::prod(iter::repeat(e.clone()).take(n)), lits);
     if n < min as usize || lits.contains_empty() {
         lits.cut();
     }
