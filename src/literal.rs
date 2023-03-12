@@ -322,7 +322,7 @@ impl<I: ~const Integral> Literals<I> {
     /// is skipped and it returns false. Otherwise, if the union succeeds, it
     /// returns true.
     pub fn union(&mut self, lits: Self) -> bool {
-        if self.num_bytes() + lits.num_bytes() > self.limit_size {
+        if self.sum_len() + lits.sum_len() > self.limit_size {
             return false;
         }
         if lits.is_empty() {
@@ -347,7 +347,7 @@ impl<I: ~const Integral> Literals<I> {
         // Check that we make sure we stay in our limits.
         let mut size_after;
         if self.is_empty() || !self.any_complete() {
-            size_after = self.num_bytes();
+            size_after = self.sum_len();
             for lit in lits.literals() {
                 size_after += lit.len();
             }
@@ -402,7 +402,7 @@ impl<I: ~const Integral> Literals<I> {
             self.lits[0].cut = i < 1;
             return !self.lits[0].cut;
         }
-        let size = self.num_bytes();
+        let size = self.sum_len();
         if size + self.lits.len() >= self.limit_size {
             return false;
         }
@@ -428,7 +428,7 @@ impl<I: ~const Integral> Literals<I> {
     /// Returns false if adding this literal would cause the class to be too
     /// big.
     pub fn add(&mut self, lit: Literal<I>) -> bool {
-        if self.num_bytes() + lit.len() > self.limit_size {
+        if self.sum_len() + lit.len() > self.limit_size {
             return false;
         }
         self.lits.push(lit);
@@ -490,8 +490,8 @@ impl<I: ~const Integral> Literals<I> {
     }
 
     /// Returns the total number of characters in this set.
-    fn num_bytes(&self) -> usize {
-        self.lits.iter().fold(0, |accum, lit| accum + lit.len())
+    fn sum_len(&self) -> usize {
+        self.lits.iter().fold(0, |acc, lit| acc + lit.len())
     }
 
     /// Returns true if a character class with the given size would cause this
