@@ -602,10 +602,8 @@ const fn suffixes<I>(expr: &Repr<I>, lits: &mut Literals<I>)
                 lits.cut();
             }
         }
+        Repr::Exp(repr) => repeat_zero_or_more_literals(&repr, lits, suffixes),
         Repr::Mul(ref repr, range) => match range.as_ref() {
-            Range::From(0) => {
-                repeat_zero_or_more_literals(&repr, lits, suffixes);
-            }
             Range::From(1) => {
                 suffixes(&repr, lits);
                 lits.cut();

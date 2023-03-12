@@ -1,6 +1,6 @@
 use alloc::{
     boxed::Box,
-//     vec::Vec
+    // vec::Vec
 };
 use core::{
     fmt::Debug,
@@ -28,7 +28,7 @@ pub enum Repr<I: ~const Integral> {
     // Sub(Box<Repr<I>>, Interval<I>),  // TODO(rnarkk)
     /// a ⊸ b (linear implication)
     Div(Box<Repr<I>>, Box<Repr<I>>),
-    Exp(Box<Repr<I>>, Range),
+    Exp(Box<Repr<I>>),
     Not(Box<Repr<I>>),
     Rev(Box<Repr<I>>),
     /// a ⅋ b (multiplicative disjunction/par)
@@ -76,8 +76,8 @@ impl<I: ~const Integral> Repr<I> {
         Self::Div(box self, box other)
     }
     
-    pub const fn exp(self, range: Range) -> Self {
-        Self::Exp(box self, range)
+    pub const fn exp(self) -> Self {
+        Self::Exp(box self)
     }
     
     pub const fn rev(self) -> Self {
@@ -98,6 +98,28 @@ impl<I: ~const Integral> Repr<I> {
 
     pub const fn all<M: ~const Iterator<Item = Self>>(reprs: M) -> Self {
         reprs.reduce(|acc, e| Repr::And(box acc, box e)).unwrap()
+    }
+
+    pub const fn repeat(self, count: usize) -> Self {
+        Self::prod(vec![self; count].into_iter())
+    }
+
+    /// Returns true if and only if this repetition operator makes it possible
+    /// to match the empty string.
+    ///
+    /// Note that this is not defined inductively. For example, while `a*`
+    /// will report `true`, `()+` will not, even though `()` matches the empty
+    /// string and one or more occurrences of something that matches the empty
+    /// string will always match the empty string. In order to get the
+    /// inductive definition, see the corresponding method on
+    /// [`Hir`](struct.Hir.html).
+    pub const fn is_match_empty(&self) -> bool {
+        match self {
+            Self::Zero(_) => true,
+            Self::Or(lhs, rhs) => lhs.is_match_empty() || rhs.is_match_empty(),
+            Self::Exp(_) => true,
+            _ => false
+        }
     }
 
     pub const fn is_anchored_start(&self) -> bool {
@@ -198,40 +220,6 @@ impl<'a> IntoIterator for Str<'a> {
 
     fn into_iter(self) -> Self::IntoIter {
         self.0.chars()
-    }
-}
-
-// 24bit
-#[unconst]
-#[derive_const(Clone, PartialEq, PartialOrd, Ord)]
-#[derive(Copy, Debug, Eq)]
-pub enum Range {
-    Empty,
-    From(usize),
-    To(usize),
-    // TODO(rnarkk) validate 0 <= 1
-    // TODO(rnarkk) if this is (0, 0), need to ignore it or treat as zero sized match any way? For now, ignore if (0, 0)
-    Full(usize, usize),
-}
-
-#[unconst]
-impl Range {
-    /// Returns true if and only if this repetition operator makes it possible
-    /// to match the empty string.
-    ///
-    /// Note that this is not defined inductively. For example, while `a*`
-    /// will report `true`, `()+` will not, even though `()` matches the empty
-    /// string and one or more occurrences of something that matches the empty
-    /// string will always match the empty string. In order to get the
-    /// inductive definition, see the corresponding method on
-    /// [`Hir`](struct.Hir.html).
-    pub const fn is_match_empty(&self) -> bool {
-        match self {
-            Range::Empty => true,
-            Range::To(_) => true,
-            Range::From(n) => n == &0,
-            Range::Full(n, _) => n == &0,
-        }
     }
 }
 

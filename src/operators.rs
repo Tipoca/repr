@@ -1,4 +1,4 @@
-use core::ops::{BitOr, BitAnd, BitXor, Range, Mul, RangeBounds};
+use core::ops::{BitOr, BitAnd, BitXor, Range, Mul, RangeFull, RangeFrom};
 
 use unconst::unconst;
 
@@ -110,11 +110,20 @@ impl<I: ~const Integral, T: Into<Self>> const BitOr<[T; 1]> for Repr<I> {
 }
 
 #[unconst]
-impl<R: RangeBounds<usize>, I: ~const Integral> const Mul<R> for Repr<I> {
+impl<I: ~const Integral> const Mul<RangeFull> for Repr<I> {
     type Output = Self;
 
-    fn mul(self, rhs: R) -> Self {
-        Self::Exp(box self, rhs.into())
+    fn mul(self, rhs: RangeFull) -> Self {
+        Self::Exp(box self)
+    }
+}
+
+#[unconst]
+impl<I: ~const Integral> const Mul<RangeFrom<usize>> for Repr<I> {
+    type Output = Self;
+
+    fn mul(self, rhs: RangeFrom<usize>) -> Self {
+        Self::Mul(box self.repeat(rhs.start), box Self::Exp(box self))
     }
 }
 
