@@ -4,7 +4,6 @@
 use core::{
     cmp,
     fmt::{self, Debug},
-    iter,
     mem,
     ops::{Deref, DerefMut}
 };
