@@ -17,13 +17,6 @@ pub trait RegularExpression: Sized {
     /// The type of the haystack.
     type Text: ?Sized + fmt::Debug;
 
-    /// Returns the position of the next character after `i`.
-    ///
-    /// For example, a haystack with type `&[u8]` probably returns `i+1`,
-    /// whereas a haystack with type `&str` probably returns `i` plus the
-    /// length of the next UTF-8 sequence.
-    fn next_after_empty(&self, text: &Self::Text, i: usize) -> usize;
-
     /// Returns the location of the shortest match.
     fn shortest_match_at(
         &self,
@@ -102,7 +95,7 @@ where
             // This is an empty match. To ensure we make progress, start
             // the next search at the smallest possible starting position
             // of the next match following this one.
-            self.last_end = self.re.next_after_empty(self.text, e);
+            self.last_end = e + 1;
             // Don't accept empty matches immediately following a match.
             // Just move on to the next match.
             if Some(e) == self.last_match {

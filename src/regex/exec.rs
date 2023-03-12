@@ -4,9 +4,9 @@ use std::sync::Arc;
 
 #[cfg(feature = "perf-literal")]
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
-use regex_syntax::hir::literal::Literals;
+use unconst::unconst;
 
-use crate::repr::{Repr, Integral};
+use crate::{Repr, Integral, Seq, literal::Literals};
 
 use super::backtrack;
 use super::compile::Compiler;
@@ -22,7 +22,6 @@ use super::re_builder::RegexOptions;
 use super::re_set;
 use super::re_trait::RegularExpression;
 use super::re_unicode;
-use super::utf8::next_utf8;
 
 /// `Exec` manages the execution of a regular expression.
 ///
@@ -47,16 +46,13 @@ pub struct Exec<I: Integral> {
 /// `ExecNoSync` is like `Exec`, except it embeds a reference to a cache. This
 /// means it is no longer Sync, but we can now avoid the overhead of
 /// synchronization to fetch the cache.
-pub struct ExecNoSync<'c, I: Integral> {
+#[unconst]
+pub struct ExecNoSync<'c, I: ~const Integral> {
     /// All read only state.
     ro: &'c Arc<ExecReadOnly<I>>,
     /// Caches for the various matching engines.
     cache: PoolGuard<'c, ProgramCache<I>>,
 }
-
-/// `ExecNoSyncStr` is like `ExecNoSync`, but matches on &str instead of &[u8].
-#[derive(Debug)]
-pub struct ExecNoSyncStr<'c, I: Integral>(ExecNoSync<'c, I>);
 
 /// `ExecReadOnly` comprises all read only state for a regex. Namely, all such
 /// state is determined at compile time and never changes during search.
@@ -113,8 +109,8 @@ pub struct ExecBuilder<I: Integral> {
 /// literals.
 struct Parsed<I: Integral> {
     exprs: Vec<Repr<I>>,
-    prefixes: Literals,
-    suffixes: Literals,
+    prefixes: Literals<I>,
+    suffixes: Literals<I>,
 }
 
 impl<I: Integral> ExecBuilder<I> {
@@ -314,35 +310,9 @@ impl<I: Integral> ExecBuilder<I> {
     }
 }
 
-impl<'c, I: Integral> RegularExpression for ExecNoSyncStr<'c, I> {
-    type Text = str;
-
-    fn next_after_empty(&self, text: &str, i: usize) -> usize {
-        next_utf8(text.as_bytes(), i)
-    }
-
-    #[cfg_attr(feature = "perf-inline", inline(always))]
-    fn shortest_match_at(&self, text: &str, start: usize) -> Option<usize> {
-        self.0.shortest_match_at(text.as_bytes(), start)
-    }
-
-    #[cfg_attr(feature = "perf-inline", inline(always))]
-    fn is_match_at(&self, text: &str, start: usize) -> bool {
-        self.0.is_match_at(text.as_bytes(), start)
-    }
-
-    #[cfg_attr(feature = "perf-inline", inline(always))]
-    fn find_at(&self, text: &str, start: usize) -> Option<(usize, usize)> {
-        self.0.find_at(text.as_bytes(), start)
-    }
-}
-
-impl<'c, I: Integral> RegularExpression for ExecNoSync<'c, I> {
+#[unconst]
+impl<'c, I: ~const Integral> RegularExpression for ExecNoSync<'c, I> {
     type Text = [u8];
-
-    fn next_after_empty(&self, _text: &[u8], i: usize) -> usize {
-        i + 1
-    }
 
     /// Returns the end of a match location, possibly occurring before the
     /// end location of the correct leftmost-first match.
@@ -352,8 +322,7 @@ impl<'c, I: Integral> RegularExpression for ExecNoSync<'c, I> {
             return None;
         }
         match self.ro.match_type {
-            #[cfg(feature = "perf-literal")]
-            MatchType::Literal(ty) => {
+            MatchType::Seq(ty) => {
                 self.find_literals(ty, text, start).map(|(_, e)| e)
             }
             #[cfg(feature = "perf-dfa")]
@@ -405,7 +374,7 @@ impl<'c, I: Integral> RegularExpression for ExecNoSync<'c, I> {
         // words, a RegexSet can't (currently) use shortest_match. ---AG
         match self.ro.match_type {
             #[cfg(feature = "perf-literal")]
-            MatchType::Literal(ty) => {
+            MatchType::Seq(ty) => {
                 self.find_literals(ty, text, start).is_some()
             }
             #[cfg(feature = "perf-dfa")]
@@ -452,7 +421,7 @@ impl<'c, I: Integral> RegularExpression for ExecNoSync<'c, I> {
         }
         match self.ro.match_type {
             #[cfg(feature = "perf-literal")]
-            MatchType::Literal(ty) => self.find_literals(ty, text, start),
+            MatchType::Seq(ty) => self.find_literals(ty, text, start),
             #[cfg(feature = "perf-dfa")]
             MatchType::Dfa => match self.find_dfa_forward(text, start) {
                 dfa::Result::Match((s, e)) => Some((s, e)),
@@ -947,24 +916,14 @@ impl<'c, I: Integral> ExecNoSync<'c, I> {
 
     #[cfg_attr(feature = "perf-inline", inline(always))]
     fn is_anchor_end_match(&self, text: &[u8]) -> bool {
-        #[cfg(not(feature = "perf-literal"))]
-        fn imp(_: &ExecReadOnly, _: &[u8]) -> bool {
-            true
-        }
-
-        #[cfg(feature = "perf-literal")]
-        fn imp<I: Integral>(ro: &ExecReadOnly<I>, text: &[u8]) -> bool {
-            // Only do this check if the haystack is big (>1MB).
-            if text.len() > (1 << 20) && ro.nfa.is_anchored_end {
-                let lcs = ro.suffixes.lcs();
-                if lcs.len() >= 1 && !lcs.is_suffix(text) {
-                    return false;
-                }
+        // Only do this check if the haystack is big (>1MB).
+        if text.len() > (1 << 20) && &self.ro.nfa.is_anchored_end {
+            let lcs = &self.ro.suffixes.lcs();
+            if lcs.len() >= 1 && !lcs.is_suffix(text) {
+                return false;
             }
-            true
         }
-
-        imp(&self.ro, text)
+        true
     }
 }
 
@@ -976,12 +935,6 @@ impl<I: Integral> Exec<I> {
             ro: &self.ro, // a clone is too expensive here! (and not needed)
             cache: self.pool.get(),
         }
-    }
-
-    /// Get a searcher that isn't Sync and can match on &str.
-    #[cfg_attr(feature = "perf-inline", inline(always))]
-    pub fn searcher_str(&self) -> ExecNoSyncStr<'_, I> {
-        ExecNoSyncStr(self.searcher())
     }
 
     /// Build a Regex from this executor.
@@ -1040,25 +993,25 @@ impl<I: Integral> ExecReadOnly<I> {
                 return None;
             }
             if ro.ac.is_some() {
-                return Some(MatchType::Literal(
+                return Some(MatchType::Seq(
                     MatchLiteralType::AhoCorasick,
                 ));
             }
             if ro.nfa.prefixes.complete() {
                 return if ro.nfa.is_anchored_start {
-                    Some(MatchType::Literal(MatchLiteralType::AnchoredStart))
+                    Some(MatchType::Seq(MatchLiteralType::AnchoredStart))
                 } else {
-                    Some(MatchType::Literal(MatchLiteralType::Unanchored))
+                    Some(MatchType::Seq(MatchLiteralType::Unanchored))
                 };
             }
             if ro.suffixes.complete() {
                 return if ro.nfa.is_anchored_end {
-                    Some(MatchType::Literal(MatchLiteralType::AnchoredEnd))
+                    Some(MatchType::Seq(MatchLiteralType::AnchoredEnd))
                 } else {
                     // This case shouldn't happen. When the regex isn't
                     // anchored, then complete prefixes should imply complete
                     // suffixes.
-                    Some(MatchType::Literal(MatchLiteralType::Unanchored))
+                    Some(MatchType::Seq(MatchLiteralType::Unanchored))
                 };
             }
             None
@@ -1232,6 +1185,7 @@ fn alternation_literals<I: Integral>(repr: &Repr<I>) -> Option<Vec<Vec<u8>>> {
     // optimization pipeline, because this is a terribly inflexible way to go
     // about things.
 
+
     if !repr.is_alternation_literal() {
         return None;
     }
@@ -1240,11 +1194,9 @@ fn alternation_literals<I: Integral>(repr: &Repr<I>) -> Option<Vec<Vec<u8>>> {
         _ => return None, // one literal isn't worth it
     };
 
-    let extendlit = |lit: &Literal, dst: &mut Vec<u8>| match *lit {
-        Literal::Unicode(c) => {
-            let mut buf = [0; 4];
-            dst.extend_from_slice(c.encode_utf8(&mut buf).as_bytes());
-        }
+    let extendlit = |seq: &Seq<I>, dst: &mut Vec<u8>| {
+        let mut buf = [0; 4];
+        dst.extend_from_slice(seq.encode_utf8(&mut buf).as_bytes());
     };
 
     let mut lits = vec![];

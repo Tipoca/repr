@@ -7,7 +7,7 @@ use crate::repr::{Integral, Repr};
 use super::find_byte::find_byte;
 
 use super::error::Error;
-use super::exec::{Exec, ExecNoSyncStr};
+use super::exec::Exec;
 use super::re_builder::RegexBuilder;
 use super::re_trait::{self, RegularExpression};
 
@@ -210,7 +210,7 @@ impl<I: Integral> Regex<I> {
     /// # }
     /// ```
     pub fn find_iter<'r, 't>(&'r self, text: &'t str) -> Matches<'r, 't, I> {
-        Matches(self.0.searcher_str().find_iter(text))
+        Matches(self.0.searcher().find_iter(text))
     }
 
     /// Returns an iterator of substrings of `text` delimited by a match of the
@@ -302,7 +302,7 @@ impl<I: Integral> Regex<I> {
         text: &str,
         start: usize,
     ) -> Option<usize> {
-        self.0.searcher_str().shortest_match_at(text, start)
+        self.0.searcher().shortest_match_at(text, start)
     }
 
     /// Returns the same as is_match, but starts the search at the given
@@ -312,7 +312,7 @@ impl<I: Integral> Regex<I> {
     /// context into consideration. For example, the `\A` anchor can only
     /// match when `start == 0`.
     pub fn is_match_at(&self, text: &str, start: usize) -> bool {
-        self.0.searcher_str().is_match_at(text, start)
+        self.0.searcher().is_match_at(text, start)
     }
 
     /// Returns the same as find, but starts the search at the given
@@ -327,7 +327,7 @@ impl<I: Integral> Regex<I> {
         start: usize,
     ) -> Option<Match<'t>> {
         self.0
-            .searcher_str()
+            .searcher()
             .find_at(text, start)
             .map(|(s, e)| Match::new(text, s, e))
     }
@@ -419,7 +419,7 @@ impl<'r, 't, I: Integral> FusedIterator for SplitN<'r, 't, I> {}
 /// `'r` is the lifetime of the compiled regular expression and `'t` is the
 /// lifetime of the matched string.
 #[derive(Debug)]
-pub struct Matches<'r, 't, I: Integral>(re_trait::Matches<'t, ExecNoSyncStr<'r, I>>);
+pub struct Matches<'r, 't, I: Integral>(re_trait::Matches<'t, ExecNoSync<'r, I>>);
 
 impl<'r, 't, I: Integral> Iterator for Matches<'r, 't, I> {
     type Item = Match<'t>;
