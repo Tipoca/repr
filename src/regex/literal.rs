@@ -25,7 +25,7 @@ enum Matcher<I: ~const Integral> {
     /// No literals. (Never advances through the input.)
     Empty,
     /// A set of four or more single byte literals.
-    Bytes(SeqSet<I>),
+    Seq(SeqSet<I>),
     /// A single substring, using vector accelerated routines when available.
     Memmem(Memmem),
     /// An Aho-Corasick automaton.
@@ -84,7 +84,7 @@ impl<I: ~const Integral> LiteralSearcher<I> {
         use self::Matcher::*;
         match self.matcher {
             Empty => Some((0, 0)),
-            Bytes(ref sset) => sset.find(haystack).map(|i| (i, i + 1)),
+            Seq(ref sset) => sset.find(haystack).map(|i| (i, i + 1)),
             Memmem(ref s) => s.find(haystack).map(|i| (i, i + s.len())),
             AC { ref ac, .. } => {
                 ac.find(haystack).map(|m| (m.start(), m.end()))
@@ -122,10 +122,10 @@ impl<I: ~const Integral> LiteralSearcher<I> {
     }
 
     /// Returns an iterator over all literals to be matched.
-    pub fn iter(&self) -> LiteralIter<'_> {
+    pub fn iter(&self) -> LiteralIter<'_, I> {
         match self.matcher {
             Matcher::Empty => LiteralIter::Empty,
-            Matcher::Bytes(ref sset) => LiteralIter::Bytes(&sset.dense),
+            Matcher::Seq(ref sset) => LiteralIter::Seq(&sset.dense),
             Matcher::Memmem(ref s) => LiteralIter::Single(&s.finder.needle()),
             Matcher::AC { ref lits, .. } => LiteralIter::AC(lits),
             Matcher::Packed { ref lits, .. } => LiteralIter::Packed(lits),
@@ -152,7 +152,7 @@ impl<I: ~const Integral> LiteralSearcher<I> {
         use self::Matcher::*;
         match self.matcher {
             Empty => 0,
-            Bytes(ref sset) => sset.dense.len(),
+            Seq(ref sset) => sset.dense.len(),
             Memmem(_) => 1,
             AC { ref ac, .. } => ac.pattern_count(),
             Packed { ref lits, .. } => lits.len(),
@@ -164,7 +164,7 @@ impl<I: ~const Integral> LiteralSearcher<I> {
         use self::Matcher::*;
         match self.matcher {
             Empty => 0,
-            Bytes(ref sset) => sset.approximate_size(),
+            Seq(ref sset) => sset.approximate_size(),
             Memmem(ref single) => single.approximate_size(),
             AC { ref ac, .. } => ac.heap_bytes(),
             Packed { ref s, .. } => s.heap_bytes(),
@@ -198,7 +198,7 @@ impl<I: ~const Integral> Matcher<I> {
             return Matcher::Empty;
         }
         if sset.complete {
-            return Matcher::Bytes(sset);
+            return Matcher::Seq(sset);
         }
         if lits.literals().len() == 1 {
             return Matcher::Memmem(Memmem::new(&lits.literals()[0]));
@@ -223,22 +223,24 @@ impl<I: ~const Integral> Matcher<I> {
     }
 }
 
+#[unconst]
 #[derive(Debug)]
-pub enum LiteralIter<'a> {
+pub enum LiteralIter<'a, I: ~const Integral> {
     Empty,
-    Bytes(&'a [u8]),
+    Seq(&'a [u8]),
     Single(&'a [u8]),
     AC(&'a [Literal<I>]),
     Packed(&'a [Literal<I>]),
 }
 
-impl<'a> Iterator for LiteralIter<'a> {
+#[unconst]
+impl<'a, I: ~const Integral> const Iterator for LiteralIter<'a, I> {
     type Item = &'a [u8];
 
     fn next(&mut self) -> Option<Self::Item> {
         match *self {
             LiteralIter::Empty => None,
-            LiteralIter::Bytes(ref mut many) => {
+            LiteralIter::Seq(ref mut many) => {
                 if many.is_empty() {
                     None
                 } else {
