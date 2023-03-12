@@ -507,38 +507,13 @@ const fn prefixes<I: ~const Integral>(expr: &Repr<I>, lits: &mut Literals<I>)
 {
     match *expr {
         Repr::Zero(_) => {}
-        Repr::One(c) => {
-            lits.cross_add(&c);
-        }
+        Repr::One(c) => { lits.cross_add(&c); },
         Repr::Interval(ref seq) => {
             if !lits.add_seq(seq, false) {
                 lits.cut();
             }
         }
         Repr::Exp(repr) => repeat_zero_or_more_literals(&repr, lits, prefixes),
-        Repr::Mul(ref repr, range) => match range {
-            Range::From(1) => {
-                prefixes(&repr, lits);
-                lits.cut();
-            }
-            Range::From(min) => {
-                repeat_range_literals(&repr, min, lits, prefixes);
-                lits.cut();
-            },
-            Range::Full(0, 1) => prefixes(&repr, lits),
-            // TODO(rnarkk) treat this as a finite set
-            Range::Full(0, max) => {
-                prefixes(&Repr::Mul(repr, Range::From(0)), lits);
-                lits.cut();
-            }
-            Range::Full(min, max) => {
-                repeat_range_literals(&repr, min, lits, prefixes);
-                if min < max {
-                    lits.cut();
-                }
-            }
-        },
-        
         Repr::And(ref lhs, ref rhs) => {
             for e in [lhs, rhs] {
                 if let Repr::Zero(Zero::StartText) = e {
@@ -581,30 +556,6 @@ const fn suffixes<I>(expr: &Repr<I>, lits: &mut Literals<I>)
             }
         }
         Repr::Exp(repr) => repeat_zero_or_more_literals(&repr, lits, suffixes),
-        Repr::Mul(ref repr, range) => match range.as_ref() {
-            Range::From(1) => {
-                suffixes(&repr, lits);
-                lits.cut();
-            }
-            Range::From(min) => {
-                repeat_range_literals(&repr, *min, lits, suffixes);
-                lits.cut();
-            },
-            Range::Full(0, 1) => {
-                suffixes(&repr, lits);
-            }
-            // TODO(rnarkk) treat this as a finite set
-            Range::Full(0, max) => {
-                suffixes(&Repr::Mul(repr, Range::From(0)), lits);
-                lits.cut();
-            }
-            Range::Full(min, max) => {
-                repeat_range_literals(&repr, *min, lits, suffixes);
-                if min < max {
-                    lits.cut();
-                }
-            }
-        },
         Repr::And(ref lhs, ref rhs) => {
             for e in [rhs, lhs] {
                 if let Repr::Zero(Zero::EndText) = e.as_ref() {
@@ -671,9 +622,7 @@ const fn repeat_range_literals<S, I, F>(
     where I: ~const Integral,
           F: FnMut(&Repr<I>, &mut Literals<I>)
 {
-    let n = cmp::min(lits.limit_size, min as usize);
-    f(&Repr::prod(iter::repeat(e.clone()).take(n)), lits);
-    if n < min as usize || lits.contains_empty() {
+    if lits.contains_empty() {
         lits.cut();
     }
 }
