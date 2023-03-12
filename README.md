@@ -39,7 +39,7 @@
 | a ∈ L (match) | `a` : `A` (judgement) | | |
 | ∅ | 0 | `Zero` | | |
 | `a` | `a` | `One(a)` | | len(a) |
-| ε (empty) | `*`, ⊤ | `One('')` | | 0 |
+| ε (empty) | `*`, ⊤ | - | | 0 |
 | `ab`/`a` · `b` (concatenation) | `a` & `b` (additive conjunction/with) | `Mul(a, b)`/`a * b` | × (product) | len(a) + len(b) |
 | `a\|b` (alternation) | `a` ⊕ `b` (additive disjuction/plus) | `Or(a, b)`/`a \| b` | + (coproduct) | max(len(a), len(b))
 | `a*` (kleen star) | `!a` (of course, exponential conjunction) | `Exp(a)` | □ (necessity) |
@@ -68,6 +68,11 @@ Symbols are grouped and assigned primarily by positive/negative distinciton. The
 | negative/intensional | & ⊤ | ⅋ ⊥ | ? |
 
 **Laws**
+
+TODO:
+
+- `Seq::empty()` - can be empty because negative
+- `Interval::full()` - can't be empty because positive
 
 | linear logic/quantale | repr | title |
 | - | - | - |
