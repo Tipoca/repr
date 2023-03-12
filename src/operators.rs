@@ -19,7 +19,7 @@ impl<I: ~const Integral> const BitAnd<I> for Repr<I> {
     type Output = Self;
 
     fn bitand(self, rhs: I) -> Self {
-        self.and(Repr::One(rhs))
+        self.and(Repr::One(rhs.into()))
     }
 }
 
@@ -71,7 +71,7 @@ impl<I: ~const Integral> const BitOr<I> for Repr<I> {
     type Output = Self;
     
     fn bitor(self, rhs: I) -> Self {
-        self.or(Self::One(rhs))
+        self.or(Self::One(rhs.into()))
     }
 }
 

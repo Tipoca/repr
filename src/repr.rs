@@ -11,6 +11,7 @@ use core::{
 use unconst::unconst;
 
 use crate::interval::Interval;
+use crate::seq::Seq;
 
 #[unconst]
 // TODO(rnarkk) Interval (class) as `or` for char, &str as `and` for char?
@@ -18,7 +19,7 @@ use crate::interval::Interval;
 #[derive(Eq, PartialEq)]
 pub enum Repr<I: ~const Integral> {
     Zero(Zero),
-    One(I),  // TODO(rnarkk)  Interval(I, I)
+    One(Seq<I>),  // TODO(rnarkk)  Interval(I, I)
     Interval(Interval<I>),  // TODO(rnarkk)
     /// a & b (additive conjunction/with)
     Mul(Box<Repr<I>>, Box<Repr<I>>),
@@ -48,7 +49,7 @@ impl<I: ~const Integral> Repr<I> {
     }
 
     pub const fn one(i: I) -> Self {
-        Self::One(i)
+        Self::One(Seq::one(i))
     }
     
     pub const fn not(self) -> Self {
@@ -82,7 +83,7 @@ impl<I: ~const Integral> Repr<I> {
     pub const fn rev(self) -> Self {
         match self {
             Self::Zero(zero) => Self::Zero(zero),
-            Self::One(i) => Self::One(i),
+            Self::One(i) => Self::One(i.rev()),
             Self::Interval(i) => Self::Interval(i),
             Self::Mul(lhs, rhs) => Self::Mul(box rhs.rev(), box lhs.rev()),
             Self::Or(lhs, rhs) => Self::Or(box lhs.rev(), box rhs.rev()),
@@ -166,26 +167,6 @@ impl Repr<char> {
     // }
 }
 
-/*
-#[unconst]
-pub struct Iter<'a, I: ~const Integral> {
-    repr: &'a Repr<I>,
-    left: 
-}
-*/
-
-// impl<I: ~const Integral> const IntoIterator for Repr<I> {
-//     type Item = I;
-//     type IntoIter: IntoIter<'a, I>;
-
-//     fn into_iter(self) -> Self::IntoIter {
-//         let mut iter = Vec::new();
-//         match self {
-//             _ => unimplemented!()
-//         }
-//     }
-// }
-
 /// - `Copy` + `Clone`: possibility of `!` exponentiation
 /// - `PartialEq` + `Eq`: decidability
 #[unconst]
@@ -197,7 +178,6 @@ pub trait Integral: Copy + ~const Clone
                     + ~const Destruct
                     + Debug
 {
-    // type S: ~const IntoIterator<Item = Self>;
     const MIN: Self;
     const MAX: Self;
     fn succ(self) -> Self;
@@ -206,7 +186,6 @@ pub trait Integral: Copy + ~const Clone
 
 #[unconst]
 impl const Integral for char {
-    // type S = Str<'a>;
     const MIN: Self = '\x00';
     const MAX: Self = '\u{10FFFF}';
     fn succ(self) -> Self {
@@ -220,17 +199,6 @@ impl const Integral for char {
             '\u{E000}' => '\u{D7FF}',
             c => char::from_u32((c as u32).checked_sub(1).unwrap()).unwrap(),
         }
-    }
-}
-
-pub struct Str<'a>(&'a str);
-
-impl<'a> IntoIterator for Str<'a> {
-    type Item = char;
-    type IntoIter = core::str::Chars<'a>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.chars()
     }
 }
 

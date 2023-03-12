@@ -52,6 +52,7 @@ mod conversions;
 mod interval;
 mod operators;
 // mod regex;
+mod seq;
 mod wrappers;
 
 pub mod char;
@@ -63,6 +64,7 @@ pub mod repr;
 pub use constants::perl::{DIGIT, WORD};
 pub use interval::Interval;
 pub use crate::repr::{Repr, Integral, Zero};
+pub use seq::Seq;
 
 // #[test]
 // fn datetime() {

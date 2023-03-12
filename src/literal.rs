@@ -454,11 +454,6 @@ impl<I: ~const Integral> Literals<I> {
         }
     }
 
-    /// Clears this set of all members.
-    pub fn clear(&mut self) {
-        self.lits.clear();
-    }
-
     /// Pops all complete literals out of this set.
     fn remove_complete(&mut self) -> Vec<Literal<I>> {
         let mut base = vec![];
