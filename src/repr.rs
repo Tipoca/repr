@@ -36,10 +36,6 @@ pub enum Repr<I: ~const Integral> {
 
 #[unconst]
 impl<I: ~const Integral> Repr<I> {
-    // pub const fn new<const N: usize>(seqs: [Interval<I>; N]) -> Self {
-
-    // }
-
     pub const fn zero() -> Self {
         Self::Zero(Default::default())
     }
