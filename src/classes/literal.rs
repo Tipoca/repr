@@ -21,29 +21,6 @@ pub enum LiteralKind {
     Special(SpecialLiteralKind),
 }
 
-/// The type of a special literal.
-///
-/// A special literal is a special escape sequence recognized by the regex
-/// parser, e.g., `\f` or `\n`.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum SpecialLiteralKind {
-    /// Bell, spelled `\a` (`\x07`).
-    Bell,
-    /// Form feed, spelled `\f` (`\x0C`).
-    FormFeed,
-    /// Tab, spelled `\t` (`\x09`).
-    Tab,
-    /// Line feed, spelled `\n` (`\x0A`).
-    LineFeed,
-    /// Carriage return, spelled `\r` (`\x0D`).
-    CarriageReturn,
-    /// Vertical tab, spelled `\v` (`\x0B`).
-    VerticalTab,
-    /// Space, spelled `\ ` (`\x20`). Note that this can only appear when
-    /// parsing in verbose mode.
-    Space,
-}
-
 /// The type of a Unicode hex literal.
 ///
 /// Note that all variants behave the same when used with brackets. They only
@@ -112,25 +89,6 @@ fn fmt_literal(&mut self, ast: &ast::Literal) -> fmt::Result {
         }
         HexBrace(ast::HexLiteralKind::UnicodeLong) => {
             write!(self.wtr, r"\U{{{:X}}}", ast.c as u32)
-        }
-        Special(ast::SpecialLiteralKind::Bell) => {
-            self.wtr.write_str(r"\a")
-        }
-        Special(ast::SpecialLiteralKind::FormFeed) => {
-            self.wtr.write_str(r"\f")
-        }
-        Special(ast::SpecialLiteralKind::Tab) => self.wtr.write_str(r"\t"),
-        Special(ast::SpecialLiteralKind::LineFeed) => {
-            self.wtr.write_str(r"\n")
-        }
-        Special(ast::SpecialLiteralKind::CarriageReturn) => {
-            self.wtr.write_str(r"\r")
-        }
-        Special(ast::SpecialLiteralKind::VerticalTab) => {
-            self.wtr.write_str(r"\v")
-        }
-        Special(ast::SpecialLiteralKind::Space) => {
-            self.wtr.write_str(r"\ ")
         }
     }
 }
