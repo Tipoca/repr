@@ -12,7 +12,7 @@ use core::{
 use unconst::unconst;
 
 use crate::interval::Interval;
-use crate::repr::{Repr, Range, Integral, Zero};
+use crate::repr::{Repr, Integral, Zero};
 
 /// A set of literal byte strings extracted from a regular expression.
 ///
@@ -535,10 +535,8 @@ const fn prefixes<I: ~const Integral>(expr: &Repr<I>, lits: &mut Literals<I>)
                 lits.cut();
             }
         }
+        Repr::Exp(repr) => repeat_zero_or_more_literals(&repr, lits, prefixes),
         Repr::Mul(ref repr, range) => match range {
-            Range::From(0) => {
-                repeat_zero_or_more_literals(&repr, lits, prefixes);
-            }
             Range::From(1) => {
                 prefixes(&repr, lits);
                 lits.cut();
