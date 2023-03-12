@@ -59,7 +59,7 @@ pub mod constants;
 pub mod macros;
 pub mod repr;
 
-pub use consts::{DIGIT, WORD};
+pub use constants::{DIGIT, WORD};
 pub use crate::repr::{Repr, Integral, Seq, Range, Zero};
 
 // #[test]
