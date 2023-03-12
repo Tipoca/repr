@@ -23,8 +23,3 @@ pub const CR: Repr<char> = Repr::from('\r');
 /// ` `
 #[unconst]
 pub const SP: Repr<char> = Repr::from(' ');
-
-#[unconst]
-pub const DIGIT: Repr<char> = Repr::from('0'..'9');
-#[unconst]
-pub const WORD: Repr<char> = Repr::from('A'..'Z') | ('a'..'z');
