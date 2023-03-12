@@ -41,7 +41,7 @@ pub struct Exec<I: Integral> {
     /// time of writing for regex's use of this pool. At the time of writing,
     /// the size of a Regex on the stack is 856 bytes. Boxing this value
     /// reduces that size to 16 bytes.
-    pool: Box<Pool<ProgramCache>>,
+    pool: Box<Pool<ProgramCache<I>>>,
 }
 
 /// `ExecNoSync` is like `Exec`, except it embeds a reference to a cache. This
@@ -51,7 +51,7 @@ pub struct ExecNoSync<'c, I: Integral> {
     /// All read only state.
     ro: &'c Arc<ExecReadOnly<I>>,
     /// Caches for the various matching engines.
-    cache: PoolGuard<'c, ProgramCache>,
+    cache: PoolGuard<'c, ProgramCache<I>>,
 }
 
 /// `ExecNoSyncStr` is like `ExecNoSync`, but matches on &str instead of &[u8].
@@ -81,7 +81,7 @@ struct ExecReadOnly<I: Integral> {
     ///
     /// Prefix literals are stored on the `Program`, since they are used inside
     /// the matching engines.
-    suffixes: LiteralSearcher,
+    suffixes: LiteralSearcher<I>,
     /// An Aho-Corasick automaton with leftmost-first match semantics.
     ///
     /// This is only set when the entire regex is a simple unanchored
@@ -191,34 +191,34 @@ impl<I: Integral> ExecBuilder<I> {
         // expressions, then disable all literal optimizations.
         for repr in &self.options.reprs {
             if cfg!(feature = "perf-literal") {
-                if !expr.is_anchored_start() && expr.is_any_anchored_start() {
+                if !repr.is_anchored_start() && repr.is_any_anchored_start() {
                     // Partial anchors unfortunately make it hard to use
                     // prefixes, so disable them.
                     prefixes = None;
-                } else if is_set && expr.is_anchored_start() {
+                } else if is_set && repr.is_anchored_start() {
                     // Regex sets with anchors do not go well with literal
                     // optimizations.
                     prefixes = None;
                 }
                 prefixes = prefixes.and_then(|mut prefixes| {
-                    if !prefixes.union_prefixes(&expr) {
+                    if !prefixes.union_prefixes(&repr) {
                         None
                     } else {
                         Some(prefixes)
                     }
                 });
 
-                if !expr.is_anchored_end() && expr.is_any_anchored_end() {
+                if !repr.is_anchored_end() && repr.is_any_anchored_end() {
                     // Partial anchors unfortunately make it hard to use
                     // suffixes, so disable them.
                     suffixes = None;
-                } else if is_set && expr.is_anchored_end() {
+                } else if is_set && repr.is_anchored_end() {
                     // Regex sets with anchors do not go well with literal
                     // optimizations.
                     suffixes = None;
                 }
                 suffixes = suffixes.and_then(|mut suffixes| {
-                    if !suffixes.union_suffixes(&expr) {
+                    if !suffixes.union_suffixes(&repr) {
                         None
                     } else {
                         Some(suffixes)
@@ -1126,7 +1126,7 @@ impl<I: Integral> ExecReadOnly<I> {
         lcs_len >= 3 && lcs_len > self.dfa.prefixes.lcp().char_len()
     }
 
-    fn new_pool(ro: &Arc<ExecReadOnly<I>>) -> Box<Pool<ProgramCache>> {
+    fn new_pool(ro: &Arc<ExecReadOnly<I>>) -> Box<Pool<ProgramCache<I>>> {
         let ro = ro.clone();
         Box::new(Pool::new(Box::new(move || {
             AssertUnwindSafe(RefCell::new(ProgramCacheInner::new(&ro)))
@@ -1223,7 +1223,7 @@ impl<I: Integral> ProgramCacheInner<I> {
 /// Alternation literals checks if the given HIR is a simple alternation of
 /// literals, and if so, returns them. Otherwise, this returns None.
 #[cfg(feature = "perf-literal")]
-fn alternation_literals<I: Integral>(expr: &Repr<I>) -> Option<Vec<Vec<u8>>> {
+fn alternation_literals<I: Integral>(repr: &Repr<I>) -> Option<Vec<Vec<u8>>> {
     // This is pretty hacky, but basically, if `is_alternation_literal` is
     // true, then we can make several assumptions about the structure of our
     // HIR. This is what justifies the `unreachable!` statements below.
@@ -1232,10 +1232,10 @@ fn alternation_literals<I: Integral>(expr: &Repr<I>) -> Option<Vec<Vec<u8>>> {
     // optimization pipeline, because this is a terribly inflexible way to go
     // about things.
 
-    if !expr.is_alternation_literal() {
+    if !repr.is_alternation_literal() {
         return None;
     }
-    let alts = match *expr {
+    let alts = match *repr {
         Repr::Or(ref alts, ref rhs) => alts,
         _ => return None, // one literal isn't worth it
     };
