@@ -73,6 +73,7 @@ Symbols are grouped and assigned primarily by positive/negative distinciton. The
 
 TODO:
 
+- `I::EMPTY` ε
 - `Seq::empty()` - can be empty because negative
 - `Interval::full()` - can't be empty because positive
 
