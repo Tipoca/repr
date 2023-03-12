@@ -132,27 +132,12 @@ impl<I: ~const Integral> Interval<I> {
         && (other.0 <= self.1 && self.1 <= other.1)
     }
 
-    // /// Negate this interval set.
-    // ///
-    // /// For all `x` where `x` is any element, if `x` was in this set, then it
-    // /// will not be in this set after negation.
-    // pub const fn not(self) -> Self {
-    //     if self.is_empty() {
-    //         return Interval(I::MIN, I::MAX);
-    //     }
-
-    //     // So just append
-    //     // the negation to the end of this range, and then drain it before
-    //     // we're done.
-    //     // We do checked arithmetic below because of the canonical ordering
-    //     // invariant.
-    //     if self.0 < I::MIN {
-    //         Interval(I::MIN, self.0.pred())
-    //     }
-    //     if self.1 < I::MAX {
-    //         Interval(self.1.succ(), I::MAX)
-    //     }
-    // }
+    /// Negate this Interval.
+    ///
+    /// For all `a` where `a` is any element, if `a` is in this interval, then it will not be in this set after negation.
+    pub const fn not(self) -> (Option<Self>, Option<Self>) {
+        Self::full().sub(self)
+    }
 }
 
 impl Interval<char> {
