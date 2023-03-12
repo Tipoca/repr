@@ -2,7 +2,7 @@ use std::mem;
 
 use aho_corasick::{self, packed, AhoCorasick, AhoCorasickBuilder};
 use memchr::{memchr, memchr2, memchr3, memmem};
-use repr::literal::{Literal, Literals};
+use crate::literal::{Literal, Literals};
 
 /// A prefix extracted from a compiled regular expression.
 ///

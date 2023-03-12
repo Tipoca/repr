@@ -1024,12 +1024,6 @@ impl<I: Integral> ExecReadOnly<I> {
     /// If a plain literal scan can be used, then a corresponding literal
     /// search type is returned.
     fn choose_literal_match_type(&self) -> Option<MatchType> {
-        #[cfg(not(feature = "perf-literal"))]
-        fn imp(_: &ExecReadOnly) -> Option<MatchType> {
-            None
-        }
-
-        #[cfg(feature = "perf-literal")]
         fn imp<I: Integral>(ro: &ExecReadOnly<I>) -> Option<MatchType> {
             // If our set of prefixes is complete, then we can use it to find
             // a match in lieu of a regex engine. This doesn't quite work well

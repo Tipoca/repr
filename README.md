@@ -118,6 +118,8 @@ Linearity (which)
 **Algorithms (TODO)**
 
 - Bit-pararell
+- aho-corasick
+- memchr
 
 **Semantics (TODO)**
 
