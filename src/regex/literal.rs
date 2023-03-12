@@ -2,23 +2,26 @@ use std::mem;
 
 use aho_corasick::{self, packed, AhoCorasick, AhoCorasickBuilder};
 use memchr::{memchr, memchr2, memchr3, memmem};
-use crate::literal::{Literal, Literals};
+use unconst::unconst;
+use crate::{literal::{Literal, Literals}, Integral};
 
+#[unconst]
 /// A prefix extracted from a compiled regular expression.
 ///
 /// A regex prefix is a set of literal strings that *must* be matched at the
 /// beginning of a regex in order for the entire regex to match. Similarly
 /// for a regex suffix.
 #[derive(Clone, Debug)]
-pub struct LiteralSearcher {
+pub struct LiteralSearcher<I: ~const Integral> {
     complete: bool,
     lcp: Memmem,
     lcs: Memmem,
-    matcher: Matcher,
+    matcher: Matcher<I>,
 }
 
+#[unconst]
 #[derive(Clone, Debug)]
-enum Matcher {
+enum Matcher<I: ~const Integral> {
     /// No literals. (Never advances through the input.)
     Empty,
     /// A set of four or more single byte literals.
@@ -26,35 +29,36 @@ enum Matcher {
     /// A single substring, using vector accelerated routines when available.
     Memmem(Memmem),
     /// An Aho-Corasick automaton.
-    AC { ac: AhoCorasick<u32>, lits: Vec<Literal> },
+    AC { ac: AhoCorasick<u32>, lits: Vec<Literal<I>> },
     /// A packed multiple substring searcher, using SIMD.
     ///
     /// Note that Aho-Corasick will actually use this packed searcher
     /// internally automatically, however, there is some overhead associated
     /// with going through the Aho-Corasick machinery. So using the packed
     /// searcher directly results in some gains.
-    Packed { s: packed::Searcher, lits: Vec<Literal> },
+    Packed { s: packed::Searcher, lits: Vec<Literal<I>> },
 }
 
-impl LiteralSearcher {
+#[unconst]
+impl<I: ~const Integral> LiteralSearcher<I> {
     /// Returns a matcher that never matches and never advances the input.
     pub fn empty() -> Self {
         Self::new(Literals::empty(), Matcher::Empty)
     }
 
     /// Returns a matcher for literal prefixes from the given set.
-    pub fn prefixes(lits: Literals) -> Self {
+    pub fn prefixes(lits: Literals<I>) -> Self {
         let matcher = Matcher::prefixes(&lits);
         Self::new(lits, matcher)
     }
 
     /// Returns a matcher for literal suffixes from the given set.
-    pub fn suffixes(lits: Literals) -> Self {
+    pub fn suffixes(lits: Literals<I>) -> Self {
         let matcher = Matcher::suffixes(&lits);
         Self::new(lits, matcher)
     }
 
-    fn new(lits: Literals, matcher: Matcher) -> Self {
+    fn new(lits: Literals<I>, matcher: Matcher) -> Self {
         let complete = lits.all_complete();
         LiteralSearcher {
             complete,
@@ -169,17 +173,17 @@ impl LiteralSearcher {
 }
 
 impl Matcher {
-    fn prefixes(lits: &Literals) -> Self {
+    fn prefixes(lits: &Literals<I>) -> Self {
         let sset = SingleByteSet::prefixes(lits);
         Matcher::new(lits, sset)
     }
 
-    fn suffixes(lits: &Literals) -> Self {
+    fn suffixes(lits: &Literals<I>) -> Self {
         let sset = SingleByteSet::suffixes(lits);
         Matcher::new(lits, sset)
     }
 
-    fn new(lits: &Literals, sset: SingleByteSet) -> Self {
+    fn new(lits: &Literals<I>, sset: SingleByteSet) -> Self {
         if lits.literals().is_empty() {
             return Matcher::Empty;
         }
@@ -223,8 +227,8 @@ pub enum LiteralIter<'a> {
     Empty,
     Bytes(&'a [u8]),
     Single(&'a [u8]),
-    AC(&'a [Literal]),
-    Packed(&'a [Literal]),
+    AC(&'a [Literal<I>]),
+    Packed(&'a [Literal<I>]),
 }
 
 impl<'a> Iterator for LiteralIter<'a> {
@@ -291,7 +295,7 @@ impl SingleByteSet {
         }
     }
 
-    fn prefixes(lits: &Literals) -> SingleByteSet {
+    fn prefixes(lits: &Literals<I>) -> SingleByteSet {
         let mut sset = SingleByteSet::new();
         for lit in lits.literals() {
             sset.complete = sset.complete && lit.len() == 1;
@@ -308,7 +312,7 @@ impl SingleByteSet {
         sset
     }
 
-    fn suffixes(lits: &Literals) -> SingleByteSet {
+    fn suffixes(lits: &Literals<I>) -> SingleByteSet {
         let mut sset = SingleByteSet::new();
         for lit in lits.literals() {
             sset.complete = sset.complete && lit.len() == 1;
