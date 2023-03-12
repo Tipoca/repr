@@ -14,7 +14,6 @@ use crate::interval::Interval;
 use crate::seq::Seq;
 
 #[unconst]
-// TODO(rnarkk) Interval (class) as `or` for char, &str as `and` for char?
 #[derive_const(Clone, Debug)]
 #[derive(Eq, PartialEq)]
 pub enum Repr<I: ~const Integral> {
@@ -26,7 +25,7 @@ pub enum Repr<I: ~const Integral> {
     /// a ⊕ b (additive disjuction/plus)
     Or(Box<Repr<I>>, Box<Repr<I>>),
     // Xor(Box<Repr<I>>, Box<Repr<I>>),
-    // Sub(Box<Repr<I>>, Interval<I>),  // TODO(rnarkk)
+    // Sub(Box<Repr<I>>, Box<Repr<<I>>),
     /// a ⊸ b (linear implication)
     Div(Box<Repr<I>>, Box<Repr<I>>),
     Exp(Box<Repr<I>>),
