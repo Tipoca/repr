@@ -54,6 +54,10 @@ impl<I: ~const Integral> Interval<I> {
             Interval(to, from)
         }
     }
+
+    pub const fn full() -> Self {
+        Interval(I::MIN, I::MAX)
+    }
     
     /// Intersect this Interval with the given Interval and return the result.
     ///
