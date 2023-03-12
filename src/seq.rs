@@ -1,6 +1,7 @@
 use alloc::{
     vec::Vec
 };
+use core::ops::Deref;
 
 use unconst::unconst;
 
@@ -33,6 +34,14 @@ impl<I: ~const Integral> Seq<I> {
 #[unconst]
 impl<I: ~const Integral> const AsRef<[I]> for Seq<I> {
     fn as_ref(&self) -> &[I] {
+        &self.0
+    }
+}
+
+#[unconst]
+impl<I: ~const Integral> const Deref for Seq<I> {
+    type Target = Vec<I>;
+    fn deref(&self) -> &Vec<I> {
         &self.0
     }
 }
