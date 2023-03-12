@@ -14,6 +14,7 @@
 - Equational reasoning
 - Induction
 - `True(I, Box<Repr<I>>)` (assertions, dependent types)
+- Fixed points
 - Spherical conic (tennis ball)
 
 **`Or`**
