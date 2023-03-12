@@ -44,7 +44,7 @@ impl<I: ~const Integral> Repr<I> {
 
     // }
 
-    pub const fn empty() -> Self {
+    pub const fn zero() -> Self {
         Self::Zero(Default::default())
     }
 
@@ -56,8 +56,11 @@ impl<I: ~const Integral> Repr<I> {
         Self::Not(box self)
     }
     
-    pub const fn and(self, other: Self) -> Self {
-        Self::And(box self, box other)
+    pub const fn mul(self, other: Self) -> Self {
+        match (self, other) {
+            (Self::One(lhs), Self::One(rhs)) => Self::One(lhs.mul(rhs)),
+            (lhs, rhs) => Self::Or(box lhs, box rhs)
+        }
     }
     
     pub const fn or(self, other: Self) -> Self {
@@ -78,6 +81,10 @@ impl<I: ~const Integral> Repr<I> {
     
     pub const fn exp(self) -> Self {
         Self::Exp(box self)
+    }
+
+    pub const fn and(self, other: Self) -> Self {
+        Self::And(box self, box other)
     }
     
     pub const fn rev(self) -> Self {
