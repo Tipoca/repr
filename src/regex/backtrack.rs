@@ -216,7 +216,7 @@ impl<'a, 'm, 'r, I: Integral + Input> Bounded<'a, 'm, 'r, I> {
                         return false;
                     }
                 }
-                Seq(ref inst) => {
+                Interval(ref inst) => {
                     if inst.matches(at.char()) {
                         ip = inst.goto;
                         at = self.input.at(at.next_pos());

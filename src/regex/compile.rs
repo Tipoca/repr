@@ -3,10 +3,11 @@ use std::result;
 
 use regex_syntax::utf8::Utf8Sequences;
 
-use crate::repr::{Repr, Seq, Range, Integral, Zero};
+use crate::interval::Interval;
+use crate::repr::{Repr, Range, Integral, Zero};
 
 use super::prog::{
-    Inst, InstOne, InstZero, InstPtr, InstSeq, InstSplit, Program,
+    Inst, InstOne, InstZero, InstPtr, InstInterval, InstSplit, Program,
 };
 
 use super::Error;
@@ -34,7 +35,7 @@ pub struct Compiler<I: Integral> {
     utf8_seqs: Option<Utf8Sequences>,
     // This keeps track of extra bytes allocated while compiling the regex
     // program. Currently, this corresponds to two things. First is the heap
-    // memory allocated by Unicode character classes ('InstSeq'). Second is
+    // memory allocated by Unicode character classes ('InstInterval'). Second is
     // a "fake" amount of memory used by empty sub-expressions, so that enough
     // empty sub-expressions will ultimately trigger the compiler to bail
     // because of a size limit restriction. (That empty sub-expressions don't
@@ -233,7 +234,7 @@ impl<I: Integral> Compiler<I> {
         match *expr {
             Repr::Zero(Zero::Any) => self.c_empty(),
             Repr::One(c) => self.c_char(c),
-            Repr::Seq(seq) => self.c_class(seq),
+            Repr::Interval(seq) => self.c_class(seq),
             // Anchor(hir::Anchor::StartLine) if self.compiled.is_reverse => {
             //     self.byte_classes.set_range(b'\n', b'\n');
             //     self.c_empty_look(prog::Zero::EndLine)
@@ -345,14 +346,14 @@ impl<I: Integral> Compiler<I> {
         Ok(Some(Patch { hole, entry: self.insts.len() - 1 }))
     }
 
-    fn c_class(&mut self, seq: Seq<I>) -> ResultOrEmpty {
+    fn c_class(&mut self, seq: Interval<I>) -> ResultOrEmpty {
         use std::mem::size_of;
 
         let hole = if seq.0 == seq.1 {
             self.push_hole(InstHole::One(seq.0))
         } else {
             self.extra_inst_bytes += size_of::<I>() * 2;
-            self.push_hole(InstHole::Seq(seq))
+            self.push_hole(InstHole::Interval(seq))
         };
         Ok(Some(Patch { hole, entry: self.insts.len() - 1 }))
     }
@@ -752,7 +753,7 @@ impl<I: Integral> MaybeInst<I> {
 enum InstHole<I: Integral> {
     Zero(Zero),
     One(I),
-    Seq(Seq<I>),
+    Interval(Interval<I>),
 }
 
 impl<I: Integral> InstHole<I> {
@@ -760,7 +761,7 @@ impl<I: Integral> InstHole<I> {
         match *self {
             InstHole::Zero(look) => Inst::Zero(InstZero { goto, look }),
             InstHole::One(c) => Inst::One(InstOne { goto, c }),
-            InstHole::Seq(ref seq) => Inst::Seq(InstSeq { goto, seq }),
+            InstHole::Interval(ref seq) => Inst::Interval(InstInterval { goto, seq }),
         }
     }
 }

@@ -42,11 +42,11 @@ macro_rules! xor {
     }
 }
 
-// /// Seq
+// /// Interval
 // #[macro_export]
-// macro_rules! seq {
+// macro_rules! interval {
 //     ($lhs:tt .. $rhs:tt) => {
-//         Repr::Seq((stringify!($lhs).chars().nth(0).unwrap()..stringify!($rhs).chars().nth(0).unwrap()).into())
+//         Repr::Interval((stringify!($lhs).chars().nth(0).unwrap()..stringify!($rhs).chars().nth(0).unwrap()).into())
 //     };
 // }
 

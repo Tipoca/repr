@@ -229,7 +229,7 @@ impl<'r, I: Integral + Input> Fsm<'r, I> {
                 }
                 false
             }
-            Seq(ref inst) => {
+            Interval(ref inst) => {
                 if inst.matches(at.char()) {
                     self.add(nlist, inst.goto, at_next);
                 }
@@ -285,7 +285,7 @@ impl<'r, I: Integral + Input> Fsm<'r, I> {
                     self.stack.push(FollowEpsilon::IP(inst.goto2));
                     ip = inst.goto1;
                 }
-                Match(_) | One(_) | Seq(_) => {
+                Match(_) | One(_) | Interval(_) => {
                     return;
                 }
             }

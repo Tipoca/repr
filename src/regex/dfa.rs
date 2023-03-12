@@ -68,7 +68,7 @@ pub fn can_exec<I: Integral>(insts: &Program<I>) -> bool {
     }
     for inst in insts {
         match *inst {
-            Inst::One(_) | Inst::Seq(_) => return false,
+            Inst::One(_) | Inst::Interval(_) => return false,
             Inst::Zero(_) | Inst::Match(_) | Inst::Split(_) => {}
         }
     }
@@ -957,7 +957,7 @@ impl<'a, I: Integral> Fsm<'a, I> {
         for &ip in &*qcur {
             match self.prog[ip as usize] {
                 // These states never happen in a byte-based program.
-                Inst::One(_) | Inst::Seq(_) => unreachable!(),
+                Inst::One(_) | Inst::Interval(_) => unreachable!(),
                 // These states are handled when following epsilon transitions.
                 Inst::Split(_) | Inst::Zero(_) => {}
                 Inst::Match(_) => {
@@ -1062,7 +1062,7 @@ impl<'a, I: Integral> Fsm<'a, I> {
                 }
                 q.insert(ip as usize);
                 match self.prog[ip as usize] {
-                    Inst::One(_) | Inst::Seq(_) => unreachable!(),
+                    Inst::One(_) | Inst::Interval(_) => unreachable!(),
                     Match(_) => {
                         break;
                     }
@@ -1199,7 +1199,7 @@ impl<'a, I: Integral> Fsm<'a, I> {
         for &ip in q {
             let ip = usize_to_u32(ip);
             match self.prog[ip as usize] {
-                One(_) | Seq(_) => unreachable!(),
+                One(_) | Interval(_) => unreachable!(),
                 Split(_) => {}
                 Zero(_) => {
                     state_flags.set_empty();

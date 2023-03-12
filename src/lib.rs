@@ -60,7 +60,8 @@ pub mod macros;
 pub mod repr;
 
 pub use constants::perl::{DIGIT, WORD};
-pub use crate::repr::{Repr, Integral, Seq, Range, Zero};
+pub use interval::Interval;
+pub use crate::repr::{Repr, Integral, Range, Zero};
 
 // #[test]
 // fn datetime() {

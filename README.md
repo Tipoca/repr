@@ -6,7 +6,7 @@
 
 **TODO**
 
-- Arbitrary one character `.` vs `Seq(MIN, MAX)` vs `⊤` (meaning we don't define such token)
+- Arbitrary one character `.` vs `Interval(MIN, MAX)` vs `⊤` (meaning we don't define such token)
 - Interpretation of `match`, is it a judgement `a : A` or a test that one is divisible by another (quotient is equal to zero) `a / b`?
 - `ignore`, or lookahead/behind
 - Derivatives
@@ -46,7 +46,7 @@
 | `a*?` (non greedy) | `?a` (why not, exponential disjunction) | `Exp(a)` | ◊ (possibility) |
 | `a?` () | `a` | `Or(Zero, a)` | |
 | `a{n,m}` (repetition) | `a` | `Or(Mul(a, Mul(a, ..)), Or(..))` | |
-| `[a-z]` (class) | | `Seq(a, z)`/`a..z` | | |
+| `[a-z]` (class) | | `Interval(a, z)`/`a..z` | | |
 | `[^a-z]` (negation) | TODO this is complementary op | `Neg(a)`/`-a` | | |
 | `a`<sup>†</sup> (reverse) | right law vs left law | `Rev(a)` | | len(a) |
 | `a` / `b` (right quotient) | `a` ⊸ `b` | `Div(a, b)`/`a / b` | | len(a) - len(b) |

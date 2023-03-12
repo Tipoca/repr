@@ -3,7 +3,8 @@ use std::mem;
 use std::ops::Deref;
 use std::slice;
 
-use crate::repr::{Seq, Integral, Zero};
+use crate::interval::Interval;
+use crate::repr::{Integral, Zero};
 
 use super::literal::LiteralSearcher;
 
@@ -167,7 +168,7 @@ impl<I: Integral> fmt::Debug for Program<I> {
                     let s = format!("{:?}", inst.c);
                     write!(f, "{:04} {}", pc, with_goto(pc, inst.goto, s))?;
                 }
-                Inst::Seq(ref inst) => {
+                Inst::Interval(ref inst) => {
                     let ranges = format!("{:?}-{:?}", inst.seq.0, inst.seq.1);
                     write!(
                         f,
@@ -231,8 +232,8 @@ pub enum Inst<I: Integral> {
     /// the current position in the input.
     One(InstOne<I>),
     /// Ranges requires the regex program to match the character at the current
-    /// position in the input with one of the ranges specified in InstSeq.
-    Seq(InstSeq<I>),
+    /// position in the input with one of the ranges specified in InstInterval.
+    Interval(InstInterval<I>),
 }
 
 impl<I: Integral> Inst<I> {
@@ -278,15 +279,15 @@ pub struct InstOne<I: Integral> {
 
 /// Representation of the Ranges instruction.
 #[derive(Clone)]
-pub struct InstSeq<I: Integral> {
+pub struct InstInterval<I: Integral> {
     /// The next location to execute in the program if this instruction
     /// succeeds.
     pub goto: InstPtr,
     /// The set of Unicode scalar value ranges to test.
-    pub seq: Seq<I>
+    pub seq: Interval<I>
 }
 
-impl<I: Integral> InstSeq<I> {
+impl<I: Integral> InstInterval<I> {
     /// Tests whether the given input character matches this instruction.
     pub fn matches(&self, c: I) -> bool {
         // This speeds up the `match_class_unicode` benchmark by checking

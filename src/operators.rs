@@ -2,7 +2,8 @@ use core::ops::{BitOr, BitAnd, BitXor, Range, Mul, RangeBounds};
 
 use unconst::unconst;
 
-use crate::repr::{Repr, Seq, Integral};
+use crate::interval::Interval;
+use crate::repr::{Repr, Integral};
 
 #[unconst]
 impl<I: ~const Integral> const BitAnd<Self> for Repr<I> {
@@ -43,7 +44,7 @@ impl<I: ~const Integral> const BitAnd<Range<I>> for Repr<I> {
     type Output = Self;
 
     fn bitand(self, rhs: Range<I>) -> Self::Output {
-        self.and(Repr::Seq(rhs.into()))
+        self.and(Repr::Interval(rhs.into()))
     }
 }
 
@@ -95,7 +96,7 @@ impl<I: ~const Integral> const BitOr<Range<I>> for Repr<I> {
     type Output = Self;
 
     fn bitor(self, rhs: Range<I>) -> Self {
-        self.or(Repr::Seq(rhs.into()))
+        self.or(Repr::Interval(rhs.into()))
     }
 }
 
@@ -118,7 +119,7 @@ impl<R: RangeBounds<usize>, I: ~const Integral> const Mul<R> for Repr<I> {
 }
 
 #[unconst]
-impl<I: ~const Integral> const BitAnd<Self> for Seq<I> {
+impl<I: ~const Integral> const BitAnd<Self> for Interval<I> {
     type Output = Option<Self>;
 
     fn bitand(self, rhs: Self) -> Self::Output {
@@ -127,7 +128,7 @@ impl<I: ~const Integral> const BitAnd<Self> for Seq<I> {
 }
 
 #[unconst]
-impl<I: ~const Integral> const BitOr<Self> for Seq<I> {
+impl<I: ~const Integral> const BitOr<Self> for Interval<I> {
     type Output = Option<Self>;
 
     fn bitor(self, rhs: Self) -> Self::Output {
@@ -136,7 +137,7 @@ impl<I: ~const Integral> const BitOr<Self> for Seq<I> {
 }
 
 #[unconst]
-impl<I: ~const Integral> const BitXor<Self> for Seq<I> {
+impl<I: ~const Integral> const BitXor<Self> for Interval<I> {
     type Output = (Option<Self>, Option<Self>);
 
     fn bitxor(self, rhs: Self) -> Self::Output {

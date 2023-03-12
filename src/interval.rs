@@ -1,5 +1,3 @@
-//! TODO(rnarkk) Refactor and relocate them in crate::repr
-//! <https://en.wikipedia.org/wiki/Interval_arithmetic>
 //! <https://en.wikipedia.org/wiki/Boundary_(topology)>
 //! <https://en.wikipedia.org/wiki/Partition_of_a_set>
 //! <https://en.wikipedia.org/wiki/Sequence>
@@ -30,3 +28,134 @@
 //
 // Tests on this are relegated to the public API of HIR in src/hir.rs.
 // Tests for interval sets are written in src/hir.rs against the public API.
+use core::{
+    cmp::{max, min},
+};
+
+use unconst::unconst;
+
+use crate::repr::Integral;
+
+#[unconst]
+// TODO(rnarkk) Does negative Interval (self.1 < self.0) have use case?
+// TODO(rnarkk) check if I..I always yield valid characters
+/// A character class, regardless of its character type, is represented by a
+/// sequence of non-overlapping non-adjacent ranges of characters.
+#[derive_const(Clone, Debug, Default, PartialEq, PartialOrd, Ord)]
+#[derive(Copy, Eq)]
+pub struct Interval<I: ~const Integral>(pub I, pub I);
+
+#[unconst]
+impl<I: ~const Integral> Interval<I> {
+    pub const fn new(from: I, to: I) -> Self {
+        if from <= to {
+            Interval(from, to)
+        } else {
+            Interval(to, from)
+        }
+    }
+    
+    /// Intersect this Interval with the given Interval and return the result.
+    ///
+    /// If the intersection is empty, then this returns `None`.
+    pub const fn and(self, other: Self) -> Option<Self> {
+        match (max(self.0, other.0), min(self.1, other.1)) {
+            (from, to) if from <= to => Some(Self::new(from, to)),
+            _ => None
+        }
+    }
+    
+    /// Union the given overlapping Interval into this Interval.
+    ///
+    /// If the two Seqs aren't contiguous, then this returns `None`.
+    pub const fn or(self, other: Self) -> Option<Self> {
+        match (max(self.0, other.0), min(self.1, other.1)) {
+            (from, to) if from <= to.succ() => Some(Self::new(from, to)),
+            _ => None
+        }
+    }
+    
+    /// Compute the symmetric difference the given Interval from this Interval. This
+    /// returns the union of the two Seqs minus its intersection.
+    pub const fn xor(self, other: Self) -> (Option<Self>, Option<Self>) {
+        let or = match self.or(other) {
+            None => return (Some(self.clone()), Some(other.clone())),
+            Some(or) => or,
+        };
+        let and = match self.and(other) {
+            None => return (Some(self.clone()), Some(other.clone())),
+            Some(and) => and,
+        };
+        or.sub(and)
+    }
+    
+    /// Subtract the given Interval from this Interval and return the resulting
+    /// Seqs.
+    ///
+    /// If subtraction would result in an empty Interval, then no Seqs are
+    /// returned.
+    /// 
+    /// other.0 <= self.0 <= self.1 <= other.1 (self <= other) => (None, None)
+    /// self.0 <= other.0 <= other.1 <= self.1 (other <= self) => (lower, upper)
+    /// self.0 <= other.0 <= self.1 <= other.1 => (lower, None)
+    /// other.0 <= self.0 <= other.1 <= self.1 => (None, uppper)
+    pub const fn sub(self, other: Self) -> (Option<Self>, Option<Self>) {
+        if self.le(&other) {
+            return (None, None);
+        }
+        if self.and(other).is_none() {
+            return (Some(self.clone()), None);
+        }
+        let mut ret = (None, None);
+        if self.0 < other.0 {
+            ret.0 = Some(Self::new(self.0, other.0.pred()));
+        }
+        if other.1 < self.1 {
+            let range = Self::new(other.1.succ(), self.1);
+            if ret.0.is_none() {
+                ret.0 = Some(range);
+            } else {
+                ret.1 = Some(range);
+            }
+        }
+        ret
+    }
+
+    // TODO(rnarkk) Why not simply `other.0 <= self.0 && self.1 <= other.1`
+    /// Returns true if and only if this range is a subset of the other range.
+    pub const fn le(&self, other: &Self) -> bool {
+        (other.0 <= self.0 && self.0 <= other.1)
+        && (other.0 <= self.1 && self.1 <= other.1)
+    }
+
+    // /// Negate this interval set.
+    // ///
+    // /// For all `x` where `x` is any element, if `x` was in this set, then it
+    // /// will not be in this set after negation.
+    // pub const fn not(self) -> Self {
+    //     if self.is_empty() {
+    //         return Interval(I::MIN, I::MAX);
+    //     }
+
+    //     // So just append
+    //     // the negation to the end of this range, and then drain it before
+    //     // we're done.
+    //     // We do checked arithmetic below because of the canonical ordering
+    //     // invariant.
+    //     if self.0 < I::MIN {
+    //         Interval(I::MIN, self.0.pred())
+    //     }
+    //     if self.1 < I::MAX {
+    //         Interval(self.1.succ(), I::MAX)
+    //     }
+    // }
+}
+
+impl Interval<char> {
+    /// Returns true if and only if this character class will either match
+    /// nothing or only ASCII bytes. Stated differently, this returns false
+    /// if and only if this class contains a non-ASCII codepoint.
+    pub fn is_all_ascii(&self) -> bool {
+        self.1 <= '\x7F'
+    }
+}

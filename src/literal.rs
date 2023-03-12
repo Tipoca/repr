@@ -11,7 +11,8 @@ use core::{
 
 use unconst::unconst;
 
-use crate::repr::{Repr, Seq, Range, Integral, Zero};
+use crate::interval::Interval;
+use crate::repr::{Repr, Range, Integral, Zero};
 
 /// A set of literal byte strings extracted from a regular expression.
 ///
@@ -434,10 +435,10 @@ impl<I: ~const Integral> Literals<I> {
         true
     }
 
-    /// Extends each literal in this set with the Seq given, writing the bytes of each character in reverse when `Seq<char>`.
+    /// Extends each literal in this set with the Interval given, writing the bytes of each character in reverse when `Interval<char>`.
     ///
-    /// Returns false if the Seq was too big to add.
-    pub fn add_seq(&mut self, seq: &Seq<I>, reverse: bool) -> bool {
+    /// Returns false if the Interval was too big to add.
+    pub fn add_seq(&mut self, seq: &Interval<I>, reverse: bool) -> bool {
         if self.class_exceeds_limits(seq_count(seq)) {
             return false;
         }
@@ -530,7 +531,7 @@ const fn prefixes<I: ~const Integral>(expr: &Repr<I>, lits: &mut Literals<I>)
         Repr::One(c) => {
             lits.cross_add(&c);
         }
-        Repr::Seq(ref seq) => {
+        Repr::Interval(ref seq) => {
             if !lits.add_seq(seq, false) {
                 lits.cut();
             }
@@ -597,7 +598,7 @@ const fn suffixes<I>(expr: &Repr<I>, lits: &mut Literals<I>)
         Repr::One(c) => {
             lits.cross_add(&c);
         }
-        Repr::Seq(ref seq) => {
+        Repr::Interval(ref seq) => {
             if !lits.add_seq(seq, false) {
                 lits.cut();
             }
@@ -866,7 +867,7 @@ const fn escape_byte(byte: u8) -> String {
 }
 
 #[unconst]
-const fn seq_count<I: ~const Integral>(seq: &Seq<I>) -> usize {
+const fn seq_count<I: ~const Integral>(seq: &Interval<I>) -> usize {
     (1 + (seq.1 as u32) - (seq.0 as u32)) as usize
 }
 
