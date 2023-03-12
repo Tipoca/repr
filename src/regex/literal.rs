@@ -25,7 +25,7 @@ enum Matcher<I: ~const Integral> {
     /// No literals. (Never advances through the input.)
     Empty,
     /// A set of four or more single byte literals.
-    Bytes(SingleByteSet),
+    Bytes(SeqSet<I>),
     /// A single substring, using vector accelerated routines when available.
     Memmem(Memmem),
     /// An Aho-Corasick automaton.
@@ -58,7 +58,7 @@ impl<I: ~const Integral> LiteralSearcher<I> {
         Self::new(lits, matcher)
     }
 
-    fn new(lits: Literals<I>, matcher: Matcher) -> Self {
+    fn new(lits: Literals<I>, matcher: Matcher<I>) -> Self {
         let complete = lits.all_complete();
         LiteralSearcher {
             complete,
@@ -172,18 +172,19 @@ impl<I: ~const Integral> LiteralSearcher<I> {
     }
 }
 
-impl Matcher {
+#[unconst]
+impl<I: ~const Integral> Matcher<I> {
     fn prefixes(lits: &Literals<I>) -> Self {
-        let sset = SingleByteSet::prefixes(lits);
+        let sset = SeqSet::prefixes(lits);
         Matcher::new(lits, sset)
     }
 
     fn suffixes(lits: &Literals<I>) -> Self {
-        let sset = SingleByteSet::suffixes(lits);
+        let sset = SeqSet::suffixes(lits);
         Matcher::new(lits, sset)
     }
 
-    fn new(lits: &Literals<I>, sset: SingleByteSet) -> Self {
+    fn new(lits: &Literals<I>, sset: SeqSet<I>) -> Self {
         if lits.literals().is_empty() {
             return Matcher::Empty;
         }
@@ -277,17 +278,19 @@ impl<'a> Iterator for LiteralIter<'a> {
     }
 }
 
+#[unconst]
 #[derive(Clone, Debug)]
-struct SingleByteSet {
+struct SeqSet<I: ~const Integral> {
     sparse: Vec<bool>,
-    dense: Vec<u8>,
+    dense: Vec<I>,
     complete: bool,
     all_ascii: bool,
 }
 
-impl SingleByteSet {
-    fn new() -> SingleByteSet {
-        SingleByteSet {
+#[unconst]
+impl<I: ~const Integral> SeqSet<I> {
+    fn new() -> SeqSet<I> {
+        SeqSet {
             sparse: vec![false; 256],
             dense: vec![],
             complete: true,
@@ -295,8 +298,8 @@ impl SingleByteSet {
         }
     }
 
-    fn prefixes(lits: &Literals<I>) -> SingleByteSet {
-        let mut sset = SingleByteSet::new();
+    fn prefixes(lits: &Literals<I>) -> SeqSet<I> {
+        let mut sset = SeqSet::new();
         for lit in lits.literals() {
             sset.complete = sset.complete && lit.len() == 1;
             if let Some(&b) = lit.get(0) {
@@ -312,8 +315,8 @@ impl SingleByteSet {
         sset
     }
 
-    fn suffixes(lits: &Literals<I>) -> SingleByteSet {
-        let mut sset = SingleByteSet::new();
+    fn suffixes(lits: &Literals<I>) -> SeqSet<I> {
+        let mut sset = SeqSet::new();
         for lit in lits.literals() {
             sset.complete = sset.complete && lit.len() == 1;
             if let Some(&b) = lit.get(lit.len().checked_sub(1).unwrap()) {
