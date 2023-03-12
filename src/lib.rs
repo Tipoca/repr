@@ -50,16 +50,16 @@ extern crate alloc;
 mod conversions;
 mod interval;
 mod operators;
-mod regex;
+// mod regex;
 mod wrappers;
 
 pub mod char;
 pub mod constants;
-// pub mod literal;
+pub mod literal;
 pub mod macros;
 pub mod repr;
 
-pub use constants::{DIGIT, WORD};
+pub use constants::perl::{DIGIT, WORD};
 pub use crate::repr::{Repr, Integral, Seq, Range, Zero};
 
 // #[test]

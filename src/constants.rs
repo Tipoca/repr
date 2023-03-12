@@ -1,5 +1,5 @@
 // pub mod ascii;
-// pub mod perl;
+pub mod perl;
 
 use unconst::unconst;
 
