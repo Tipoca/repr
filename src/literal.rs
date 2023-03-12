@@ -13,6 +13,7 @@ use unconst::unconst;
 
 use crate::interval::Interval;
 use crate::repr::{Repr, Integral, Zero};
+use crate::seq::Seq;
 
 /// A set of literal byte strings extracted from a regular expression.
 ///
@@ -68,7 +69,7 @@ pub struct Literals<I: ~const Integral> {
 /// and `Vec` operations are available.
 #[derive(Clone, Eq, Ord)]
 pub struct Literal<I: ~const Integral> {
-    v: Vec<I>,
+    v: Seq<I>,
     cut: bool,
 }
 
@@ -721,12 +722,12 @@ impl<I: ~const Integral> Debug for Literals<I> {
 impl<I: ~const Integral> Literal<I> {
     /// Returns a new complete literal with the bytes given.
     pub fn new(c: I) -> Literal<I> {
-        Literal { v: vec![c], cut: false }
+        Literal { v: c.into(), cut: false }
     }
 
     /// Returns a new complete empty literal.
     pub fn empty() -> Literal<I> {
-        Literal { v: vec![], cut: false }
+        Literal { v: Seq::empty(), cut: false }
     }
 
     /// Returns true if this literal was "cut."
@@ -768,21 +769,21 @@ impl<I: ~const Integral> Debug for Literal<I> {
 #[unconst]
 impl<I: ~const Integral> AsRef<[I]> for Literal<I> {
     fn as_ref(&self) -> &[I] {
-        &self.v
+        self.v.as_ref()
     }
 }
 
 #[unconst]
 impl<I: ~const Integral> Deref for Literal<I> {
-    type Target = Vec<I>;
-    fn deref(&self) -> &Vec<I> {
+    type Target = Seq<I>;
+    fn deref(&self) -> &Seq<I> {
         &self.v
     }
 }
 
 #[unconst]
 impl<I: ~const Integral> DerefMut for Literal<I> {
-    fn deref_mut(&mut self) -> &mut Vec<I> {
+    fn deref_mut(&mut self) -> &mut Seq<I> {
         &mut self.v
     }
 }
