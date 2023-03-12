@@ -30,7 +30,6 @@ pub enum Repr<I: ~const Integral> {
     Div(Box<Repr<I>>, Box<Repr<I>>),
     Exp(Box<Repr<I>>),
     Not(Box<Repr<I>>),
-    Rev(Box<Repr<I>>),
     /// a ⅋ b (multiplicative disjunction/par)
     Add(Box<Repr<I>>, Box<Repr<I>>),
     /// a ⊗ b (multiplicative conjunction/times)
@@ -81,7 +80,19 @@ impl<I: ~const Integral> Repr<I> {
     }
     
     pub const fn rev(self) -> Self {
-        Self::Rev(box self)
+        match self {
+            Self::Zero(zero) => Self::Zero(zero),
+            Self::One(i) => Self::One(i),
+            Self::Interval(i) => Self::Interval(i),
+            Self::Mul(lhs, rhs) => Self::Mul(box rhs.rev(), box lhs.rev()),
+            Self::Or(lhs, rhs) => Self::Or(box lhs.rev(), box rhs.rev()),
+            // Self::Div(lhs, rhs) => ,
+            Self::Exp(repr) => Self::Exp(box repr.rev()),
+            // Self::Not => ,
+            Self::Add(lhs, rhs) => Self::Add(box lhs.rev(), box rhs.rev()),
+            Self::And(lhs, rhs) => Self::And(box lhs.rev(), box rhs.rev()),
+            _ => unimplemented!()
+        }
     }
 
     pub const fn prod<M: ~const Iterator<Item = Self>>(reprs: M) -> Self {

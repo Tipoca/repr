@@ -88,9 +88,9 @@ impl<I: ~const Integral> Literals<I> {
 
     /// Returns a set of literal suffixes extracted from the given `Repr<I>`.
     pub fn suffixes(expr: &Repr<I>) -> Literals<I> {
-        let mut lits = Literals::empty();
-        lits.union_suffixes(expr);
-        lits
+        let mut output = Self::prefixes(&expr.rev());
+        output.reverse();
+        output
     }
 
     /// Returns the set of literals as a slice. Its order is unspecified.
@@ -297,22 +297,6 @@ impl<I: ~const Integral> Literals<I> {
     pub fn union_prefixes(&mut self, expr: &Repr<I>) -> bool {
         let mut lits = self.new_empty();
         prefixes(expr, &mut lits);
-        !lits.is_empty() && !lits.contains_empty() && self.union(lits)
-    }
-
-    /// Unions the suffixes from the given expression to this set.
-    ///
-    /// If suffixes could not be added (for example, this set would exceed its
-    /// size limits or the set of suffixes from `expr` includes the empty
-    /// string), then false is returned.
-    ///
-    /// Note that prefix literals extracted from `expr` are said to be complete
-    /// if and only if the literal extends from the end of `expr` to the
-    /// beginning of `expr`.
-    pub fn union_suffixes(&mut self, expr: &Repr<I>) -> bool {
-        let mut lits = self.new_empty();
-        suffixes(expr, &mut lits);
-        lits.reverse();
         !lits.is_empty() && !lits.contains_empty() && self.union(lits)
     }
 
@@ -933,14 +917,6 @@ const fn escape_byte(byte: u8) -> String {
 //     #[allow(non_snake_case)]
 //     fn M(s: &'static str) -> ULiteral {
 //         ULiteral { v: s.to_owned(), cut: false }
-//     }
-
-//     fn prefixes<I: ~const Integral>(lits: &mut Literals, expr: &Repr<I>) {
-//         lits.union_prefixes(expr);
-//     }
-
-//     fn suffixes<I: ~const Integral>(lits: &mut Literals, expr: &Repr<I>) {
-//         lits.union_suffixes(expr);
 //     }
 
 //     macro_rules! assert_lit_eq {
