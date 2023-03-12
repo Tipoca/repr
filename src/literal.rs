@@ -438,16 +438,15 @@ impl<I: ~const Integral> Literals<I> {
     /// Extends each literal in this set with the Interval given, writing the bytes of each character in reverse when `Interval<char>`.
     ///
     /// Returns false if the Interval was too big to add.
-    pub fn add_seq(&mut self, seq: &Interval<I>, reverse: bool) -> bool {
-        if self.class_exceeds_limits(seq.len()) {
+    pub fn add_seq(&mut self, interval: &Interval<I>, reverse: bool) -> bool {
+        if self.class_exceeds_limits(interval.len()) {
             return false;
         }
         let mut base = self.remove_complete();
         if base.is_empty() {
             base = vec![Literal::empty()];
         }
-        // TODO(rnarkk) need .filter_map(char::from_u32)?
-        for c in seq.0..seq.1 {
+        for c in *interval {
             for mut lit in base.clone() {
                 lit.push(c);
                 self.lits.push(lit);

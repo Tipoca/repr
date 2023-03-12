@@ -30,7 +30,8 @@
 // Tests for interval sets are written in src/hir.rs against the public API.
 use core::{
     cmp::{max, min},
-    iter::Step,
+    iter::{IntoIterator, Step},
+    ops::RangeInclusive
 };
 
 use unconst::unconst;
@@ -142,6 +143,16 @@ impl<I: ~const Integral> Interval<I> {
 
     pub const fn len(&self) -> usize {
         <I as Step>::steps_between(&self.0, &self.1).unwrap()
+    }
+}
+
+#[unconst]
+impl<I: ~const Integral> const IntoIterator for Interval<I> {
+    type Item = I;
+    type IntoIter = RangeInclusive<I>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0..=self.1
     }
 }
 
