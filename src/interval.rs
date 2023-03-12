@@ -30,6 +30,7 @@
 // Tests for interval sets are written in src/hir.rs against the public API.
 use core::{
     cmp::{max, min},
+    iter::Step,
 };
 
 use unconst::unconst;
@@ -140,16 +141,7 @@ impl<I: ~const Integral> Interval<I> {
     }
 
     pub const fn len(&self) -> usize {
-        let mut output = 0;
-        let mut current = self.0;
-        while current != self.1 {
-            output += 1;
-            current = current.succ();
-            if output > u32::MAX as usize {
-                panic!();
-            }
-        }
-        1 + output
+        <I as Step>::steps_between(&self.0, &self.1).unwrap()
     }
 }
 

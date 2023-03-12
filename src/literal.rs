@@ -178,7 +178,7 @@ impl<I: ~const Integral> Literals<I> {
         &self.lits[0][self.lits[0].len() - len..]
     }
 
-    /// Returns a new set of literals with the given number of bytes trimmed
+    /// Returns a new set of literals with the given len trimmed
     /// from the suffix of each literal.
     ///
     /// If any literal would be cut out completely by trimming, then None is
@@ -186,13 +186,13 @@ impl<I: ~const Integral> Literals<I> {
     ///
     /// Any duplicates that are created as a result of this transformation are
     /// removed.
-    pub fn trim_suffix(&self, num_bytes: usize) -> Option<Literals<I>> {
-        if self.min_len().map(|len| len <= num_bytes).unwrap_or(true) {
+    pub fn trim_suffix(&self, len: usize) -> Option<Literals<I>> {
+        if self.min_len().map(|len_| len_ <= len).unwrap_or(true) {
             return None;
         }
         let mut new = self.new_empty();
         for mut lit in self.lits.iter().cloned() {
-            let new_len = lit.len() - num_bytes;
+            let new_len = lit.len() - len;
             lit.truncate(new_len);
             lit.cut = true;
             new.lits.push(lit);

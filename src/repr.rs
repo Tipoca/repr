@@ -4,7 +4,7 @@ use alloc::{
 };
 use core::{
     fmt::Debug,
-    // iter::IntoIterator,
+    iter::Step,
     marker::Destruct,
 };
 
@@ -160,6 +160,7 @@ pub struct Iter<'a, I: ~const Integral> {
 pub trait Integral: Copy + ~const Clone
                     + ~const PartialEq + Eq
                     + ~const PartialOrd + ~const Ord
+                    + Step
                     + ~const Destruct
                     + Debug
 {
@@ -168,8 +169,6 @@ pub trait Integral: Copy + ~const Clone
     const MAX: Self;
     fn succ(self) -> Self;
     fn pred(self) -> Self;
-    // // (rnarkk) use this in crate::literal
-    // fn as_bytes(self, reverse: bool) -> &'static [u8];
 }
 
 #[unconst]
@@ -189,15 +188,6 @@ impl const Integral for char {
             c => char::from_u32((c as u32).checked_sub(1).unwrap()).unwrap(),
         }
     }
-    // fn as_bytes(self, reverse: bool) -> &'static [u8] {
-    //     let mut buf = [0u8; 4];
-    //     let len = self.encode_utf8(&mut buf).len();
-    //     let buf = &mut buf[..len];
-    //     if reverse {
-    //         buf.reverse();
-    //     }
-    //     buf
-    // }
 }
 
 pub struct Str<'a>(&'a str);
