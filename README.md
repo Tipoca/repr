@@ -33,8 +33,8 @@
 | `.` | | `Interval(MIN, MAX)` | | 1 |
 | `ab`/`a` · `b` (concatenation) | `a` ⊗ `b` (multiplicative conjunction/times) | `Mul(a, b)`/`a * b` | ⊗ (tensor product) | len(a) + len(b) |
 | `a\|b` (alternation) | `a` ⊕ `b` (additive disjuction/plus) | `Or(a, b)`/`a \| b` | + (coproduct) | max(len(a), len(b))
-| `a*` (kleen star) | `!a` (of course, exponential conjunction) | `Exp(a)` | □ (necessity), fixed point/trace |
-| `a*?` (non greedy) | `?a` (why not, exponential disjunction) | `Exp(a)` | ◊ (possibility) |
+| `a*` (kleen star) | `!a` (exponential conjunction/of course) | `Exp(a)` | □ (necessity), μ, fixed point/trace |
+| `a*?` (non greedy) | `?a` (exponential disjunction/why not) | `Exp(a)` | ◊ (possibility), ν |
 | `a?` () | `a` | `Or(Zero, a)` | |
 | `a{n,m}` (repetition) | `a` | `Or(Mul(a, Mul(a, ..)), Or(..))` | |
 | `[a-z]` (class) | | `Interval(a, z)`/`a..z` | | |
