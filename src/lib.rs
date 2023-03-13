@@ -58,9 +58,11 @@ mod operators;
 mod options;
 mod partition;
 mod pattern;
+mod pikevm;
 mod pool;
 mod program;
 mod seq;
+mod sparse;
 mod unicode;
 mod wrappers;
 

@@ -1,6 +1,9 @@
-use std::fmt;
-use std::ops::Deref;
-use std::slice;
+use alloc::vec::Vec;
+use core::{
+    fmt::{self, Debug},
+    ops::Deref,
+    slice::Iter
+};
 
 /// A sparse set used for representing ordered NFA states.
 ///
@@ -59,9 +62,16 @@ impl SparseSet {
     pub fn clear(&mut self) {
         self.dense.clear();
     }
+
+    pub fn resize(&mut self, size: usize) {
+        if size == self.capacity() {
+            return;
+        }
+        *self = SparseSet::new(size);
+    }
 }
 
-impl fmt::Debug for SparseSet {
+impl Debug for SparseSet {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "SparseSet({:?})", self.dense)
     }
@@ -77,7 +87,7 @@ impl Deref for SparseSet {
 
 impl<'a> IntoIterator for &'a SparseSet {
     type Item = &'a usize;
-    type IntoIter = slice::Iter<'a, usize>;
+    type IntoIter = Iter<'a, usize>;
     
     fn into_iter(self) -> Self::IntoIter {
         self.iter()

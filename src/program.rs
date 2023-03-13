@@ -28,13 +28,6 @@ pub struct Program<I: Integral> {
     /// expressions. The actual starting point of the program is after the
     /// `.*?`.
     pub start: Index,
-    // /// When true, the program is compiled for DFA matching. For example, this
-    // /// implies `is_bytes` and also inserts a preceding `.*?` for unanchored
-    // /// regexes.
-    // pub is_dfa: bool,
-    /// When true, the program matches text in reverse (for use only in the
-    /// DFA).
-    pub is_reverse: bool,
     /// Whether the regex must match from the start of the input.
     pub is_anchored_start: bool,
     /// Whether the regex must match at the end of the input.
@@ -71,7 +64,6 @@ impl<I: ~const Integral> Program<I> {
             matches: vec![],
             start: 0,
             // byte_classes: vec![0; 256],
-            is_reverse: false,
             is_anchored_start: false,
             is_anchored_end: false,
             has_unicode_word_boundary: false,
@@ -166,6 +158,7 @@ impl<I: ~const Integral> Debug for Program<I> {
 impl<'a, I: Integral> IntoIterator for &'a Program<I> {
     type Item = &'a Inst<I>;
     type IntoIter = slice::Iter<'a, Inst<I>>;
+    
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
     }

@@ -19,12 +19,13 @@ matching engines either aren't feasible to run or are insufficient.
 
 use core::mem;
 
-use crate::repr::Integral;
+use unconst::unconst;
 
-use crate::exec::ProgramCache;
+use crate::repr::Integral;
 use crate::context::Context;
-use crate::program::{Index, Program};
-use super::sparse::SparseSet;
+use crate::exec::ProgramCache;
+use crate::program::{Index, Program, Inst};
+use crate::sparse::SparseSet;
 
 /// An NFA simulation matching engine.
 #[derive(Debug)]
@@ -35,7 +36,7 @@ pub struct Fsm<'r, I: Integral> {
     prog: &'r Program<I>,
     /// An explicit stack used for following epsilon transitions. (This is
     /// borrowed from the cache.)
-    stack: &'r mut Vec<FollowEpsilon>,
+    stack: &'r mut Vec<Index>,
     /// The context to search.
     context: Context<I>,
 }
@@ -43,37 +44,31 @@ pub struct Fsm<'r, I: Integral> {
 /// A cached allocation that can be reused on each execution.
 #[derive(Clone, Debug)]
 pub struct Cache {
-    /// A pair of ordered sets for tracking NFA states.
-    clist: Threads,
-    nlist: Threads,
+    /// A pair of ordered sets of opcodes (each opcode is an NFA state) for tracking NFA states.
+    clist: SparseSet,
+    nlist: SparseSet,
     /// An explicit stack used for following epsilon transitions.
-    stack: Vec<FollowEpsilon>,
-}
-
-/// An ordered set of NFA states and their captures.
-#[derive(Clone, Debug)]
-struct Threads {
-    /// An ordered set of opcodes (each opcode is an NFA state).
-    set: SparseSet,
-}
-
-/// A representation of an explicit stack frame when following epsilon
-/// transitions. This is used to avoid recursion.
-#[derive(Clone, Debug)]
-enum FollowEpsilon {
+    /// A representation of an explicit stack frame when following epsilon
+    /// transitions. This is used to avoid recursion.
     /// Follow transitions at the given instruction pointer.
-    IP(Index),
+    stack: Vec<Index>,
 }
 
+#[unconst]
 impl Cache {
     /// Create a new allocation used by the NFA machine to record execution
     /// and captures.
-    pub fn new<I: Integral>(_prog: &Program<I>) -> Self {
-        Cache { clist: Threads::new(), nlist: Threads::new(), stack: vec![] }
+    pub const fn new<I: Integral>(_prog: &Program<I>) -> Self {
+        Cache {
+            clist: SparseSet::new(0),
+            nlist: SparseSet::new(0),
+            stack: Vec::new()
+        }
     }
 }
 
-impl<'r, I: Integral> Fsm<'r, I> {
+#[unconst]
+impl<'r, I: ~const Integral> Fsm<'r, I> {
     /// Execute the NFA matching engine.
     ///
     /// If there's a match, `exec` returns `true` and populates the given
@@ -104,8 +99,8 @@ impl<'r, I: Integral> Fsm<'r, I> {
 
     fn exec_(
         &mut self,
-        mut clist: &mut Threads,
-        mut nlist: &mut Threads,
+        mut clist: &mut SparseSet,
+        mut nlist: &mut SparseSet,
         matches: &mut [bool],
         quit_after_match: bool,
         mut at: I,
@@ -113,10 +108,10 @@ impl<'r, I: Integral> Fsm<'r, I> {
     ) -> bool {
         let mut matched = false;
         let mut all_matched = false;
-        clist.set.clear();
-        nlist.set.clear();
+        clist.clear();
+        nlist.clear();
         'LOOP: loop {
-            if clist.set.is_empty() {
+            if clist.is_empty() {
                 // Three ways to bail out when our current set of threads is
                 // empty.
                 //
@@ -145,7 +140,7 @@ impl<'r, I: Integral> Fsm<'r, I> {
             // This simulates a preceding '.*?' for every regex by adding
             // a state starting at the current position in the input for the
             // beginning of the program only if we don't already have a match.
-            if clist.set.is_empty()
+            if clist.is_empty()
                 || (!self.prog.is_anchored_start && !all_matched)
             {
                 self.add(&mut clist, 0, at);
@@ -155,15 +150,9 @@ impl<'r, I: Integral> Fsm<'r, I> {
             // we can to look at the current character, so we advance the
             // input.
             let at_next = self.context[at + 1];
-            for i in 0..clist.set.len() {
-                let ip = clist.set[i];
-                if self.step(
-                    &mut nlist,
-                    matches,
-                    ip,
-                    at,
-                    at_next,
-                ) {
+            for i in 0..clist.len() {
+                let ip = clist[i];
+                if self.step(&mut nlist, matches, ip, at, at_next) {
                     matched = true;
                     all_matched = all_matched || matches.iter().all(|&b| b);
                     if quit_after_match {
@@ -189,7 +178,7 @@ impl<'r, I: Integral> Fsm<'r, I> {
             }
             at = at_next;
             mem::swap(clist, nlist);
-            nlist.set.clear();
+            nlist.clear();
         }
         matched
     }
@@ -208,99 +197,70 @@ impl<'r, I: Integral> Fsm<'r, I> {
     /// at_next may be EOF.
     fn step(
         &mut self,
-        nlist: &mut Threads,
+        nlist: &mut SparseSet,
         matches: &mut [bool],
         ip: usize,
         at: I,
         at_next: I,
     ) -> bool {
-        use super::program::Inst::*;
         match self.prog[ip] {
-            Match(match_slot) => {
+            Inst::Match(match_slot) => {
                 if match_slot < matches.len() {
                     matches[match_slot] = true;
                 }
                 true
             }
-            One(ref inst) => {
+            Inst::One(ref inst) => {
                 if inst.c == at.char() {
                     self.add(nlist, inst.goto, at_next);
                 }
                 false
             }
-            Interval(ref inst) => {
+            Inst::Interval(ref inst) => {
                 if inst.matches(at.char()) {
                     self.add(nlist, inst.goto, at_next);
                 }
                 false
             }
-            Zero(_) | Split(_) => false,
+            Inst::Zero(_) | Inst::Split(_) => false,
         }
     }
 
     /// Follows epsilon transitions and adds them for processing to nlist,
     /// starting at and including ip.
-    fn add(
-        &mut self,
-        nlist: &mut Threads,
-        ip: usize,
-        at: I,
-    ) {
-        self.stack.push(FollowEpsilon::IP(ip));
-        while let Some(frame) = self.stack.pop() {
-            match frame {
-                FollowEpsilon::IP(ip) => {
-                    self.add_step(nlist, ip, at);
-                }
-            }
+    fn add(&mut self, nlist: &mut SparseSet, ip: Index, at: I) {
+        self.stack.push(ip);
+        while let Some(ip) = self.stack.pop() {
+            self.add_step(nlist, ip, at);
         }
     }
 
     /// A helper function for add that avoids excessive pushing to the stack.
-    fn add_step(
-        &mut self,
-        nlist: &mut Threads,
-        mut ip: usize,
-        at: I,
-    ) {
+    fn add_step(&mut self, nlist: &mut SparseSet, mut ip: usize, at: I) {
         // Instead of pushing and popping to the stack, we mutate ip as we
         // traverse the set of states. We only push to the stack when we
         // absolutely need recursion (restoring captures or following a
         // branch).
-        use super::program::Inst::*;
         loop {
             // Don't visit states we've already added.
-            if nlist.set.contains(ip) {
+            if nlist.contains(ip) {
                 return;
             }
-            nlist.set.insert(ip);
+            nlist.insert(ip);
             match self.prog[ip] {
-                Zero(ref inst) => {
-                    if self.context.is_empty_match(at, inst) {
-                        ip = inst.goto;
+                Inst::Zero { goto, look } => {
+                    if self.context.is_empty_match(at, look) {
+                        ip = goto;
                     }
                 }
-                Split(ref inst) => {
-                    self.stack.push(FollowEpsilon::IP(inst.goto2));
-                    ip = inst.goto1;
+                Inst::Split { goto1, goto2 } => {
+                    self.stack.push(goto2);
+                    ip = goto1;
                 }
-                Match(_) | One(_) | Interval(_) => {
+                Inst::Match(_) | Inst::One(_) | Inst::Interval(_) => {
                     return;
                 }
             }
         }
-    }
-}
-
-impl Threads {
-    fn new() -> Self {
-        Threads { set: SparseSet::new(0) }
-    }
-
-    fn resize(&mut self, num_insts: usize) {
-        if num_insts == self.set.capacity() {
-            return;
-        }
-        self.set = SparseSet::new(num_insts);
     }
 }
