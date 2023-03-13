@@ -45,7 +45,7 @@ pub fn should_exec(num_insts: usize, text_len: usize) -> bool {
 #[derive(Debug)]
 pub struct Bounded<'a, 'm, 'r, I: Integral> {
     prog: &'r Program<I>,
-    input: Context<I>,
+    context: Context<I>,
     matches: &'m mut [bool],
     m: &'a mut Cache<I>,
 }
@@ -111,7 +111,7 @@ impl<'a, 'm, 'r, I: Integral> Bounded<'a, 'm, 'r, I> {
         // (Probably because backtracking is limited to such small
         // inputs/regexes in the first place.)
         let visited_len =
-            (self.prog.len() * (self.input.len() + 1) + BIT_SIZE - 1)
+            (self.prog.len() * (self.context.len() + 1) + BIT_SIZE - 1)
                 / BIT_SIZE;
         self.m.visited.truncate(visited_len);
         for v in &mut self.m.visited {
@@ -138,7 +138,7 @@ impl<'a, 'm, 'r, I: Integral> Bounded<'a, 'm, 'r, I> {
         let mut matched = false;
         loop {
             if !self.prog.prefixes.is_empty() {
-                at = match self.input.prefix_at(&self.prog.prefixes, at) {
+                at = match self.context.prefix_at(&self.prog.prefixes, at) {
                     None => break,
                     Some(at) => at,
                 };
@@ -150,7 +150,7 @@ impl<'a, 'm, 'r, I: Integral> Bounded<'a, 'm, 'r, I> {
             if at >= end {
                 break;
             }
-            at = self.input[at + 1];
+            at = self.context[at + 1];
         }
         matched
     }
@@ -203,7 +203,7 @@ impl<'a, 'm, 'r, I: Integral> Bounded<'a, 'm, 'r, I> {
                     ip = inst.goto1;
                 }
                 Zero(ref inst) => {
-                    if self.input.is_empty_match(at, inst) {
+                    if self.context.is_empty_match(at, inst) {
                         ip = inst.goto;
                     } else {
                         return false;
@@ -212,7 +212,7 @@ impl<'a, 'm, 'r, I: Integral> Bounded<'a, 'm, 'r, I> {
                 One(ref inst) => {
                     if inst.c == c {
                         ip = inst.goto;
-                        at = self.input[at + 1];
+                        at = self.context[at + 1];
                     } else {
                         return false;
                     }
@@ -220,7 +220,7 @@ impl<'a, 'm, 'r, I: Integral> Bounded<'a, 'm, 'r, I> {
                 Interval(ref inst) => {
                     if inst.matches(c) {
                         ip = inst.goto;
-                        at = self.input[at + 1];
+                        at = self.context[at + 1];
                     } else {
                         return false;
                     }
@@ -230,7 +230,7 @@ impl<'a, 'm, 'r, I: Integral> Bounded<'a, 'm, 'r, I> {
     }
 
     fn has_visited(&mut self, ip: Index, at: usize) -> bool {
-        let k = ip * (self.input.len() + 1) + at;
+        let k = ip * (self.context.len() + 1) + at;
         let k1 = k / BIT_SIZE;
         let k2 = usize_to_u32(1 << (k & (BIT_SIZE - 1)));
         if self.m.visited[k1] & k2 == 0 {
