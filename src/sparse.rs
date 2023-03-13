@@ -19,12 +19,12 @@ use core::{
 pub struct SparseSet<T: Default> {
     /// Dense contains the instruction pointers in the order in which they
     /// were inserted.
-    dense: Vec<T>,
+    pub dense: Vec<T>,
     /// Sparse maps instruction pointers to their location in dense.
     ///
     /// An instruction pointer is in the set if and only if
     /// sparse[ip] < dense.len() && ip == dense[sparse[ip]].
-    sparse: Box<[usize]>,
+    pub sparse: Box<[usize]>,
 }
 
 impl<T: Default> SparseSet<T> {
