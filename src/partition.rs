@@ -1,4 +1,8 @@
-use core::iter::FusedIterator;
+use alloc::vec::IntoIter;
+use core::{
+    iter::{Enumerate, FusedIterator},
+    slice::Iter
+};
 
 use unconst::unconst;
 
@@ -8,7 +12,14 @@ use crate::repr::{Repr, Integral};
 
 #[unconst]
 /// An iterator over all non-overlapping successive leftmost-first ranges.
-#[derive(Debug)]
+///
+/// The iterator yields a `Match` value. The iterator stops when no more
+/// matches can be found.
+///
+/// `'r` is the lifetime of the compiled regular expression and `'c` is the
+/// lifetime of the matched string.
+#[derive_const(PartialEq)]
+#[derive(Debug, Eq)]
 pub struct Partition<'c, I: ~const Integral> {
     context: &'c Context<I>,
     repr: Repr<I>,
@@ -34,7 +45,7 @@ impl<'c, I: ~const Integral> Iterator for Partition<'c, I> {
     type Item = (usize, usize);
 
     fn next(&mut self) -> Option<(usize, usize)> {
-        if self.last_end > self.context.as_ref().len() {
+        if self.last_end > self.context.len() {
             return None;
         }
         let (start, end) = match self.repr.find_at(self.context, self.last_end) {
@@ -75,41 +86,20 @@ pub struct Match<'c, I: ~const Integral> {
 
 #[unconst]
 impl<'c, I: ~const Integral> Match<'c, I> {
-    /// Returns the matched text.
-    #[inline]
-    pub fn as_str(&self) -> &'c Context<I> {
-        &self.context[self.start..self.end]
-    }
-
     /// Creates a new match from the given haystack and byte offsets.
     #[inline]
-    pub const fn new(context: &'c Context<I>, start: usize, end: usize)
-        -> Match<'c, I>
+    pub const fn new(context: &'c Context<I>, start: usize, end: usize) -> Self
     {
         Match { context, start, end }
     }
-}
 
-/// An iterator over all non-overlapping matches for a particular string.
-///
-/// The iterator yields a `Match` value. The iterator stops when no more
-/// matches can be found.
-///
-/// `'r` is the lifetime of the compiled regular expression and `'c` is the
-/// lifetime of the matched string.
-#[derive(Debug)]
-pub struct Matches<'r, 'c, I: Integral>(Partition<'c, ExecNoSync<'r, I>>);
-
-impl<'r, 'c, I: Integral> Iterator for Matches<'r, 'c, I> {
-    type Item = Match<'c, I>;
-
-    fn next(&mut self) -> Option<Match<'c, I>> {
-        let context = self.0.context();
-        self.0.next().map(|(s, e)| Match::new(context, s, e))
+    /// Returns the matched text.
+    #[inline]
+    pub const fn as_slice(&self) -> &'c [I] {
+        &self.context[self.start..self.end]
     }
 }
 
-impl<'r, 'c, I: Integral> FusedIterator for Matches<'r, 'c, I> {}
 
 /// A set of matches returned by a regex set.
 #[derive(Clone, Debug)]
@@ -175,7 +165,7 @@ impl<'a> IntoIterator for &'a SetMatches {
 /// index corresponds to the index of the regex that matched with respect to
 /// its position when initially building the set.
 #[derive(Debug)]
-pub struct SetMatchesIntoIter(core::iter::Enumerate<alloc::vec::IntoIter<bool>>);
+pub struct SetMatchesIntoIter(Enumerate<IntoIter<bool>>);
 
 impl Iterator for SetMatchesIntoIter {
     type Item = usize;
@@ -217,7 +207,7 @@ impl FusedIterator for SetMatchesIntoIter {}
 /// index corresponds to the index of the regex that matched with respect to
 /// its position when initially building the set.
 #[derive(Clone, Debug)]
-pub struct SetMatchesIter<'a>(core::iter::Enumerate<core::slice::Iter<'a, bool>>);
+pub struct SetMatchesIter<'a>(Enumerate<Iter<'a, bool>>);
 
 impl<'a> Iterator for SetMatchesIter<'a> {
     type Item = usize;

@@ -5,6 +5,8 @@ use unconst::unconst;
 use crate::repr::Integral;
 
 #[unconst]
+#[derive_const(PartialEq)]
+#[derive(Debug, Eq)]
 pub struct Context<I: ~const Integral>(Vec<I>);
 
 #[unconst]

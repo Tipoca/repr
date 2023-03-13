@@ -12,7 +12,7 @@ use aho_corasick::{self, packed, AhoCorasick, AhoCorasickBuilder};
 use memchr::{memchr, memchr2, memchr3, memmem};
 use unconst::unconst;
 
-use crate::interval::Interval;
+use crate::{interval::Interval, Context};
 use crate::repr::{Repr, Integral, Zero};
 use crate::seq::Seq;
 
@@ -367,7 +367,7 @@ impl<I: ~const Integral> Literals<I> {
         true
     }
 
-    /// Extends each literal in this set with the bytes given.
+    /// Extends each literal in this set with the Seq given.
     ///
     /// If the set is empty, then the given literal is added to the set.
     ///
@@ -375,7 +375,7 @@ impl<I: ~const Integral> Literals<I> {
     /// to be exceeded, then no bytes are added and false is returned. If a
     /// prefix of `bytes` can be fit into this set, then it is used and all
     /// resulting literals are cut.
-    pub fn cross_add(&mut self, c: &I) -> bool {
+    pub fn cross_add(&mut self, seq: &Seq<I>) -> bool {
         // N.B. This could be implemented by simply calling cross_product with
         // a literal set containing just `bytes`, but we can be smarter about
         // taking shorter prefixes of `bytes` if they'll fit.
@@ -384,7 +384,7 @@ impl<I: ~const Integral> Literals<I> {
         // }
         if self.lits.is_empty() {
             let i = cmp::min(self.limit_size, 1);
-            self.lits.push(Literal::new(c.to_owned()));
+            self.lits.push(Literal::new(seq.to_owned()));
             self.lits[0].cut = i < 1;
             return !self.lits[0].cut;
         }
@@ -400,7 +400,7 @@ impl<I: ~const Integral> Literals<I> {
         }
         for lit in &mut self.lits {
             if !lit.cut {
-                lit.push(*c);
+                lit.extend(*seq);
                 if i < 1 {
                     lit.cut = true;
                 }
@@ -506,7 +506,7 @@ impl<I: ~const Integral> Literals<I> {
 const fn prefixes<I: ~const Integral>(expr: &Repr<I>, lits: &mut Literals<I>)
     where I: ~const Integral,
 {
-    match *expr {
+    match expr {
         Repr::Zero(_) => {}
         Repr::One(c) => { lits.cross_add(&c); },
         Repr::Interval(ref seq) => {
@@ -517,7 +517,7 @@ const fn prefixes<I: ~const Integral>(expr: &Repr<I>, lits: &mut Literals<I>)
         Repr::Exp(repr) => repeat_zero_or_more_literals(&repr, lits, prefixes),
         Repr::And(ref lhs, ref rhs) => {
             for e in [lhs, rhs] {
-                if let Repr::Zero(Zero::StartText) = e {
+                if let Repr::Zero(Zero::StartText) = **e {
                     if !lits.is_empty() {
                         lits.cut();
                         break;
@@ -671,8 +671,8 @@ impl<I: ~const Integral> Debug for Literals<I> {
 #[unconst]
 impl<I: ~const Integral> Literal<I> {
     /// Returns a new complete literal with the bytes given.
-    pub fn new(c: I) -> Literal<I> {
-        Literal { v: c.into(), cut: false }
+    pub fn new(seq: Seq<I>) -> Literal<I> {
+        Literal { v: seq.into(), cut: false }
     }
 
     /// Returns a new complete empty literal.
@@ -739,56 +739,18 @@ impl<I: ~const Integral> DerefMut for Literal<I> {
 }
 
 #[unconst]
-const fn position<I>(needle: &[I], mut haystack: &[I]) -> Option<usize>
+const fn position<I>(needle: &[I], mut context: &[I]) -> Option<usize>
     where I: ~const Integral
 {
     let mut i = 0;
-    while haystack.len() >= needle.len() {
-        if needle == &haystack[..needle.len()] {
+    while context.len() >= needle.len() {
+        if needle == &context[..needle.len()] {
             return Some(i);
         }
         i += 1;
-        haystack = &haystack[1..];
+        context = &context[1..];
     }
     None
-}
-
-#[unconst]
-const fn escape_unicode(cs: &[char]) -> String {
-    let show = cs;
-    let mut space_escaped = String::new();
-    for c in cs {
-        if c.is_whitespace() {
-            let escaped = if *c as u32 <= 0x7F {
-                escape_byte(*c as u8)
-            } else if *c as u32 <= 0xFFFF {
-                format!(r"\u{{{:04x}}}", *c as u32)
-            } else {
-                format!(r"\U{{{:08x}}}", *c as u32)
-            };
-            space_escaped.push_str(&escaped);
-        } else {
-            space_escaped.push(*c);
-        }
-    }
-    space_escaped
-}
-
-#[unconst]
-const fn escape_bytes(bytes: &[u8]) -> String {
-    let mut s = String::new();
-    for &b in bytes {
-        s.push_str(&escape_byte(b));
-    }
-    s
-}
-
-#[unconst]
-const fn escape_byte(byte: u8) -> String {
-    use std::ascii::escape_default;
-
-    let escaped: Vec<u8> = escape_default(byte).collect();
-    String::from_utf8_lossy(&escaped).into_owned()
 }
 
 #[unconst]
@@ -864,44 +826,44 @@ impl<I: ~const Integral> LiteralSearcher<I> {
         self.complete && !self.is_empty()
     }
 
-    /// Find the position of a literal in `haystack` if it exists.
+    /// Find the position of a literal in `context` if it exists.
     #[cfg_attr(feature = "perf-inline", inline(always))]
-    pub fn find(&self, haystack: &[u8]) -> Option<(usize, usize)> {
+    pub fn find(&self, context: &Context<I>) -> Option<(usize, usize)> {
         use self::Matcher::*;
         match self.matcher {
             Empty => Some((0, 0)),
-            Seq(ref sset) => sset.find(haystack).map(|i| (i, i + 1)),
-            Memmem(ref s) => s.find(haystack).map(|i| (i, i + s.len())),
+            Seq(ref sset) => sset.find(context).map(|i| (i, i + 1)),
+            Memmem(ref s) => s.find(context).map(|i| (i, i + s.len())),
             AC { ref ac, .. } => {
-                ac.find(haystack).map(|m| (m.start(), m.end()))
+                ac.find(context).map(|m| (m.start(), m.end()))
             }
             Packed { ref s, .. } => {
-                s.find(haystack).map(|m| (m.start(), m.end()))
+                s.find(context).map(|m| (m.start(), m.end()))
             }
         }
     }
 
     /// Like find, except matches must start at index `0`.
-    pub fn find_start(&self, haystack: &[u8]) -> Option<(usize, usize)> {
+    pub fn find_start(&self, context: &Context<I>) -> Option<(usize, usize)> {
         for lit in self.iter() {
-            if lit.len() > haystack.len() {
+            if lit.len() > context.len() {
                 continue;
             }
-            if lit == &haystack[0..lit.len()] {
+            if lit == &context[0..lit.len()] {
                 return Some((0, lit.len()));
             }
         }
         None
     }
 
-    /// Like find, except matches must end at index `haystack.len()`.
-    pub fn find_end(&self, haystack: &[u8]) -> Option<(usize, usize)> {
+    /// Like find, except matches must end at index `context.len()`.
+    pub fn find_end(&self, context: &Context<I>) -> Option<(usize, usize)> {
         for lit in self.iter() {
-            if lit.len() > haystack.len() {
+            if lit.len() > context.len() {
                 continue;
             }
-            if lit == &haystack[haystack.len() - lit.len()..] {
-                return Some((haystack.len() - lit.len(), haystack.len()));
+            if lit == &context[context.len() - lit.len()..] {
+                return Some((context.len() - lit.len(), context.len()));
             }
         }
         None
@@ -977,9 +939,9 @@ impl<I: ~const Integral> Matcher<I> {
         if sset.dense.len() >= 26 {
             // Avoid trying to match a large number of single bytes.
             // This is *very* sensitive to a frequency analysis comparison
-            // between the bytes in sset and the composition of the haystack.
+            // between the bytes in sset and the composition of the context.
             // No matter the size of sset, if its members all are rare in the
-            // haystack, then it'd be worth using it. How to tune this... IDK.
+            // context, then it'd be worth using it. How to tune this... IDK.
             // ---AG
             return Matcher::Empty;
         }
@@ -1013,15 +975,15 @@ impl<I: ~const Integral> Matcher<I> {
 #[derive(Debug)]
 pub enum LiteralIter<'a, I: ~const Integral> {
     Empty,
-    Seq(&'a [u8]),
-    Single(&'a [u8]),
+    Seq(&'a [I]),
+    Single(&'a [I]),
     AC(&'a [Literal<I>]),
     Packed(&'a [Literal<I>]),
 }
 
 #[unconst]
 impl<'a, I: ~const Integral> const Iterator for LiteralIter<'a, I> {
-    type Item = &'a [u8];
+    type Item = &'a [I];
 
     fn next(&mut self) -> Option<Self::Item> {
         match *self {
@@ -1122,19 +1084,19 @@ impl<I: ~const Integral> SeqSet<I> {
 
     /// Faster find that special cases certain sizes to use memchr.
     #[cfg_attr(feature = "perf-inline", inline(always))]
-    fn find(&self, text: &[u8]) -> Option<usize> {
+    fn find(&self, context: &Context<I>) -> Option<usize> {
         match self.dense.len() {
             0 => None,
-            1 => memchr(self.dense[0], text),
-            2 => memchr2(self.dense[0], self.dense[1], text),
-            3 => memchr3(self.dense[0], self.dense[1], self.dense[2], text),
-            _ => self._find(text),
+            1 => memchr(self.dense[0], context),
+            2 => memchr2(self.dense[0], self.dense[1], context),
+            3 => memchr3(self.dense[0], self.dense[1], self.dense[2], context),
+            _ => self._find(context),
         }
     }
 
     /// Generic find that works on any sized set.
-    fn _find(&self, haystack: &[u8]) -> Option<usize> {
-        for (i, &b) in haystack.iter().enumerate() {
+    fn _find(&self, context: &Context<I>) -> Option<usize> {
+        for (i, &b) in context.iter().enumerate() {
             if self.sparse[b as usize] {
                 return Some(i);
             }
@@ -1159,24 +1121,24 @@ pub struct Memmem {
 }
 
 impl Memmem {
-    fn new(pat: &[u8]) -> Memmem {
+    fn new(context: &Context<I>) -> Memmem {
         Memmem {
-            finder: memmem::Finder::new(pat).into_owned(),
-            char_len: char_len_lossy(pat),
+            finder: memmem::Finder::new(context).into_owned(),
+            char_len: char_len_lossy(context),
         }
     }
 
     #[cfg_attr(feature = "perf-inline", inline(always))]
-    pub fn find(&self, haystack: &[u8]) -> Option<usize> {
-        self.finder.find(haystack)
+    pub fn find(&self, context: &Context<I>) -> Option<usize> {
+        self.finder.find(context)
     }
 
     #[cfg_attr(feature = "perf-inline", inline(always))]
-    pub fn is_suffix(&self, text: &[u8]) -> bool {
-        if text.len() < self.len() {
+    pub fn is_suffix(&self, context: &Context<I>) -> bool {
+        if context.len() < self.len() {
             return false;
         }
-        &text[text.len() - self.len()..] == self.finder.needle()
+        &context[context.len() - self.len()..] == self.finder.needle()
     }
 
     pub fn len(&self) -> usize {

@@ -5,7 +5,7 @@ use core::panic::AssertUnwindSafe;
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
 use unconst::unconst;
 
-use crate::{Repr, Integral, Seq, Partition, Context};
+use crate::{Repr, Integral, Seq, Partition, Context, pikevm};
 use crate::backtrack;
 use crate::compile::Compiler;
 use crate::derivative::{Literals, LiteralSearcher};
@@ -833,24 +833,26 @@ impl<I: ~const Integral> ExecBuilder<I> {
         if parsed.reprs.len() != 1 {
             return None;
         }
-        let lits = match or_constants(&parsed.reprs[0]) {
-            None => return None,
-            Some(lits) => lits,
-        };
-        // If we have a small number of literals, then let Teddy handle
-        // things (see literal/mod.rs).
-        if lits.len() <= 32 {
-            return None;
-        }
-        Some(
-            AhoCorasickBuilder::new()
-                .match_kind(MatchKind::LeftmostFirst)
-                .auto_configure(&lits)
-                .build_with_size::<u32, _, _>(&lits)
-                // This should never happen because we'd long exceed the
-                // compilation limit for regexes first.
-                .expect("AC automaton too big"),
-        )
+        // TODO(rnarkk)
+        // let lits = match or_constants(&parsed.reprs[0]) {
+        //     None => return None,
+        //     Some(lits) => lits,
+        // };
+        return None;
+        // // If we have a small number of literals, then let Teddy handle
+        // // things (see literal/mod.rs).
+        // if lits.len() <= 32 {
+        //     return None;
+        // }
+        // Some(
+        //     AhoCorasickBuilder::new()
+        //         .match_kind(MatchKind::LeftmostFirst)
+        //         .auto_configure(&lits)
+        //         .build_with_size::<u32, _, _>(&lits)
+        //         // This should never happen because we'd long exceed the
+        //         // compilation limit for regexes first.
+        //         .expect("AC automaton too big"),
+        // )
     }
 }
 
@@ -992,40 +994,40 @@ impl<I: Integral> ProgramCacheInner<I> {
     }
 }
 
-/// Alternation literals checks if the given HIR is a simple alternation of
-/// literals, and if so, returns them. Otherwise, this returns None.
-#[cfg(feature = "perf-literal")]
-fn or_constants<I: Integral>(repr: &Repr<I>) -> Option<Vec<Vec<u8>>> {
-    // This is pretty hacky, but basically, if `is_alternation_literal` is
-    // true, then we can make several assumptions about the structure of our
-    // HIR. This is what justifies the `unreachable!` statements below.
-    //
-    // This code should be refactored once we overhaul this crate's
-    // optimization pipeline, because this is a terribly inflexible way to go
-    // about things.
+// /// Alternation literals checks if the given HIR is a simple alternation of
+// /// literals, and if so, returns them. Otherwise, this returns None.
+// #[cfg(feature = "perf-literal")]
+// fn or_constants<I: Integral>(repr: &Repr<I>) -> Option<Vec<Vec<u8>>> {
+//     // This is pretty hacky, but basically, if `is_alternation_literal` is
+//     // true, then we can make several assumptions about the structure of our
+//     // HIR. This is what justifies the `unreachable!` statements below.
+//     //
+//     // This code should be refactored once we overhaul this crate's
+//     // optimization pipeline, because this is a terribly inflexible way to go
+//     // about things.
 
-    if !repr.is_alternation_literal() {
-        return None;
-    }
-    let mut constants = Vec::new();
-    let mut current = repr;
-    // One literal isn't worth it.
-    while let Repr::Or(lhs, rhs) = current {
-        let mut constant = Seq::empty();
-        match *lhs {
-            Repr::One(ref seq) => constant = constant.mul(seq),
-            Repr::And(ref exprs) => {
-                for e in exprs {
-                    match *e {
-                        Repr::One(ref x) => constant = constant.mul(x),
-                        _ => unreachable!("expected literal, got {:?}", e),
-                    }
-                }
-            }
-            _ => unreachable!("expected literal or concat, got {:?}", lhs),
-        }
-        constants.push(constant);
-    }
+//     if !repr.is_alternation_literal() {
+//         return None;
+//     }
+//     let mut constants = Vec::new();
+//     let mut current = repr;
+//     // One literal isn't worth it.
+//     while let Repr::Or(lhs, rhs) = current {
+//         let mut constant = Seq::empty();
+//         match lhs {
+//             Repr::One(ref seq) => constant = constant.mul(seq),
+//             Repr::And(ref exprs) => {
+//                 for e in exprs {
+//                     match *e {
+//                         Repr::One(ref x) => constant = constant.mul(x),
+//                         _ => unreachable!("expected literal, got {:?}", e),
+//                     }
+//                 }
+//             }
+//             _ => unreachable!("expected literal or concat, got {:?}", lhs),
+//         }
+//         constants.push(constant);
+//     }
 
-    Some(constants)
-}
+//     Some(constants)
+// }

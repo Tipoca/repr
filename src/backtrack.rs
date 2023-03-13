@@ -206,7 +206,7 @@ impl<'a, 'm, 'r, I: Integral> Bounded<'a, 'm, 'r, I> {
                     ip = goto1;
                 }
                 Inst::Zero { goto, look } => {
-                    if self.context.is_empty_match(at, inst) {
+                    if self.context.is_empty_match(at, look) {
                         ip = goto;
                     } else {
                         return false;
