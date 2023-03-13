@@ -21,7 +21,7 @@ on large bitsets.
 use crate::context::Context;
 use crate::exec::ProgramCache;
 use crate::repr::Integral;
-use crate::program::{Index, Program};
+use crate::program::{Index, Program, Inst};
 
 type Bits = u32;
 
@@ -83,14 +83,14 @@ impl<'a, 'm, 'r, I: Integral> Bounded<'a, 'm, 'r, I> {
         prog: &'r Program<I>,
         cache: &ProgramCache<I>,
         matches: &'m mut [bool],
-        input: I,
+        context: Context<I>,
         start: usize,
         end: usize,
     ) -> bool {
         let mut cache = cache.borrow_mut();
         let cache = &mut cache.backtrack;
-        let start = input[start];
-        let mut b = Bounded { prog, input, matches, m: cache };
+        let start = context[start];
+        let mut b = Bounded { prog, context, matches, m: cache };
         b.exec_(start, end)
     }
 
@@ -162,27 +162,22 @@ impl<'a, 'm, 'r, I: Integral> Bounded<'a, 'm, 'r, I> {
         // in the `step` helper function, which only pushes to the stack when
         // there's a capture or a branch.
         let mut matched = false;
-        self.m.jobs.push(Job::Inst { ip: 0, at });
+        self.m.jobs.push(Job { ip: 0, at });
         while let Some(job) = self.m.jobs.pop() {
-            match job {
-                Job::Inst { ip, at } => {
-                    if self.step(ip, at) {
-                        // Only quit if we're matching one regex.
-                        // If we're matching a regex set, then mush on and
-                        // try to find other matches (if we want them).
-                        if self.prog.matches.len() == 1 {
-                            return true;
-                        }
-                        matched = true;
-                    }
+            if self.step(job.ip, job.at) {
+                // Only quit if we're matching one regex.
+                // If we're matching a regex set, then mush on and
+                // try to find other matches (if we want them).
+                if self.prog.matches.len() == 1 {
+                    return true;
                 }
+                matched = true;
             }
         }
         matched
     }
 
-    fn step(&mut self, mut ip: Index, mut at: usize, c: I) -> bool {
-        use super::program::Inst::*;
+    fn step(&mut self, mut ip: Index, mut at: usize) -> bool {
         loop {
             // This loop is an optimization to avoid constantly pushing/popping
             // from the stack. Namely, if we're pushing a job only to run it
@@ -192,34 +187,34 @@ impl<'a, 'm, 'r, I: Integral> Bounded<'a, 'm, 'r, I> {
                 return false;
             }
             match self.prog[ip] {
-                Match(slot) => {
+                Inst::Match(slot) => {
                     if slot < self.matches.len() {
                         self.matches[slot] = true;
                     }
                     return true;
                 }
-                Split(ref inst) => {
-                    self.m.jobs.push(Job::Inst { ip: inst.goto2, at });
-                    ip = inst.goto1;
+                Inst::Split { goto1, goto2 } => {
+                    self.m.jobs.push(Job { ip: goto2, at });
+                    ip = goto1;
                 }
-                Zero(ref inst) => {
+                Inst::Zero { goto, look } => {
                     if self.context.is_empty_match(at, inst) {
-                        ip = inst.goto;
+                        ip = goto;
                     } else {
                         return false;
                     }
                 }
-                One(ref inst) => {
-                    if inst.c == c {
-                        ip = inst.goto;
+                Inst::One { goto, c } => {
+                    if c == self.context[at] {
+                        ip = goto;
                         at = self.context[at + 1];
                     } else {
                         return false;
                     }
                 }
-                Interval(ref inst) => {
-                    if inst.matches(c) {
-                        ip = inst.goto;
+                Inst::Interval { goto, i } => {
+                    if i.has(self.context[at]) {
+                        ip = goto;
                         at = self.context[at + 1];
                     } else {
                         return false;
@@ -243,7 +238,7 @@ impl<'a, 'm, 'r, I: Integral> Bounded<'a, 'm, 'r, I> {
 }
 
 fn usize_to_u32(n: usize) -> u32 {
-    if (n as u64) > (::std::u32::MAX as u64) {
+    if (n as u64) > (u32::MAX as u64) {
         panic!("BUG: {} is too big to fit into u32", n)
     }
     n as u32

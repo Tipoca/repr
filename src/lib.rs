@@ -61,7 +61,6 @@ mod pattern;
 mod pool;
 mod program;
 mod re;
-mod regex;
 mod seq;
 mod unicode;
 mod wrappers;

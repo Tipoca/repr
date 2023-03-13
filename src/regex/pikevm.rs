@@ -19,9 +19,9 @@ use std::mem;
 
 use crate::repr::Integral;
 
-use super::exec::ProgramCache;
-use super::input::Input;
-use super::program::{InstPtr, Program};
+use crate::exec::ProgramCache;
+use crate::context::Context;
+use crate::program::{Index, Program};
 use super::sparse::SparseSet;
 
 /// An NFA simulation matching engine.
@@ -34,8 +34,8 @@ pub struct Fsm<'r, I: Integral> {
     /// An explicit stack used for following epsilon transitions. (This is
     /// borrowed from the cache.)
     stack: &'r mut Vec<FollowEpsilon>,
-    /// The input to search.
-    input: Input<I>,
+    /// The context to search.
+    context: Context<I>,
 }
 
 /// A cached allocation that can be reused on each execution.
@@ -60,7 +60,7 @@ struct Threads {
 #[derive(Clone, Debug)]
 enum FollowEpsilon {
     /// Follow transitions at the given instruction pointer.
-    IP(InstPtr),
+    IP(Index),
 }
 
 impl Cache {
@@ -81,7 +81,7 @@ impl<'r, I: Integral> Fsm<'r, I> {
         cache: &ProgramCache<I>,
         matches: &mut [bool],
         quit_after_match: bool,
-        input: Input<I>,
+        context: Context<I>,
         start: usize,
         end: usize,
     ) -> bool {
@@ -89,8 +89,8 @@ impl<'r, I: Integral> Fsm<'r, I> {
         let cache = &mut cache.pikevm;
         cache.clist.resize(prog.len());
         cache.nlist.resize(prog.len());
-        let at = input[start];
-        Fsm { prog, stack: &mut cache.stack, input }.exec_(
+        let at = context[start];
+        Fsm { prog, stack: &mut cache.stack, context }.exec_(
             &mut cache.clist,
             &mut cache.nlist,
             matches,
@@ -133,7 +133,7 @@ impl<'r, I: Integral> Fsm<'r, I> {
                 //    jump ahead quickly. If it can't be found, then we can
                 //    bail out early.
                 if !self.prog.prefixes.is_empty() {
-                    at = match self.input.prefix_at(&self.prog.prefixes, at) {
+                    at = match self.context.prefix_at(&self.prog.prefixes, at) {
                         None => break,
                         Some(at) => at,
                     };
@@ -152,7 +152,7 @@ impl<'r, I: Integral> Fsm<'r, I> {
             // before the current character. For stepping through the machine,
             // we can to look at the current character, so we advance the
             // input.
-            let at_next = self.input[at + 1];
+            let at_next = self.context[at + 1];
             for i in 0..clist.set.len() {
                 let ip = clist.set[i];
                 if self.step(
@@ -274,7 +274,7 @@ impl<'r, I: Integral> Fsm<'r, I> {
             nlist.set.insert(ip);
             match self.prog[ip] {
                 Zero(ref inst) => {
-                    if self.input.is_empty_match(at, inst) {
+                    if self.context.is_empty_match(at, inst) {
                         ip = inst.goto;
                     }
                 }

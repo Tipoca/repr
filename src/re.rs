@@ -118,8 +118,8 @@ impl<I: Integral> Regex<I> {
     /// }
     /// # }
     /// ```
-    pub fn find_iter<'r, 't>(&'r self, text: &'t str) -> Matches<'r, 't, I> {
-        Matches(self.0.searcher().find_iter(text))
+    pub fn find_iter<'r, 't>(&'r self, text: &'t str) -> Partition<'r, 't, I> {
+        Partition(self.0.searcher().find_iter(text))
     }
 }
 
