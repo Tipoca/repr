@@ -121,7 +121,7 @@ Linearity (which)
 **Let's not say 'communication'**
 
 - local ↔︎ global
-- context solution
+- context solving
 
 ![Drawing Hands](https://upload.wikimedia.org/wikipedia/en/b/ba/DrawingHands.jpg)
 
