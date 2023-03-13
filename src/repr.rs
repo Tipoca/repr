@@ -1,7 +1,4 @@
-use alloc::{
-    boxed::Box,
-    // vec::Vec
-};
+use alloc::boxed::Box;
 use core::{
     fmt::Debug,
     iter::Step,
@@ -14,7 +11,6 @@ use crate::interval::Interval;
 use crate::seq::Seq;
 
 #[unconst]
-// TODO(rnarkk) Interval (class) as `or` for char, &str as `and` for char?
 #[derive_const(Clone, Debug)]
 #[derive(Eq, PartialEq)]
 pub enum Repr<I: ~const Integral> {
@@ -26,7 +22,7 @@ pub enum Repr<I: ~const Integral> {
     /// a ⊕ b (additive disjuction/plus)
     Or(Box<Repr<I>>, Box<Repr<I>>),
     // Xor(Box<Repr<I>>, Box<Repr<I>>),
-    // Sub(Box<Repr<I>>, Interval<I>),  // TODO(rnarkk)
+    // Sub(Box<Repr<I>>, Box<Repr<<I>>),
     /// a ⊸ b (linear implication)
     Div(Box<Repr<I>>, Box<Repr<I>>),
     Exp(Box<Repr<I>>),
@@ -40,10 +36,6 @@ pub enum Repr<I: ~const Integral> {
 
 #[unconst]
 impl<I: ~const Integral> Repr<I> {
-    // pub const fn new<const N: usize>(seqs: [Interval<I>; N]) -> Self {
-
-    // }
-
     pub const fn zero() -> Self {
         Self::Zero(Default::default())
     }
@@ -85,6 +77,11 @@ impl<I: ~const Integral> Repr<I> {
 
     pub const fn and(self, other: Self) -> Self {
         Self::And(box self, box other)
+    }
+    
+    pub const fn le(&self, other: &Self) -> bool {
+        match self {
+        }
     }
     
     pub const fn rev(self) -> Self {

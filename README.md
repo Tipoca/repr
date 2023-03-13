@@ -14,6 +14,7 @@
 - Equational reasoning
 - Induction
 - `True(I, Box<Repr<I>>)` (assertions, dependent types)
+- Fixed points
 - Spherical conic (tennis ball)
 
 **`Or`**
@@ -72,8 +73,9 @@ Symbols are grouped and assigned primarily by positive/negative distinciton. The
 
 TODO:
 
-- `Seq::empty()`
-- `Interval::full()`
+- `I::EMPTY` ε
+- `Seq::empty()` - can be empty because negative
+- `Interval::full()` - can't be empty because positive
 
 | linear logic/quantale | repr | title |
 | - | - | - |
@@ -106,6 +108,10 @@ Linearity (which)
 - d(Exp(a)) = Mul(d(a), Exp(a))
 - a : D(a)
 - 
+
+**True**
+
+- And(True, a) -> 
 
 **Flags (TODO)**
 - `i`, CaseInsensitive
