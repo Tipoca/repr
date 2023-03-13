@@ -24,7 +24,7 @@
 
 **Comparisons**
 
-| regular expressions/<br/>set theory | linear logic | repr | type theory/<br/>category theory | len |
+| regular expressions/<br/>set theory | linear logic/<br/>modal logic | repr | type theory/<br/>category theory | len |
 | - | - | - | - | - |
 | a ∈ L (match) | `a` : `A` (judgement) | | |
 | ∅ | 0 | `Zero` | | |
@@ -33,8 +33,8 @@
 | `.` | | `Interval(MIN, MAX)` | | 1 |
 | `ab`/`a` · `b` (concatenation) | `a` ⊗ `b` (multiplicative conjunction/times) | `Mul(a, b)`/`a * b` | ⊗ (tensor product) | len(a) + len(b) |
 | `a\|b` (alternation) | `a` ⊕ `b` (additive disjuction/plus) | `Or(a, b)`/`a \| b` | + (coproduct) | max(len(a), len(b))
-| `a*` (kleen star) | `!a` (exponential conjunction/of course) | `Exp(a)` | □ (necessity), μ, fixed point/trace |
-| `a*?` (non greedy) | `?a` (exponential disjunction/why not) | `Exp(a)` | ◊ (possibility), ν |
+| `a*` (kleen star) | `!a` (exponential conjunction/of course),<br/>□ (necessity) | `Exp(a)` | μ, fixed point/trace |
+| `a*?` (non greedy) | `?a` (exponential disjunction/why not),<br/>◊ (possibility) | `Exp(a)` | ν |
 | `a?` () | `a` | `Or(Zero, a)` | |
 | `a{n,m}` (repetition) | `a` | `Or(Mul(a, Mul(a, ..)), Or(..))` | |
 | `[a-z]` (class) | | `Interval(a, z)`/`a..z` | | |
