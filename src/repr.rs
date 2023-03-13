@@ -17,7 +17,7 @@ pub enum Repr<I: ~const Integral> {
     Zero(Zero),
     One(Seq<I>),
     Interval(Interval<I>),
-    /// a & b (additive conjunction/with)
+    /// a ⊗ b (multiplicative conjunction/times)
     Mul(Box<Repr<I>>, Box<Repr<I>>),
     /// a ⊕ b (additive disjuction/plus)
     Or(Box<Repr<I>>, Box<Repr<I>>),
@@ -29,7 +29,7 @@ pub enum Repr<I: ~const Integral> {
     Not(Box<Repr<I>>),
     /// a ⅋ b (multiplicative disjunction/par)
     Add(Box<Repr<I>>, Box<Repr<I>>),
-    /// a ⊗ b (multiplicative conjunction/times)
+    /// a & b (additive conjunction/with)
     And(Box<Repr<I>>, Box<Repr<I>>),
     // Map(Box<Repr<I>>, Fn(Box<Repr<I>>), Fn(Box<Repr<I>>))
 }
