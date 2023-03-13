@@ -32,7 +32,7 @@
 | a ∈ L (match) | `a` : `A` (judgement) | | |
 | ∅ | 0 | `Zero` | | |
 | `a` | `a` | `One(a)` | | len(a) |
-| ε (empty) | `*`, ⊤ | - | | 0 |
+| ε (empty)/{ε} | 1 | - | \*/1 | 0 |
 | `ab`/`a` · `b` (concatenation) | `a` ⊗ `b` (multiplicative conjunction/times) | `Mul(a, b)`/`a * b` | ⊗ (tensor product) | len(a) + len(b) |
 | `a\|b` (alternation) | `a` ⊕ `b` (additive disjuction/plus) | `Or(a, b)`/`a \| b` | + (coproduct) | max(len(a), len(b))
 | `a*` (kleen star) | `!a` (of course, exponential conjunction) | `Exp(a)` | □ (necessity) |
@@ -74,12 +74,14 @@ TODO:
 | | |
 | a ⊕ a = a | Or(a, a) = a | Or-idempotence |
 | a ⊕ 0 = 0 ⊕ a = a| Or(a, Zero) = Or(Zero, a) = a | Zero, Or-unit |
-| a & ⊤ = ⊤ & a = a | Mul(a, One('')) = Mul(One(''), a) = a | One(''), Mul-unit |
-| (a ⊕ b) & c = (a & c) ⊕ (b & c) | Mul(Or(a, b), c) = Or(Mul(a, c), Mul(b, c)) | right distributivity |
-| a & (b ⊕ c) = (a & b) ⊕ (a & c) | Mul(a, Or(b, c)) = Or(Mul(a, b), Mul(a, c)) | left distributivity |
+| a ⊗ 1 = 1 ⊗ a = a | Mul(a, One('')) = Mul(One(''), a) = a | One(''), Mul-unit |
+| (a ⊕ b) ⊗ c = (a ⊗ c) ⊕ (b ⊗ c) | Mul(Or(a, b), c) = Or(Mul(a, c), Mul(b, c)) | right-distributivity |
+| a ⊗ (b ⊕ c) = (a ⊗ b) ⊕ (a ⊗ c) | Mul(a, Or(b, c)) = Or(Mul(a, b), Mul(a, c)) | left-distributivity |
 | a<sup>†</sup> = a | Rev(One(a)) = One(a) | |
 | (a & b)<sup>†</sup> = (b<sup>†</sup>) & (a<sup>†</sup>)| Rev(Mul(a, b)) = Mul(Rev(b), Rev(a)) | |
 | | Mul(One(a), One(b)) = One(ab) | |
+| a ⅋ (b & c) = (a ⅋ b) & (a ⅋ c) | | distributivity |
+| (a & b) ⅋ c = (a ⅋ c) & (b ⅋ c) | | distributivity |
 
 Relationship among additive, multiplicative and exponential
 
