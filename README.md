@@ -28,7 +28,7 @@
 | a ∈ L (match) | `a` : `A` (judgement) | | |
 | ∅ | 0 | `Zero` | | |
 | `a` | `a` | `One(a)` | | len(a) |
-| ε (empty)/{ε} | 1 | - | \*/1 | 0 |
+| ε (empty)/{ε} | 1 | `Seq([])` | \*/1 | 0 |
 | `.` | | `Interval(MIN, MAX)` | | 1 |
 | `ab`/`a` · `b` (concatenation) | `a` ⊗ `b` (multiplicative conjunction/times) | `Mul(a, b)`/`a * b` | ⊗ (tensor product) | len(a) + len(b) |
 | `a\|b` (alternation) | `a` ⊕ `b` (additive disjuction/plus) | `Or(a, b)`/`a \| b` | + (coproduct) | max(len(a), len(b))
