@@ -1,32 +1,33 @@
 use core::str::pattern::{Pattern, Searcher, SearchStep};
-use regex::{Regex, Matches};
-use regex_syntax::{
-    Parser,
-    hir::print::Printer
-};
+use crate::regex::{Regex, Matches};
 
-use crate::repr::Repr;
+use unconst::unconst;
 
-// #[derive(Debug)]
-// pub struct RegexSearcher<'r, 't> {
-//     haystack: &'t str,
-//     it: Matches<'r, 't>,
-//     last_step_end: usize,
-//     next_match: Option<(usize, usize)>,
-// }
+use crate::partition::Partition;
+use crate::repr::{Repr, Integral};
 
-// impl<'r, 't> Pattern<'t> for &'r Repr {
-//     type Searcher = RegexSearcher<'r, 't>;
+#[unconst]
+#[derive(Debug)]
+pub struct RegexSearcher<'c, I: ~const Integral> {
+    haystack: &'c str,
+    it: Partition<'c, I>,
+    last_step_end: usize,
+    next_match: Option<(usize, usize)>,
+}
 
-//     fn into_searcher(self, haystack: &'t str) -> RegexSearcher<'r, 't> {
-//         RegexSearcher {
-//             haystack,
-//             it: self.find_iter(haystack),
-//             last_step_end: 0,
-//             next_match: None,
-//         }
-//     }
-// }
+#[unconst]
+impl<'c, I: ~const Integral> Pattern<'c> for &'c Repr<I> {
+    type Searcher = RegexSearcher<'c, I>;
+
+    fn into_searcher(self, haystack: &'c str) -> RegexSearcher<'c, I> {
+        RegexSearcher {
+            haystack,
+            it: self.find_iter(haystack),
+            last_step_end: 0,
+            next_match: None,
+        }
+    }
+}
 
 // unsafe impl<'r, 't> Searcher<'t> for RegexSearcher<'r, 't> {
 //     #[inline]
@@ -66,3 +67,4 @@ use crate::repr::Repr;
 //         }
 //     }
 // }
+

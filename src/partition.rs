@@ -59,6 +59,4 @@ impl<'c, I: ~const Integral> Iterator for Partition<'c, I> {
 }
 
 #[unconst]
-impl<'c, I: ~const Integral> FusedIterator for Partition<'c, I>
-    // R::Text: 'c + AsRef<[u8]>,
-{}
+impl<'c, I: ~const Integral> FusedIterator for Partition<'c, I> {}

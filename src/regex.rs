@@ -713,9 +713,6 @@ mod error;
 mod exec;
 mod expand;
 mod find_byte;
-mod literal;
-#[cfg(feature = "pattern")]
-mod pattern;
 mod pikevm;
 mod pool;
 mod prog;

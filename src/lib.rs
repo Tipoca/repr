@@ -53,6 +53,7 @@ mod conversions;
 mod interval;
 mod operators;
 mod partition;
+mod pattern;
 mod regex;
 mod seq;
 mod unicode;
