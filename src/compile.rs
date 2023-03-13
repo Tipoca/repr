@@ -3,7 +3,7 @@ use core::mem::size_of;
 
 use crate::Seq;
 use crate::interval::Interval;
-use crate::program::{Index, Inst, Program};
+use crate::program::{Index, Program};
 use crate::repr::{Repr, Integral, Zero};
 use crate::sparse::SparseSet;
 
@@ -25,6 +25,148 @@ impl Hole {
         match self {
             Hole::One(i) => (Hole::One(i), Hole::One(i)),
             _ => unreachable!("must be called on single hole")
+        }
+    }
+}
+
+#[derive(Clone)]
+enum MaybeInst<I: Integral> {
+    Compiled(Inst<I>),
+    Zero(Zero),
+    One(Seq<I>),
+    Interval(Interval<I>),
+    Split,
+    Split1(Index),
+    Split2(Index),
+}
+
+// Endofunctor?
+/// Inst is an instruction code in a Regex program.
+#[derive(Clone)]
+pub enum Inst<I: Integral> {
+    /// Match indicates that the program has reached a match state.
+    ///
+    /// The number in the match corresponds to the Nth logical regular
+    /// expression in this program. This index is always 0 for normal regex
+    /// programs. Values greater than 0 appear when compiling regex sets, and
+    /// each match instruction gets its own unique value. The value corresponds
+    /// to the Nth regex in the set.
+    Match(usize),
+    /// Representation of the Split instruction.
+    /// Split causes the program to diverge to one of two paths in the
+    /// program, preferring goto1.
+    Split {
+        /// The first instruction to try. A match resulting from following goto1
+        /// has precedence over a match resulting from following goto2.
+        goto1: Index,
+        /// The second instruction to try. A match resulting from following goto1
+        /// has precedence over a match resulting from following goto2.
+        goto2: Index,
+    },
+    /// Representation of the `Zero` instruction.
+    /// Zero represents a zero-width assertion in a regex program. A
+    /// zero-width assertion does not consume any of the input text.
+    Zero {
+        /// The next location to execute in the program if this instruction
+        /// succeeds.
+        goto: Index,
+        /// The type of zero-width assertion to check.
+        zero: Zero,
+    },
+    /// Representation of the Char instruction.
+    /// Char requires the regex program to match the character in InstOne at
+    /// the current position in the input.
+    One {
+        /// The next location to execute in the program if this instruction
+        /// succeeds.
+        goto: Index,
+        /// The character to test.
+        seq: Seq<I>,
+    },
+    /// Representation of the Ranges instruction.
+    /// Ranges requires the regex program to match the character at the current
+    /// position in the input with one of the ranges specified in InstInterval.
+    Interval  {
+        /// The next location to execute in the program if this instruction
+        /// succeeds.
+        goto: Index,
+        /// The set of Unicode scalar value ranges to test.
+        interval: Interval<I>
+    },
+}
+
+impl<I: Integral> MaybeInst<I> {
+    fn fill(&mut self, goto: Index) {
+        let maybeinst = match *self {
+            Self::Zero(zero) => Inst::Zero { goto, zero },
+            Self::One(seq) => Inst::One { goto, seq },
+            Self::Interval(ref interval) => Inst::Interval { goto, interval },
+            Self::Split => Self::Split1(goto),
+            Self::Split1(goto1) => {
+                Self::Compiled(Inst::Split {
+                    goto1,
+                    goto2: goto,
+                })
+            }
+            Self::Split2(goto2) => {
+                Self::Compiled(Inst::Split {
+                    goto1: goto,
+                    goto2,
+                })
+            }
+            _ => unreachable!(
+                "not all instructions were compiled! \
+                 found uncompiled instruction: {:?}",
+                self
+            ),
+        };
+        *self = maybeinst;
+    }
+
+    fn fill_split(&mut self, goto1: Index, goto2: Index) {
+        let filled = match *self {
+            Self::Split => Inst::Split { goto1, goto2 },
+            _ => unreachable!(
+                "must be called on Split instruction, \
+                 instead it was called on: {:?}",
+                self
+            ),
+        };
+        *self = Self::Compiled(filled);
+    }
+
+    fn half_fill_split_goto1(&mut self, goto1: Index) {
+        let half_filled = match *self {
+            Self::Split => goto1,
+            _ => unreachable!(
+                "must be called on Split instruction, \
+                 instead it was called on: {:?}",
+                self
+            ),
+        };
+        *self = Self::Split1(half_filled);
+    }
+
+    fn half_fill_split_goto2(&mut self, goto2: Index) {
+        let half_filled = match *self {
+            Self::Split => goto2,
+            _ => unreachable!(
+                "must be called on Split instruction, \
+                 instead it was called on: {:?}",
+                self
+            ),
+        };
+        *self = Self::Split2(half_filled);
+    }
+
+    fn unwrap(self) -> Inst<I> {
+        match self {
+            Self::Compiled(inst) => inst,
+            _ => unreachable!(
+                "must be called on a compiled instruction, \
+                 instead it was called on: {:?}",
+                self
+            ),
         }
     }
 }
@@ -286,23 +428,23 @@ impl<I: Integral> Compiler<I> {
         self.c(&Repr::Exp(box Repr::Interval(Interval::full()))).unwrap()
     }
 
-    fn c_one(&mut self, c: I) -> Patch {
-        let hole = self.push_hole(InstHole::One(c));
+    fn c_one(&mut self, seq: Seq<I>) -> Patch {
+        let hole = self.push_hole(MaybeInst::One(seq));
         Patch { hole, entry: self.insts.len() - 1 }
     }
 
     fn c_interval(&mut self, seq: Interval<I>) -> Patch {
         let hole = if seq.0 == seq.1 {
-            self.push_hole(InstHole::One(seq.0))
+            self.push_hole(MaybeInst::One(seq.0))
         } else {
             self.extra_inst_bytes += size_of::<I>() * 2;
-            self.push_hole(InstHole::Interval(seq))
+            self.push_hole(MaybeInst::Interval(seq))
         };
         Patch { hole, entry: self.insts.len() - 1 }
     }
 
     fn c_zero(&mut self, look: Zero) -> Patch {
-        let hole = self.push_hole(InstHole::Zero(look));
+        let hole = self.push_hole(MaybeInst::Zero(look));
         Patch { hole, entry: self.insts.len() - 1 }
     }
 
@@ -508,9 +650,10 @@ impl<I: Integral> Compiler<I> {
         self.insts.push(MaybeInst::Compiled(inst));
     }
 
-    fn push_hole(&mut self, inst: InstHole<I>) -> Hole {
+    fn push_hole(&mut self, inst: MaybeInst<I>) -> Hole {
+        matches!(inst, MaybeInst::Zero { .. } | MaybeInst::One { .. } | MaybeInst::Interval { .. });
         let hole = self.insts.len();
-        self.insts.push(MaybeInst::Uncompiled(inst));
+        self.insts.push(inst);
         Hole::One(hole)
     }
 
@@ -530,108 +673,6 @@ impl<I: Integral> Compiler<I> {
             self.extra_inst_bytes + (self.insts.len() * size_of::<Inst<I>>());
         if size > self.size_limit {
             panic!("Size limit exceeds");
-        }
-    }
-}
-
-#[derive(Clone)]
-enum MaybeInst<I: Integral> {
-    Compiled(Inst<I>),
-    Uncompiled(InstHole<I>),
-    Split,
-    Split1(Index),
-    Split2(Index),
-}
-
-impl<I: Integral> MaybeInst<I> {
-    fn fill(&mut self, goto: Index) {
-        let maybeinst = match *self {
-            MaybeInst::Split => MaybeInst::Split1(goto),
-            MaybeInst::Uncompiled(ref inst) => {
-                MaybeInst::Compiled(inst.fill(goto))
-            }
-            MaybeInst::Split1(goto1) => {
-                MaybeInst::Compiled(Inst::Split {
-                    goto1,
-                    goto2: goto,
-                })
-            }
-            MaybeInst::Split2(goto2) => {
-                MaybeInst::Compiled(Inst::Split {
-                    goto1: goto,
-                    goto2,
-                })
-            }
-            _ => unreachable!(
-                "not all instructions were compiled! \
-                 found uncompiled instruction: {:?}",
-                self
-            ),
-        };
-        *self = maybeinst;
-    }
-
-    fn fill_split(&mut self, goto1: Index, goto2: Index) {
-        let filled = match *self {
-            MaybeInst::Split => Inst::Split { goto1, goto2 },
-            _ => unreachable!(
-                "must be called on Split instruction, \
-                 instead it was called on: {:?}",
-                self
-            ),
-        };
-        *self = MaybeInst::Compiled(filled);
-    }
-
-    fn half_fill_split_goto1(&mut self, goto1: Index) {
-        let half_filled = match *self {
-            MaybeInst::Split => goto1,
-            _ => unreachable!(
-                "must be called on Split instruction, \
-                 instead it was called on: {:?}",
-                self
-            ),
-        };
-        *self = MaybeInst::Split1(half_filled);
-    }
-
-    fn half_fill_split_goto2(&mut self, goto2: Index) {
-        let half_filled = match *self {
-            MaybeInst::Split => goto2,
-            _ => unreachable!(
-                "must be called on Split instruction, \
-                 instead it was called on: {:?}",
-                self
-            ),
-        };
-        *self = MaybeInst::Split2(half_filled);
-    }
-
-    fn unwrap(self) -> Inst<I> {
-        match self {
-            MaybeInst::Compiled(inst) => inst,
-            _ => unreachable!(
-                "must be called on a compiled instruction, \
-                 instead it was called on: {:?}",
-                self
-            ),
-        }
-    }
-}
-
-#[derive(Clone)]
-enum InstHole<I: Integral> {
-    Zero(Zero),
-    One(Seq<I>),
-    Interval(Interval<I>),
-}
-
-impl<I: Integral> InstHole<I> {
-    fn fill(&self, goto: Index) -> Inst<I> {
-        match *self {
-            InstHole::Zero(zero) => Inst::Zero { goto, zero },
-            InstHole::One(seq) => Inst::One { goto, seq },
-            InstHole::Interval(ref interval) => Inst::Interval { goto, interval },
         }
     }
 }
