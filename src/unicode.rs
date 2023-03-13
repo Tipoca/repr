@@ -3,9 +3,10 @@ use core::char::from_u32;
 use unconst::unconst;
 
 use crate::context::Context;
+use crate::interval::Interval;
 use crate::regex::LiteralSearcher;
 use crate::regex::InstZero;
-use crate::repr::{Integral, Zero};
+use crate::repr::{Repr, Integral, Zero};
 
 #[unconst]
 impl const Integral for char {
@@ -23,6 +24,24 @@ impl const Integral for char {
             c => from_u32((c as u32).checked_sub(1).unwrap()).unwrap(),
         }
     }
+}
+
+#[unconst]
+impl Repr<char> {
+    /// `.` expression that matches any character except for `\n`. To build an
+    /// expression that matches any character, including `\n`, use the `any`
+    /// method.
+    pub const fn dot() -> Self {
+        Self::Or(box Self::Interval(Interval('\0', '\x09')),
+                 box Self::Interval(Interval('\x0B', '\u{10FFFF}')))
+    }
+
+    // /// `(?s).` expression that matches any character, including `\n`. To build an
+    // /// expression that matches any character except for `\n`, then use the
+    // /// `dot` method.
+    // pub const fn any() -> Self {
+    //     Self::Interval(Interval('\0', '\u{10FFFF}'))
+    // }
 }
 
 /// An abstraction over input used in the matching engines.
