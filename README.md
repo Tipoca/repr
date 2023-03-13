@@ -1,10 +1,6 @@
 **TODO**
 
-- Arbitrary one character `.` vs `Interval(MIN, MAX)` vs `⊤` (meaning we don't define such token)
 - Interpretation of `match`, is it a judgement `a : A` or a test that one is divisible by another (quotient is equal to zero) `a / b`?
-- `ignore`, or lookahead/behind
-- Derivatives
-- Rename `One` → `Seq` or sorts
 - TODO Partition of a context, equality between contexts
 - Equational reasoning
 - Induction
@@ -18,7 +14,7 @@
 
 **`Xor`**
 
-- lookahead/behind, multiple futures, communication and discard
+- lookahead/behind, multiple futures, communication and discard, `ignore` combinator
 - Split, subspace
 
 **`Rem`** (partial match)
@@ -33,6 +29,7 @@
 | ∅ | 0 | `Zero` | | |
 | `a` | `a` | `One(a)` | | len(a) |
 | ε (empty)/{ε} | 1 | - | \*/1 | 0 |
+| `.` | | `Interval(MIN, MAX)` | | 1 |
 | `ab`/`a` · `b` (concatenation) | `a` ⊗ `b` (multiplicative conjunction/times) | `Mul(a, b)`/`a * b` | ⊗ (tensor product) | len(a) + len(b) |
 | `a\|b` (alternation) | `a` ⊕ `b` (additive disjuction/plus) | `Or(a, b)`/`a \| b` | + (coproduct) | max(len(a), len(b))
 | `a*` (kleen star) | `!a` (of course, exponential conjunction) | `Exp(a)` | □ (necessity) |
