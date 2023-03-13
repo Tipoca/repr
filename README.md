@@ -118,6 +118,8 @@ Linearity (which)
 
 - By regarding matching as an assignment of occurrences of strings to each part of an expression, regular expressions are resource (limited occurrences of strings) consumption (exclusive assignment/matching of them).
 
+**Let's not say 'communication'**
+
 ![Drawing Hands](https://upload.wikimedia.org/wikipedia/en/b/ba/DrawingHands.jpg)
 
 **Algorithms (TODO)**
