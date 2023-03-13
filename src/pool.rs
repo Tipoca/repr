@@ -1,64 +1,69 @@
-// This module provides a relatively simple thread-safe pool of reusable
-// objects. For the most part, it's implemented by a stack represented by a
-// Mutex<Vec<T>>. It has one small trick: because unlocking a mutex is somewhat
-// costly, in the case where a pool is accessed by the first thread that tried
-// to get a value, we bypass the mutex. Here are some benchmarks showing the
-// difference.
-//
-// 1) misc::anchored_literal_long_non_match    21 (18571 MB/s)
-// 2) misc::anchored_literal_long_non_match   107 (3644 MB/s)
-// 3) misc::anchored_literal_long_non_match    45 (8666 MB/s)
-// 4) misc::anchored_literal_long_non_match    19 (20526 MB/s)
-//
-// (1) represents our baseline: the master branch at the time of writing when
-// using the 'thread_local' crate to implement the pool below.
-//
-// (2) represents a naive pool implemented completely via Mutex<Vec<T>>. There
-// is no special trick for bypassing the mutex.
-//
-// (3) is the same as (2), except it uses Mutex<Vec<Box<T>>>. It is twice as
-// fast because a Box<T> is much smaller than the T we use with a Pool in this
-// crate. So pushing and popping a Box<T> from a Vec is quite a bit faster
-// than for T.
-//
-// (4) is the same as (3), but with the trick for bypassing the mutex in the
-// case of the first-to-get thread.
-//
-// Why move off of thread_local? Even though (4) is a hair faster than (1)
-// above, this was not the main goal. The main goal was to move off of
-// thread_local and find a way to *simply* re-capture some of its speed for
-// regex's specific case. So again, why move off of it? The *primary* reason is
-// because of memory leaks. See https://github.com/rust-lang/regex/issues/362
-// for example. (Why do I want it to be simple? Well, I suppose what I mean is,
-// "use as much safe code as possible to minimize risk and be as sure as I can
-// be that it is correct.")
-//
-// My guess is that the thread_local design is probably not appropriate for
-// regex since its memory usage scales to the number of active threads that
-// have used a regex, where as the pool below scales to the number of threads
-// that simultaneously use a regex. While neither case permits contraction,
-// since we own the pool data structure below, we can add contraction if a
-// clear use case pops up in the wild. More pressingly though, it seems that
-// there are at least some use case patterns where one might have many threads
-// sitting around that might have used a regex at one point. While thread_local
-// does try to reuse space previously used by a thread that has since stopped,
-// its maximal memory usage still scales with the total number of active
-// threads. In contrast, the pool below scales with the total number of threads
-// *simultaneously* using the pool. The hope is that this uses less memory
-// overall. And if it doesn't, we can hopefully tune it somehow.
-//
-// It seems that these sort of conditions happen frequently
-// in FFI inside of other more "managed" languages. This was
-// mentioned in the issue linked above, and also mentioned here:
-// https://github.com/BurntSushi/rure-go/issues/3. And in particular, users
-// confirm that disabling the use of thread_local resolves the leak.
-//
-// There were other weaker reasons for moving off of thread_local as well.
-// Namely, at the time, I was looking to reduce dependencies. And for something
-// like regex, maintenance can be simpler when we own the full dependency tree.
+/*!
+This module provides a relatively simple thread-safe pool of reusable
+objects. For the most part, it's implemented by a stack represented by a
+Mutex<Vec<T>>. It has one small trick: because unlocking a mutex is somewhat
+costly, in the case where a pool is accessed by the first thread that tried
+to get a value, we bypass the mutex. Here are some benchmarks showing the
+difference.
 
-use std::panic::{RefUnwindSafe, UnwindSafe};
-use std::sync::atomic::{AtomicUsize, Ordering};
+1) misc::anchored_literal_long_non_match    21 (18571 MB/s)
+2) misc::anchored_literal_long_non_match   107 (3644 MB/s)
+3) misc::anchored_literal_long_non_match    45 (8666 MB/s)
+4) misc::anchored_literal_long_non_match    19 (20526 MB/s)
+
+(1) represents our baseline: the master branch at the time of writing when
+using the 'thread_local' crate to implement the pool below.
+
+(2) represents a naive pool implemented completely via Mutex<Vec<T>>. There
+is no special trick for bypassing the mutex.
+
+(3) is the same as (2), except it uses Mutex<Vec<Box<T>>>. It is twice as
+fast because a Box<T> is much smaller than the T we use with a Pool in this
+crate. So pushing and popping a Box<T> from a Vec is quite a bit faster
+than for T.
+
+(4) is the same as (3), but with the trick for bypassing the mutex in the
+case of the first-to-get thread.
+
+Why move off of thread_local? Even though (4) is a hair faster than (1)
+above, this was not the main goal. The main goal was to move off of
+thread_local and find a way to *simply* re-capture some of its speed for
+regex's specific case. So again, why move off of it? The *primary* reason is
+because of memory leaks. See https://github.com/rust-lang/regex/issues/362
+for example. (Why do I want it to be simple? Well, I suppose what I mean is,
+"use as much safe code as possible to minimize risk and be as sure as I can
+be that it is correct.")
+
+My guess is that the thread_local design is probably not appropriate for
+regex since its memory usage scales to the number of active threads that
+have used a regex, where as the pool below scales to the number of threads
+that simultaneously use a regex. While neither case permits contraction,
+since we own the pool data structure below, we can add contraction if a
+clear use case pops up in the wild. More pressingly though, it seems that
+there are at least some use case patterns where one might have many threads
+sitting around that might have used a regex at one point. While thread_local
+does try to reuse space previously used by a thread that has since stopped,
+its maximal memory usage still scales with the total number of active
+threads. In contrast, the pool below scales with the total number of threads
+*simultaneously* using the pool. The hope is that this uses less memory
+overall. And if it doesn't, we can hopefully tune it somehow.
+
+It seems that these sort of conditions happen frequently
+in FFI inside of other more "managed" languages. This was
+mentioned in the issue linked above, and also mentioned here:
+https://github.com/BurntSushi/rure-go/issues/3. And in particular, users
+confirm that disabling the use of thread_local resolves the leak.
+
+There were other weaker reasons for moving off of thread_local as well.
+Namely, at the time, I was looking to reduce dependencies. And for something
+like regex, maintenance can be simpler when we own the full dependency tree.
+*/
+
+use core::{
+    fmt::{self, Debug},
+    panic::{RefUnwindSafe, UnwindSafe},
+    sync::atomic::{AtomicUsize, Ordering}
+};
 use std::sync::Mutex;
 
 /// An atomic counter used to allocate thread IDs.
@@ -153,8 +158,8 @@ pub struct Pool<T> {
 // will require unlocking a mutex.
 unsafe impl<T: Send> Sync for Pool<T> {}
 
-impl<T: ::std::fmt::Debug> ::std::fmt::Debug for Pool<T> {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+impl<T: Debug> Debug for Pool<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Pool")
             .field("stack", &self.stack)
             .field("owner", &self.owner)
@@ -284,7 +289,7 @@ mod tests {
 
     #[test]
     fn oibits() {
-        use super::super::exec::ProgramCache;
+        use crate::exec::ProgramCache;
 
         fn has_oibits<T: Send + Sync + UnwindSafe + RefUnwindSafe>() {}
         has_oibits::<Pool<ProgramCache>>();

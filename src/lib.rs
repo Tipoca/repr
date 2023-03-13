@@ -56,6 +56,7 @@ mod operators;
 mod options;
 mod partition;
 mod pattern;
+mod pool;
 mod program;
 mod re;
 mod regex;

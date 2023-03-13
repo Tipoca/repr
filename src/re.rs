@@ -33,7 +33,7 @@ impl<'t> Match<'t> {
     /// Returns the matched text.
     #[inline]
     pub fn as_str(&self) -> &'t str {
-        &self.text[self.start..self.end]
+        &self.context[self.start..self.end]
     }
 
     /// Creates a new match from the given haystack and byte offsets.
