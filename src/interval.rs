@@ -134,11 +134,20 @@ impl<I: ~const Integral> Interval<I> {
         Self::full().sub(self)
     }
 
-        // TODO(rnarkk) Why not simply `other.0 <= self.0 && self.1 <= other.1`
-    /// Returns true if and only if this range is a subset of the other range.
+    // TODO(rnarkk) Why not simply `other.0 <= self.0 && self.1 <= other.1`
+    /// a ⊆ b
     pub const fn le(&self, other: &Self) -> bool {
         (other.0 <= self.0 && self.0 <= other.1)
         && (other.0 <= self.1 && self.1 <= other.1)
+    }
+
+    /// i ∈ a
+    pub fn has(&self, i: I) -> bool {
+        if self.0 <= i && i <= self.1 {
+            true
+        } else {
+            false
+        }
     }
 
     pub const fn len(&self) -> usize {

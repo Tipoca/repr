@@ -20,7 +20,7 @@ use crate::context::Context;
 use crate::repr::Integral;
 
 use super::exec::ProgramCache;
-use super::prog::{InstPtr, Program};
+use super::program::{InstPtr, Program};
 
 type Bits = u32;
 
@@ -181,7 +181,7 @@ impl<'a, 'm, 'r, I: Integral> Bounded<'a, 'm, 'r, I> {
     }
 
     fn step(&mut self, mut ip: InstPtr, mut at: usize, c: I) -> bool {
-        use super::prog::Inst::*;
+        use super::program::Inst::*;
         loop {
             // This loop is an optimization to avoid constantly pushing/popping
             // from the stack. Namely, if we're pushing a job only to run it

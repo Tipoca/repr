@@ -1,19 +1,14 @@
-use std::iter;
-use std::result;
+use core::iter;
+use core::result;
 
 use regex_syntax::utf8::Utf8Sequences;
 
 use crate::interval::Interval;
 use crate::repr::{Repr, Integral, Zero};
 
-use super::prog::{
+use super::program::{
     Inst, InstOne, InstZero, InstPtr, InstInterval, InstSplit, Program,
 };
-
-use super::Error;
-
-type Result = result::Result<Patch, Error>;
-type ResultOrEmpty = result::Result<Option<Patch>, Error>;
 
 #[derive(Debug)]
 struct Patch {
@@ -29,7 +24,6 @@ struct Patch {
 pub struct Compiler<I: Integral> {
     insts: Vec<MaybeInst<I>>,
     compiled: Program<I>,
-    num_exprs: usize,
     size_limit: usize,
     suffix_cache: SuffixCache,
     utf8_seqs: Option<Utf8Sequences>,
@@ -54,7 +48,6 @@ impl<I: Integral> Compiler<I> {
         Compiler {
             insts: vec![],
             compiled: Program::new(),
-            num_exprs: 0,
             size_limit: 10 * (1 << 20),
             suffix_cache: SuffixCache::new(1000),
             utf8_seqs: Some(Utf8Sequences::new('\x00', '\x00')),
@@ -94,8 +87,7 @@ impl<I: Integral> Compiler<I> {
     /// The compiler is guaranteed to succeed unless the program exceeds the
     /// specified size limit. If the size limit is exceeded, then compilation
     /// stops and returns an error.
-    pub fn compile(mut self, exprs: &[Repr<I>]) -> result::Result<Program<I>, Error> {
-        self.num_exprs = exprs.len();
+    pub fn compile(mut self, exprs: &[Repr<I>]) -> Program<I> {
         if exprs.len() == 1 {
             self.compile_one(&exprs[0])
         } else {
@@ -103,7 +95,7 @@ impl<I: Integral> Compiler<I> {
         }
     }
 
-    fn compile_one(mut self, expr: &Repr<I>) -> result::Result<Program<I>, Error> {
+    fn compile_one(mut self, expr: &Repr<I>) -> Program<I> {
         // If we're compiling a forward DFA and we aren't anchored, then
         // add a `.*?` before the first capture group.
         // Other matching engines handle this by baking the logic into the
@@ -111,27 +103,16 @@ impl<I: Integral> Compiler<I> {
         let mut dotstar_patch = Patch { hole: Hole::None, entry: 0 };
         self.compiled.is_anchored_start = expr.is_anchored_start();
         self.compiled.is_anchored_end = expr.is_anchored_end();
-        if self.compiled.needs_dotstar() {
-            dotstar_patch = self.c_dotstar()?;
-            self.compiled.start = dotstar_patch.entry;
-        }
         let patch =
-            self.c_capture(expr)?.unwrap_or_else(|| self.next_inst());
-        if self.compiled.needs_dotstar() {
-            self.fill(dotstar_patch.hole, patch.entry);
-        } else {
-            self.compiled.start = patch.entry;
-        }
+            self.c_capture(expr).unwrap_or_else(|| self.next_inst());
+        self.compiled.start = patch.entry;
         self.fill_to_next(patch.hole);
         self.compiled.matches = vec![self.insts.len()];
         self.push_compiled(Inst::Match(0));
         self.compile_finish()
     }
 
-    fn compile_many(
-        mut self,
-        exprs: &[Repr<I>],
-    ) -> result::Result<Program<I>, Error> {
+    fn compile_many(mut self, exprs: &[Repr<I>]) -> Program<I> {
         debug_assert!(exprs.len() > 1);
 
         self.compiled.is_anchored_start =
@@ -139,12 +120,7 @@ impl<I: Integral> Compiler<I> {
         self.compiled.is_anchored_end =
             exprs.iter().all(|e| e.is_anchored_end());
         let mut dotstar_patch = Patch { hole: Hole::None, entry: 0 };
-        if self.compiled.needs_dotstar() {
-            dotstar_patch = self.c_dotstar()?;
-            self.compiled.start = dotstar_patch.entry;
-        } else {
-            self.compiled.start = 0; // first instruction is always split
-        }
+        self.compiled.start = 0; // first instruction is always split
         self.fill_to_next(dotstar_patch.hole);
 
         let mut prev_hole = Hole::None;
@@ -152,7 +128,7 @@ impl<I: Integral> Compiler<I> {
             self.fill_to_next(prev_hole);
             let split = self.push_split_hole();
             let Patch { hole, entry } =
-                self.c_capture(expr)?.unwrap_or_else(|| self.next_inst());
+                self.c_capture(expr).unwrap_or_else(|| self.next_inst());
             self.fill_to_next(hole);
             self.compiled.matches.push(self.insts.len());
             self.push_compiled(Inst::Match(i));
@@ -160,7 +136,7 @@ impl<I: Integral> Compiler<I> {
         }
         let i = exprs.len() - 1;
         let Patch { hole, entry } =
-            self.c_capture(&exprs[i])?.unwrap_or_else(|| self.next_inst());
+            self.c_capture(&exprs[i]).unwrap_or_else(|| self.next_inst());
         self.fill(prev_hole, entry);
         self.fill_to_next(hole);
         self.compiled.matches.push(self.insts.len());
@@ -168,7 +144,7 @@ impl<I: Integral> Compiler<I> {
         self.compile_finish()
     }
 
-    fn compile_finish(mut self) -> result::Result<Program<I>, Error> {
+    fn compile_finish(mut self) -> Program<I> {
         self.compiled.insts =
             self.insts.into_iter().map(|inst| inst.unwrap()).collect();
         Ok(self.compiled)
@@ -229,12 +205,12 @@ impl<I: Integral> Compiler<I> {
     ///
     /// Ok(None) is returned when an expression is compiled to no
     /// instruction, and so no patch.entry value makes sense.
-    fn c(&mut self, expr: &Repr<I>) -> ResultOrEmpty {
+    fn c(&mut self, expr: &Repr<I>) -> Option<Patch> {
         self.check_size()?;
         match *expr {
             Repr::Zero(Zero::Any) => self.c_empty(),
-            Repr::One(c) => self.c_char(c),
-            Repr::Interval(seq) => self.c_class(seq),
+            Repr::One(c) => self.c_one(c),
+            Repr::Interval(seq) => self.c_interval(seq),
             // Anchor(hir::Anchor::StartLine) if self.compiled.is_reverse => {
             //     self.byte_classes.set_range(b'\n', b'\n');
             //     self.c_empty_look(prog::Zero::EndLine)
@@ -312,12 +288,12 @@ impl<I: Integral> Compiler<I> {
                 }
             }
             Repr::Or(ref lhs, ref rhs) => self.c_alternate(lhs, rhs),
-            Repr::Exp(ref repr, ref rep) => self.c_repeat(repr, rep),
+            Repr::Exp(ref repr) => self.c_exp(repr),
             _ => unimplemented!()
         }
     }
 
-    fn c_empty(&mut self) -> ResultOrEmpty {
+    fn c_empty(&mut self) -> Option<Patch> {
         // See: https://github.com/rust-lang/regex/security/advisories/GHSA-m5pq-gvj9-9vr8
         // See: CVE-2022-24713
         //
@@ -330,23 +306,23 @@ impl<I: Integral> Compiler<I> {
         Ok(None)
     }
 
-    fn c_capture(&mut self, expr: &Repr<I>) -> ResultOrEmpty {
+    fn c_capture(&mut self, expr: &Repr<I>) -> Option<Patch> {
         // Don't ever compile Save instructions for regex sets because
         // they are never used. They are also never used in DFA programs
         // because DFAs can't handle captures.
         self.c(expr)
     }
 
-    fn c_dotstar(&mut self) -> Result {
-        Ok(self.c(&Repr::Exp(Box::new(Repr::any()), Range::From(0)))?.unwrap())
+    fn c_dotstar(&mut self) -> Patch {
+        self.c(&Repr::Exp(box Repr::Interval(Interval::full()))).unwrap()
     }
 
-    fn c_char(&mut self, c: I) -> ResultOrEmpty {
+    fn c_one(&mut self, c: I) -> Option<Patch> {
         let hole = self.push_hole(InstHole::One(c));
         Ok(Some(Patch { hole, entry: self.insts.len() - 1 }))
     }
 
-    fn c_class(&mut self, seq: Interval<I>) -> ResultOrEmpty {
+    fn c_interval(&mut self, seq: Interval<I>) -> Option<Patch> {
         use std::mem::size_of;
 
         let hole = if seq.0 == seq.1 {
@@ -358,12 +334,12 @@ impl<I: Integral> Compiler<I> {
         Ok(Some(Patch { hole, entry: self.insts.len() - 1 }))
     }
 
-    fn c_empty_look(&mut self, look: Zero) -> ResultOrEmpty {
+    fn c_empty_look(&mut self, look: Zero) -> Option<Patch> {
         let hole = self.push_hole(InstHole::Zero(look));
         Ok(Some(Patch { hole, entry: self.insts.len() - 1 }))
     }
 
-    fn c_concat(&mut self, lhs: Repr<I>, rhs: Repr<I>) -> ResultOrEmpty
+    fn c_concat(&mut self, lhs: Repr<I>, rhs: Repr<I>) -> Option<Patch>
     {
         let Patch { mut hole, entry } = if let Some(p) = self.c(&lhs)? {
             p
@@ -381,7 +357,7 @@ impl<I: Integral> Compiler<I> {
         Ok(Some(Patch { hole, entry }))
     }
 
-    fn c_alternate(&mut self, lhs: &Repr<I>, rhs: &Repr<I>) -> ResultOrEmpty {
+    fn c_alternate(&mut self, lhs: &Repr<I>, rhs: &Repr<I>) -> Option<Patch> {
         // Initial entry point is always the first split.
         let first_split_entry = self.insts.len();
 
@@ -423,18 +399,19 @@ impl<I: Integral> Compiler<I> {
         Ok(Some(Patch { hole: Hole::Many(holes), entry: first_split_entry }))
     }
 
-    fn c_repeat(&mut self, rep: &Repr<I>, range: Range) -> ResultOrEmpty {
-        match range {
-            Range::Full(0, 1) => self.c_repeat_zero_or_one(&rep),
-            Range::From(0) => self.c_repeat_zero_or_more(&rep),
-            Range::From(1) => self.c_repeat_one_or_more(&rep),
-            Range::Full(n, m) if n == m => self.c_repeat_range(&rep, n, n),
-            Range::From(m) => self.c_repeat_range_min_or_more(&rep, m),
-            Range::Full(n, m) => self.c_repeat_range(&rep, n, m)
-        }
+    fn c_exp(&mut self, rep: &Repr<I>) -> Option<Patch> {
+        self.c_repeat_zero_or_more(&rep)
+        // match range {
+        //     Range::Full(0, 1) => self.c_repeat_zero_or_one(&rep),
+        //     Range::From(0) => ,
+        //     Range::From(1) => self.c_repeat_one_or_more(&rep),
+        //     Range::Full(n, m) if n == m => self.c_repeat_range(&rep, n, n),
+        //     Range::From(m) => self.c_repeat_range_min_or_more(&rep, m),
+        //     Range::Full(n, m) => self.c_repeat_range(&rep, n, m)
+        // }
     }
 
-    fn c_repeat_zero_or_one(&mut self, expr: &Repr<I>) -> ResultOrEmpty {
+    fn c_repeat_zero_or_one(&mut self, expr: &Repr<I>) -> Option<Patch> {
         let split_entry = self.insts.len();
         let split = self.push_split_hole();
         let Patch { hole: hole_rep, entry: entry_rep } = match self.c(expr)? {
@@ -446,7 +423,7 @@ impl<I: Integral> Compiler<I> {
         Ok(Some(Patch { hole: Hole::Many(holes), entry: split_entry }))
     }
 
-    fn c_repeat_zero_or_more(&mut self, expr: &Repr<I>) -> ResultOrEmpty {
+    fn c_repeat_zero_or_more(&mut self, expr: &Repr<I>) -> Option<Patch> {
         let split_entry = self.insts.len();
         let split = self.push_split_hole();
         let Patch { hole: hole_rep, entry: entry_rep } = match self.c(expr)? {
@@ -459,7 +436,7 @@ impl<I: Integral> Compiler<I> {
         Ok(Some(Patch { hole: split_hole, entry: split_entry }))
     }
 
-    fn c_repeat_one_or_more(&mut self, expr: &Repr<I>) -> ResultOrEmpty {
+    fn c_repeat_one_or_more(&mut self, expr: &Repr<I>) -> Option<Patch> {
         let Patch { hole: hole_rep, entry: entry_rep } = match self.c(expr)? {
             Some(p) => p,
             None => return Ok(None),
@@ -475,7 +452,7 @@ impl<I: Integral> Compiler<I> {
         &mut self,
         expr: &Repr<I>,
         min: u32,
-    ) -> ResultOrEmpty {
+    ) -> Option<Patch> {
         let min = u32_to_usize(min);
         // Using next_inst() is ok, because we can't return it (concat would
         // have to return Some(_) while c_repeat_range_min_or_more returns
@@ -485,7 +462,7 @@ impl<I: Integral> Compiler<I> {
         //     slf = slf.c_concat(expr.clone(), rhs)
         // }
         let patch_concat = self
-            .c_concat(iter::repeat(expr).take(min))?
+            .c_concat(iter::repeat(expr).take(min))
             .unwrap_or_else(|| self.next_inst());
         if let Some(patch_rep) = self.c_repeat_zero_or_more(expr)? {
             self.fill(patch_concat.hole, patch_rep.entry);
@@ -500,10 +477,10 @@ impl<I: Integral> Compiler<I> {
         expr: &Repr<I>,
         min: u32,
         max: u32,
-    ) -> ResultOrEmpty {
+    ) -> Option<Patch> {
         let (min, max) = (u32_to_usize(min), u32_to_usize(max));
         debug_assert!(min <= max);
-        let patch_concat = self.c_concat(iter::repeat(expr).take(min))?;
+        let patch_concat = self.c_concat(iter::repeat(expr).take(min));
         if min == max {
             return Ok(patch_concat);
         }
@@ -629,7 +606,7 @@ impl<I: Integral> Compiler<I> {
         Hole::One(hole)
     }
 
-    fn pop_split_hole(&mut self) -> ResultOrEmpty {
+    fn pop_split_hole(&mut self) -> Option<Patch> {
         self.insts.pop();
         Ok(None)
     }

@@ -21,7 +21,7 @@ use crate::repr::Integral;
 
 use super::exec::ProgramCache;
 use super::input::Input;
-use super::prog::{InstPtr, Program};
+use super::program::{InstPtr, Program};
 use super::sparse::SparseSet;
 
 /// An NFA simulation matching engine.
@@ -212,7 +212,7 @@ impl<'r, I: Integral> Fsm<'r, I> {
         at: I,
         at_next: I,
     ) -> bool {
-        use super::prog::Inst::*;
+        use super::program::Inst::*;
         match self.prog[ip] {
             Match(match_slot) => {
                 if match_slot < matches.len() {
@@ -265,7 +265,7 @@ impl<'r, I: Integral> Fsm<'r, I> {
         // traverse the set of states. We only push to the stack when we
         // absolutely need recursion (restoring captures or following a
         // branch).
-        use super::prog::Inst::*;
+        use super::program::Inst::*;
         loop {
             // Don't visit states we've already added.
             if nlist.set.contains(ip) {

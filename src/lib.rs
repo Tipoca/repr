@@ -56,6 +56,7 @@ mod operators;
 mod options;
 mod partition;
 mod pattern;
+mod program;
 mod regex;
 mod seq;
 mod unicode;

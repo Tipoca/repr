@@ -45,7 +45,7 @@ use std::sync::Arc;
 use crate::repr::Integral;
 
 use super::exec::ProgramCache;
-use super::prog::{Inst, Program};
+use super::program::{Inst, Program};
 use super::sparse::SparseSet;
 
 /// Return true if and only if the given program can be executed by a DFA.
@@ -1047,7 +1047,7 @@ impl<'a, I: Integral> Fsm<'a, I> {
         flags: EmptyFlags,
     ) {
         use crate::repr::Zero::*;
-        use super::prog::Inst::*;
+        use super::program::Inst::*;
 
         // We need to traverse the NFA to follow epsilon transitions, so avoid
         // recursion with an explicit stack.
@@ -1178,7 +1178,7 @@ impl<'a, I: Integral> Fsm<'a, I> {
         q: &SparseSet,
         state_flags: &mut StateFlags,
     ) -> Option<State> {
-        use super::prog::Inst::*;
+        use super::program::Inst::*;
 
         // We need to build up enough information to recognize pre-built states
         // in the DFA. Generally speaking, this includes every instruction

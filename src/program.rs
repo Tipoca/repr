@@ -1,16 +1,18 @@
-use core::fmt;
+use core::fmt::{self, Debug};
 use core::mem;
 use core::ops::Deref;
 use core::slice;
+
+use unconst::unconst;
 
 use crate::interval::Interval;
 use crate::literal::LiteralSearcher;
 use crate::repr::{Integral, Zero};
 
-/// `InstPtr` represents the index of an instruction in a regex program.
-pub type InstPtr = usize;
+/// `Index` represents the index of an instruction in a regex program.
+pub type Index = usize;
 
-/// Program is a sequence of instructions and various facts about thos
+/// Program is a sequence of instructions and various facts about those
 /// instructions.
 #[derive(Clone)]
 pub struct Program<I: Integral> {
@@ -19,17 +21,17 @@ pub struct Program<I: Integral> {
     /// Pointers to each Match instruction in the sequence.
     ///
     /// This is always length 1 unless this program represents a regex set.
-    pub matches: Vec<InstPtr>,
+    pub matches: Vec<Index>,
     /// A pointer to the start instruction. This can vary depending on how
     /// the program was compiled. For example, programs for use with the DFA
     /// engine have a `.*?` inserted at the beginning of unanchored regular
     /// expressions. The actual starting point of the program is after the
     /// `.*?`.
-    pub start: InstPtr,
-    /// When true, the program is compiled for DFA matching. For example, this
-    /// implies `is_bytes` and also inserts a preceding `.*?` for unanchored
-    /// regexes.
-    pub is_dfa: bool,
+    pub start: Index,
+    // /// When true, the program is compiled for DFA matching. For example, this
+    // /// implies `is_bytes` and also inserts a preceding `.*?` for unanchored
+    // /// regexes.
+    // pub is_dfa: bool,
     /// When true, the program matches text in reverse (for use only in the
     /// DFA).
     pub is_reverse: bool,
@@ -59,7 +61,8 @@ pub struct Program<I: Integral> {
     pub dfa_size_limit: usize,
 }
 
-impl<I: Integral> Program<I> {
+#[unconst]
+impl<I: ~const Integral> Program<I> {
     /// Creates an empty instruction sequence. Fields are given default
     /// values.
     pub fn new() -> Self {
@@ -68,7 +71,6 @@ impl<I: Integral> Program<I> {
             matches: vec![],
             start: 0,
             // byte_classes: vec![0; 256],
-            is_dfa: false,
             is_reverse: false,
             is_anchored_start: false,
             is_anchored_end: false,
@@ -77,12 +79,6 @@ impl<I: Integral> Program<I> {
             dfa_size_limit: 2 * (1 << 20),
         }
     }
-
-    // /// If pc is an index to a no-op instruction (like Save), then return the
-    // /// next pc that is not a no-op instruction.
-    // pub fn skip(&self, mut pc: usize) -> usize {
-    //     pc
-    // }
 
     /// Return true if and only if an execution engine at instruction `pc` will
     /// always lead to a match.
@@ -99,18 +95,6 @@ impl<I: Integral> Program<I> {
         }
     }
 
-    /// Returns true if the current configuration demands that an implicit
-    /// `.*?` be prepended to the instruction sequence.
-    pub fn needs_dotstar(&self) -> bool {
-        self.is_dfa && !self.is_reverse && !self.is_anchored_start
-    }
-
-    /// Returns true if this program uses Byte instructions instead of
-    /// Char/Range instructions.
-    pub fn uses_bytes(&self) -> bool {
-        self.is_dfa
-    }
-
     /// Return the approximate heap usage of this instruction sequence in
     /// bytes.
     pub fn approximate_size(&self) -> usize {
@@ -118,13 +102,14 @@ impl<I: Integral> Program<I> {
         // Unicode codepoint programs) to store non-overlapping codepoint
         // ranges. To keep this operation constant time, we ignore them.
         (self.len() * mem::size_of::<Inst<I>>())
-            + (self.matches.len() * mem::size_of::<InstPtr>())
+            + (self.matches.len() * mem::size_of::<Index>())
             + (256 * mem::size_of::<u8>())
             + self.prefixes.approximate_size()
     }
 }
 
-impl<I: Integral> Deref for Program<I> {
+#[unconst]
+impl<I: ~const Integral> Deref for Program<I> {
     type Target = [Inst<I>];
 
     #[cfg_attr(feature = "perf-inline", inline(always))]
@@ -133,7 +118,8 @@ impl<I: Integral> Deref for Program<I> {
     }
 }
 
-impl<I: Integral> fmt::Debug for Program<I> {
+#[unconst]
+impl<I: ~const Integral> Debug for Program<I> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fn with_goto(cur: usize, goto: usize, fmtd: String) -> String {
             if goto == cur + 1 {
@@ -152,29 +138,20 @@ impl<I: Integral> fmt::Debug for Program<I> {
         for (pc, inst) in self.iter().enumerate() {
             match *inst {
                 Inst::Match(slot) => write!(f, "{:04} Match({:?})", pc, slot)?,
-                Inst::Split(ref inst) => {
-                    write!(
-                        f,
-                        "{:04} Split({}, {})",
-                        pc, inst.goto1, inst.goto2
-                    )?;
+                Inst::Split { goto1, goto2 } => {
+                    write!(f, "{:04} Split({}, {})", pc, goto1, goto2)?;
                 }
-                Inst::Zero(ref inst) => {
-                    let s = format!("{:?}", inst.look);
-                    write!(f, "{:04} {}", pc, with_goto(pc, inst.goto, s))?;
+                Inst::Zero { goto, look } => {
+                    let s = format!("{:?}", look);
+                    write!(f, "{:04} {}", pc, with_goto(pc, goto, s))?;
                 }
-                Inst::One(ref inst) => {
-                    let s = format!("{:?}", inst.c);
-                    write!(f, "{:04} {}", pc, with_goto(pc, inst.goto, s))?;
+                Inst::One { goto, c } => {
+                    let s = format!("{:?}", c);
+                    write!(f, "{:04} {}", pc, with_goto(pc, goto, s))?;
                 }
-                Inst::Interval(ref inst) => {
-                    let ranges = format!("{:?}-{:?}", inst.seq.0, inst.seq.1);
-                    write!(
-                        f,
-                        "{:04} {}",
-                        pc,
-                        with_goto(pc, inst.goto, ranges)
-                    )?;
+                Inst::Interval { goto, i } => {
+                    let ranges = format!("{:?}-{:?}", i.0, i.1);
+                    write!(f, "{:04} {}", pc, with_goto(pc, goto, ranges))?;
                 }
             }
             if pc == self.start {
@@ -221,18 +198,47 @@ pub enum Inst<I: Integral> {
     /// each match instruction gets its own unique value. The value corresponds
     /// to the Nth regex in the set.
     Match(usize),
+    /// Representation of the Split instruction.
     /// Split causes the program to diverge to one of two paths in the
-    /// program, preferring goto1 in InstSplit.
-    Split(InstSplit),
+    /// program, preferring goto1.
+    Split {
+        /// The first instruction to try. A match resulting from following goto1
+        /// has precedence over a match resulting from following goto2.
+        goto1: Index,
+        /// The second instruction to try. A match resulting from following goto1
+        /// has precedence over a match resulting from following goto2.
+        goto2: Index,
+    },
+    /// Representation of the `Zero` instruction.
     /// Zero represents a zero-width assertion in a regex program. A
     /// zero-width assertion does not consume any of the input text.
-    Zero(InstZero),
+    Zero {
+        /// The next location to execute in the program if this instruction
+        /// succeeds.
+        goto: Index,
+        /// The type of zero-width assertion to check.
+        look: Zero,
+    },
+    /// Representation of the Char instruction.
     /// Char requires the regex program to match the character in InstOne at
     /// the current position in the input.
-    One(InstOne<I>),
+    One {
+        /// The next location to execute in the program if this instruction
+        /// succeeds.
+        goto: Index,
+        /// The character to test.
+        c: I,
+    },
+    /// Representation of the Ranges instruction.
     /// Ranges requires the regex program to match the character at the current
     /// position in the input with one of the ranges specified in InstInterval.
-    Interval(InstInterval<I>),
+    Interval  {
+        /// The next location to execute in the program if this instruction
+        /// succeeds.
+        goto: Index,
+        /// The set of Unicode scalar value ranges to test.
+        i: Interval<I>
+    },
 }
 
 impl<I: Integral> Inst<I> {
@@ -242,79 +248,5 @@ impl<I: Integral> Inst<I> {
             Inst::Match(_) => true,
             _ => false,
         }
-    }
-}
-
-/// Representation of the Split instruction.
-#[derive(Clone, Debug)]
-pub struct InstSplit {
-    /// The first instruction to try. A match resulting from following goto1
-    /// has precedence over a match resulting from following goto2.
-    pub goto1: InstPtr,
-    /// The second instruction to try. A match resulting from following goto1
-    /// has precedence over a match resulting from following goto2.
-    pub goto2: InstPtr,
-}
-
-/// Representation of the `Zero` instruction.
-#[derive(Clone, Debug)]
-pub struct InstZero {
-    /// The next location to execute in the program if this instruction
-    /// succeeds.
-    pub goto: InstPtr,
-    /// The type of zero-width assertion to check.
-    pub look: Zero,
-}
-
-/// Representation of the Char instruction.
-#[derive(Clone, Debug)]
-pub struct InstOne<I: Integral> {
-    /// The next location to execute in the program if this instruction
-    /// succeeds.
-    pub goto: InstPtr,
-    /// The character to test.
-    pub c: I,
-}
-
-/// Representation of the Ranges instruction.
-#[derive(Clone)]
-pub struct InstInterval<I: Integral> {
-    /// The next location to execute in the program if this instruction
-    /// succeeds.
-    pub goto: InstPtr,
-    /// The set of Unicode scalar value ranges to test.
-    pub seq: Interval<I>
-}
-
-impl<I: Integral> InstInterval<I> {
-    /// Tests whether the given input character matches this instruction.
-    pub fn matches(&self, c: I) -> bool {
-        // This speeds up the `match_class_unicode` benchmark by checking
-        // some common cases quickly without binary search. e.g., Matching
-        // a Unicode class on predominantly ASCII text.
-        if c < self.seq.0 {
-            return false;
-        }
-        if c <= self.seq.1 {
-            return true;
-        }
-        false
-        // self.ranges
-        //     .binary_search_by(|r| {
-        //         if self.seq.1 < c {
-        //             Ordering::Less
-        //         } else if self.seq.0 > c {
-        //             Ordering::Greater
-        //         } else {
-        //             Ordering::Equal
-        //         }
-        //     })
-        //     .is_ok()
-    }
-
-    /// Return the number of distinct characters represented by all of the
-    /// ranges.
-    pub fn num_chars(&self) -> usize {
-        (1 + (self.seq.1 as u32) - (self.seq.0 as u32)) as usize
     }
 }

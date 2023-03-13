@@ -5,7 +5,6 @@ use unconst::unconst;
 use crate::context::Context;
 use crate::interval::Interval;
 use crate::literal::LiteralSearcher;
-use crate::regex::InstZero;
 use crate::repr::{Repr, Integral, Zero};
 
 #[unconst]
@@ -48,8 +47,8 @@ impl Repr<char> {
 impl Context<char> {
     /// Return true if the given empty width instruction matches at the
     /// input position given.
-    fn is_empty_match(&self, at: usize, empty: &InstZero) -> bool {
-        match empty.look {
+    fn is_empty_match(&self, at: usize, look: &Zero) -> bool {
+        match look {
             Zero::StartLine => {
                 let c = &self[at - 1];
                 at == 0 || c == '\n'

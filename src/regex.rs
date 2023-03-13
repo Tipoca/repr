@@ -595,9 +595,6 @@ another matching engine with fixed memory requirements.
 #![deny(missing_docs)]
 #![warn(missing_debug_implementations)]
 
-#[cfg(not(feature = "std"))]
-compile_error!("`std` feature is currently required to build this crate");
-
 // To check README's example
 // TODO: Re-enable this once the MSRV is 1.43 or greater.
 // See: https://github.com/rust-lang/regex/issues/684
@@ -708,7 +705,6 @@ mod dfa;
 mod find_byte;
 mod pikevm;
 mod pool;
-mod prog;
 mod re_set;
 mod re_unicode;
 mod sparse;
@@ -721,7 +717,4 @@ mod utf8;
 #[cfg(feature = "std")]
 pub mod internal {
     pub use super::compile::Compiler;
-    pub use super::prog::{Inst, InstInterval, InstZero, Program};
 }
-
-pub use prog::{Inst, InstInterval, InstZero, Program};
