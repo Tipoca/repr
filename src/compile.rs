@@ -1,19 +1,13 @@
-use core::iter;
-use core::result;
-
-use regex_syntax::utf8::Utf8Sequences;
+use core::mem::size_of;
 
 use crate::interval::Interval;
+use crate::program::{Index, Inst, Program};
 use crate::repr::{Repr, Integral, Zero};
-
-use super::program::{
-    Inst, InstOne, InstZero, InstPtr, InstInterval, InstSplit, Program,
-};
 
 #[derive(Debug)]
 struct Patch {
     hole: Hole,
-    entry: InstPtr,
+    entry: Index,
 }
 
 /// A compiler translates a regular expression AST to a sequence of
@@ -26,7 +20,6 @@ pub struct Compiler<I: Integral> {
     compiled: Program<I>,
     size_limit: usize,
     suffix_cache: SuffixCache,
-    utf8_seqs: Option<Utf8Sequences>,
     // This keeps track of extra bytes allocated while compiling the regex
     // program. Currently, this corresponds to two things. First is the heap
     // memory allocated by Unicode character classes ('InstInterval'). Second is
@@ -50,7 +43,6 @@ impl<I: Integral> Compiler<I> {
             compiled: Program::new(),
             size_limit: 10 * (1 << 20),
             suffix_cache: SuffixCache::new(1000),
-            utf8_seqs: Some(Utf8Sequences::new('\x00', '\x00')),
             extra_inst_bytes: 0,
         }
     }
@@ -60,18 +52,6 @@ impl<I: Integral> Compiler<I> {
     /// compilation will stop and return an error.
     pub fn size_limit(mut self, size_limit: usize) -> Self {
         self.size_limit = size_limit;
-        self
-    }
-
-    /// When set, the machine returned is suitable for use in the DFA matching
-    /// engine.
-    ///
-    /// In particular, this ensures that if the regex is not anchored in the
-    /// beginning, then a preceding `.*?` is included in the program. (The NFA
-    /// based engines handle the preceding `.*?` explicitly, which is difficult
-    /// or impossible in the DFA engine.)
-    pub fn dfa(mut self, yes: bool) -> Self {
-        self.compiled.is_dfa = yes;
         self
     }
 
@@ -104,7 +84,7 @@ impl<I: Integral> Compiler<I> {
         self.compiled.is_anchored_start = expr.is_anchored_start();
         self.compiled.is_anchored_end = expr.is_anchored_end();
         let patch =
-            self.c_capture(expr).unwrap_or_else(|| self.next_inst());
+            self.c(expr).unwrap_or_else(|| self.next_inst());
         self.compiled.start = patch.entry;
         self.fill_to_next(patch.hole);
         self.compiled.matches = vec![self.insts.len()];
@@ -128,7 +108,7 @@ impl<I: Integral> Compiler<I> {
             self.fill_to_next(prev_hole);
             let split = self.push_split_hole();
             let Patch { hole, entry } =
-                self.c_capture(expr).unwrap_or_else(|| self.next_inst());
+                self.c(expr).unwrap_or_else(|| self.next_inst());
             self.fill_to_next(hole);
             self.compiled.matches.push(self.insts.len());
             self.push_compiled(Inst::Match(i));
@@ -136,7 +116,7 @@ impl<I: Integral> Compiler<I> {
         }
         let i = exprs.len() - 1;
         let Patch { hole, entry } =
-            self.c_capture(&exprs[i]).unwrap_or_else(|| self.next_inst());
+            self.c(&exprs[i]).unwrap_or_else(|| self.next_inst());
         self.fill(prev_hole, entry);
         self.fill_to_next(hole);
         self.compiled.matches.push(self.insts.len());
@@ -206,7 +186,7 @@ impl<I: Integral> Compiler<I> {
     /// Ok(None) is returned when an expression is compiled to no
     /// instruction, and so no patch.entry value makes sense.
     fn c(&mut self, expr: &Repr<I>) -> Option<Patch> {
-        self.check_size()?;
+        self.check_size();
         match *expr {
             Repr::Zero(Zero::Any) => self.c_empty(),
             Repr::One(c) => self.c_one(c),
@@ -302,15 +282,8 @@ impl<I: Integral> Compiler<I> {
         // size so that our 'check_size_limit' routine will eventually
         // stop compilation if there are too many empty sub-expressions
         // (e.g., via a large repetition).
-        self.extra_inst_bytes += std::mem::size_of::<Inst<I>>();
+        self.extra_inst_bytes += size_of::<Inst<I>>();
         Ok(None)
-    }
-
-    fn c_capture(&mut self, expr: &Repr<I>) -> Option<Patch> {
-        // Don't ever compile Save instructions for regex sets because
-        // they are never used. They are also never used in DFA programs
-        // because DFAs can't handle captures.
-        self.c(expr)
     }
 
     fn c_dotstar(&mut self) -> Patch {
@@ -323,8 +296,6 @@ impl<I: Integral> Compiler<I> {
     }
 
     fn c_interval(&mut self, seq: Interval<I>) -> Option<Patch> {
-        use std::mem::size_of;
-
         let hole = if seq.0 == seq.1 {
             self.push_hole(InstHole::One(seq.0))
         } else {
@@ -420,7 +391,7 @@ impl<I: Integral> Compiler<I> {
         };
         let split_hole = self.fill_split(split, Some(entry_rep), None);
         let holes = vec![hole_rep, split_hole];
-        Ok(Some(Patch { hole: Hole::Many(holes), entry: split_entry }))
+        Some(Patch { hole: Hole::Many(holes), entry: split_entry })
     }
 
     fn c_repeat_zero_or_more(&mut self, expr: &Repr<I>) -> Option<Patch> {
@@ -433,95 +404,59 @@ impl<I: Integral> Compiler<I> {
 
         self.fill(hole_rep, split_entry);
         let split_hole = self.fill_split(split, Some(entry_rep), None);
-        Ok(Some(Patch { hole: split_hole, entry: split_entry }))
+        Some(Patch { hole: split_hole, entry: split_entry })
     }
 
-    fn c_repeat_one_or_more(&mut self, expr: &Repr<I>) -> Option<Patch> {
-        let Patch { hole: hole_rep, entry: entry_rep } = match self.c(expr)? {
-            Some(p) => p,
-            None => return Ok(None),
-        };
-        self.fill_to_next(hole_rep);
-        let split = self.push_split_hole();
-
-        let split_hole = self.fill_split(split, Some(entry_rep), None);
-        Ok(Some(Patch { hole: split_hole, entry: entry_rep }))
-    }
-
-    fn c_repeat_range_min_or_more(
-        &mut self,
-        expr: &Repr<I>,
-        min: u32,
-    ) -> Option<Patch> {
-        let min = u32_to_usize(min);
-        // Using next_inst() is ok, because we can't return it (concat would
-        // have to return Some(_) while c_repeat_range_min_or_more returns
-        // None).
-        // let mut slf = self;
-        // for i in 0..min {
-        //     slf = slf.c_concat(expr.clone(), rhs)
-        // }
-        let patch_concat = self
-            .c_concat(iter::repeat(expr).take(min))
-            .unwrap_or_else(|| self.next_inst());
-        if let Some(patch_rep) = self.c_repeat_zero_or_more(expr)? {
-            self.fill(patch_concat.hole, patch_rep.entry);
-            Ok(Some(Patch { hole: patch_rep.hole, entry: patch_concat.entry }))
-        } else {
-            Ok(None)
-        }
-    }
-
-    fn c_repeat_range(
-        &mut self,
-        expr: &Repr<I>,
-        min: u32,
-        max: u32,
-    ) -> Option<Patch> {
-        let (min, max) = (u32_to_usize(min), u32_to_usize(max));
-        debug_assert!(min <= max);
-        let patch_concat = self.c_concat(iter::repeat(expr).take(min));
-        if min == max {
-            return Ok(patch_concat);
-        }
-        // Same reasoning as in c_repeat_range_min_or_more (we know that min <
-        // max at this point).
-        let patch_concat = patch_concat.unwrap_or_else(|| self.next_inst());
-        let initial_entry = patch_concat.entry;
-        // It is much simpler to compile, e.g., `a{2,5}` as:
-        //
-        //     aaa?a?a?
-        //
-        // But you end up with a sequence of instructions like this:
-        //
-        //     0: 'a'
-        //     1: 'a',
-        //     2: split(3, 4)
-        //     3: 'a'
-        //     4: split(5, 6)
-        //     5: 'a'
-        //     6: split(7, 8)
-        //     7: 'a'
-        //     8: MATCH
-        //
-        // This is *incredibly* inefficient because the splits end
-        // up forming a chain, which has to be resolved everything a
-        // transition is followed.
-        let mut holes = vec![];
-        let mut prev_hole = patch_concat.hole;
-        for _ in min..max {
-            self.fill_to_next(prev_hole);
-            let split = self.push_split_hole();
-            let Patch { hole, entry } = match self.c(expr)? {
-                Some(p) => p,
-                None => return self.pop_split_hole(),
-            };
-            prev_hole = hole;
-            holes.push(self.fill_split(split, Some(entry), None));
-        }
-        holes.push(prev_hole);
-        Ok(Some(Patch { hole: Hole::Many(holes), entry: initial_entry }))
-    }
+    // fn c_repeat_range(
+    //     &mut self,
+    //     expr: &Repr<I>,
+    //     min: u32,
+    //     max: u32,
+    // ) -> Option<Patch> {
+    //     let (min, max) = (u32_to_usize(min), u32_to_usize(max));
+    //     debug_assert!(min <= max);
+    //     let patch_concat = self.c_concat(iter::repeat(expr).take(min));
+    //     if min == max {
+    //         return Ok(patch_concat);
+    //     }
+    //     // Same reasoning as in c_repeat_range_min_or_more (we know that min <
+    //     // max at this point).
+    //     let patch_concat = patch_concat.unwrap_or_else(|| self.next_inst());
+    //     let initial_entry = patch_concat.entry;
+    //     // It is much simpler to compile, e.g., `a{2,5}` as:
+    //     //
+    //     //     aaa?a?a?
+    //     //
+    //     // But you end up with a sequence of instructions like this:
+    //     //
+    //     //     0: 'a'
+    //     //     1: 'a',
+    //     //     2: split(3, 4)
+    //     //     3: 'a'
+    //     //     4: split(5, 6)
+    //     //     5: 'a'
+    //     //     6: split(7, 8)
+    //     //     7: 'a'
+    //     //     8: MATCH
+    //     //
+    //     // This is *incredibly* inefficient because the splits end
+    //     // up forming a chain, which has to be resolved everything a
+    //     // transition is followed.
+    //     let mut holes = vec![];
+    //     let mut prev_hole = patch_concat.hole;
+    //     for _ in min..max {
+    //         self.fill_to_next(prev_hole);
+    //         let split = self.push_split_hole();
+    //         let Patch { hole, entry } = match self.c(expr)? {
+    //             Some(p) => p,
+    //             None => return self.pop_split_hole(),
+    //         };
+    //         prev_hole = hole;
+    //         holes.push(self.fill_split(split, Some(entry), None));
+    //     }
+    //     holes.push(prev_hole);
+    //     Ok(Some(Patch { hole: Hole::Many(holes), entry: initial_entry }))
+    // }
 
     /// Can be used as a default value for the c_* functions when the call to
     /// c_function is followed by inserting at least one instruction that is
@@ -530,11 +465,11 @@ impl<I: Integral> Compiler<I> {
         Patch { hole: Hole::None, entry: self.insts.len() }
     }
 
-    fn fill(&mut self, hole: Hole, goto: InstPtr) {
+    fn fill(&mut self, hole: Hole, goto: Index) {
         match hole {
             Hole::None => {}
-            Hole::One(pc) => {
-                self.insts[pc].fill(goto);
+            Hole::One(i) => {
+                self.insts[i].fill(goto);
             }
             Hole::Many(holes) => {
                 for hole in holes {
@@ -552,8 +487,8 @@ impl<I: Integral> Compiler<I> {
     fn fill_split(
         &mut self,
         hole: Hole,
-        goto1: Option<InstPtr>,
-        goto2: Option<InstPtr>,
+        goto1: Option<Index>,
+        goto2: Option<Index>,
     ) -> Hole {
         match hole {
             Hole::None => Hole::None,
@@ -611,15 +546,11 @@ impl<I: Integral> Compiler<I> {
         Ok(None)
     }
 
-    fn check_size(&self) -> result::Result<(), Error> {
-        use std::mem::size_of;
-
+    fn check_size(&self) {
         let size =
             self.extra_inst_bytes + (self.insts.len() * size_of::<Inst<I>>());
         if size > self.size_limit {
-            Err(Error::CompiledTooBig(self.size_limit))
-        } else {
-            Ok(())
+            panic!("Size limit exceeds");
         }
     }
 }
@@ -627,16 +558,15 @@ impl<I: Integral> Compiler<I> {
 #[derive(Debug)]
 enum Hole {
     None,
-    One(InstPtr),
+    One(Index),
     Many(Vec<Hole>),
 }
 
 impl Hole {
     fn dup_one(self) -> (Self, Self) {
         match self {
-            Hole::One(pc) => (Hole::One(pc), Hole::One(pc)),
-            Hole::None | Hole::Many(_) =>
-                unreachable!("must be called on single hole")
+            Hole::One(i) => (Hole::One(i), Hole::One(i)),
+            _ => unreachable!("must be called on single hole")
         }
     }
 }
@@ -646,28 +576,28 @@ enum MaybeInst<I: Integral> {
     Compiled(Inst<I>),
     Uncompiled(InstHole<I>),
     Split,
-    Split1(InstPtr),
-    Split2(InstPtr),
+    Split1(Index),
+    Split2(Index),
 }
 
 impl<I: Integral> MaybeInst<I> {
-    fn fill(&mut self, goto: InstPtr) {
+    fn fill(&mut self, goto: Index) {
         let maybeinst = match *self {
             MaybeInst::Split => MaybeInst::Split1(goto),
             MaybeInst::Uncompiled(ref inst) => {
                 MaybeInst::Compiled(inst.fill(goto))
             }
             MaybeInst::Split1(goto1) => {
-                MaybeInst::Compiled(Inst::Split(InstSplit {
+                MaybeInst::Compiled(Inst::Split {
                     goto1,
                     goto2: goto,
-                }))
+                })
             }
             MaybeInst::Split2(goto2) => {
-                MaybeInst::Compiled(Inst::Split(InstSplit {
+                MaybeInst::Compiled(Inst::Split {
                     goto1: goto,
                     goto2,
-                }))
+                })
             }
             _ => unreachable!(
                 "not all instructions were compiled! \
@@ -678,9 +608,9 @@ impl<I: Integral> MaybeInst<I> {
         *self = maybeinst;
     }
 
-    fn fill_split(&mut self, goto1: InstPtr, goto2: InstPtr) {
+    fn fill_split(&mut self, goto1: Index, goto2: Index) {
         let filled = match *self {
-            MaybeInst::Split => Inst::Split(InstSplit { goto1, goto2 }),
+            MaybeInst::Split => Inst::Split { goto1, goto2 },
             _ => unreachable!(
                 "must be called on Split instruction, \
                  instead it was called on: {:?}",
@@ -690,7 +620,7 @@ impl<I: Integral> MaybeInst<I> {
         *self = MaybeInst::Compiled(filled);
     }
 
-    fn half_fill_split_goto1(&mut self, goto1: InstPtr) {
+    fn half_fill_split_goto1(&mut self, goto1: Index) {
         let half_filled = match *self {
             MaybeInst::Split => goto1,
             _ => unreachable!(
@@ -702,7 +632,7 @@ impl<I: Integral> MaybeInst<I> {
         *self = MaybeInst::Split1(half_filled);
     }
 
-    fn half_fill_split_goto2(&mut self, goto2: InstPtr) {
+    fn half_fill_split_goto2(&mut self, goto2: Index) {
         let half_filled = match *self {
             MaybeInst::Split => goto2,
             _ => unreachable!(
@@ -734,11 +664,11 @@ enum InstHole<I: Integral> {
 }
 
 impl<I: Integral> InstHole<I> {
-    fn fill(&self, goto: InstPtr) -> Inst<I> {
+    fn fill(&self, goto: Index) -> Inst<I> {
         match *self {
-            InstHole::Zero(look) => Inst::Zero(InstZero { goto, look }),
-            InstHole::One(c) => Inst::One(InstOne { goto, c }),
-            InstHole::Interval(ref seq) => Inst::Interval(InstInterval { goto, seq }),
+            InstHole::Zero(look) => Inst::Zero { goto, look },
+            InstHole::One(c) => Inst::One { goto, c },
+            InstHole::Interval(ref i) => Inst::Interval { goto, i },
         }
     }
 }
@@ -774,12 +704,12 @@ struct SuffixCache {
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
 struct SuffixCacheEntry {
     key: SuffixCacheKey,
-    pc: InstPtr,
+    pc: Index,
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
 struct SuffixCacheKey {
-    from_inst: InstPtr,
+    from_inst: Index,
     start: u8,
     end: u8,
 }
@@ -792,7 +722,7 @@ impl SuffixCache {
         }
     }
 
-    fn get(&mut self, key: SuffixCacheKey, pc: InstPtr) -> Option<InstPtr> {
+    fn get(&mut self, key: SuffixCacheKey, pc: Index) -> Option<Index> {
         let hash = self.hash(&key);
         let pos = &mut self.sparse[hash];
         if let Some(entry) = self.dense.get(*pos) {

@@ -1,3 +1,7 @@
+// Don't ever compile Save instructions for regex sets because
+// they are never used. They are also never used in DFA programs
+// because DFAs can't handle captures.
+        
 use alloc::vec;
 use core::iter::FusedIterator;
 use core::iter;

@@ -6,17 +6,17 @@ use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
 use unconst::unconst;
 
 use crate::{Repr, Integral, Seq, literal::Literals};
+use crate::backtrack;
 use crate::context::Context;
 use crate::literal::LiteralSearcher;
 use crate::options::Options;
+use crate::pool::{Pool, PoolGuard};
+use crate::program::Program;
 
-use super::backtrack;
-use super::compile::Compiler;
-#[cfg(feature = "perf-dfa")]
-use super::dfa;
-use super::pikevm;
-use super::pool::{Pool, PoolGuard};
-use super::prog::Program;
+// use super::compile::Compiler;
+// #[cfg(feature = "perf-dfa")]
+// use super::dfa;
+// use super::pikevm;
 
 /// A compiled regular expression for matching Unicode strings.
 ///

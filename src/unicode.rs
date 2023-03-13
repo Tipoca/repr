@@ -47,7 +47,7 @@ impl Repr<char> {
 impl Context<char> {
     /// Return true if the given empty width instruction matches at the
     /// input position given.
-    fn is_empty_match(&self, at: usize, look: &Zero) -> bool {
+    pub fn is_empty_match(&self, at: usize, look: &Zero) -> bool {
         match look {
             Zero::StartLine => {
                 let c = &self[at - 1];
@@ -80,7 +80,7 @@ impl Context<char> {
     }
 
     /// Scan the input for a matching prefix.
-    fn prefix_at(&self, prefixes: &LiteralSearcher<char>, at: usize)
+    pub fn prefix_at(&self, prefixes: &LiteralSearcher<char>, at: usize)
         -> Option<char>
     {
         prefixes.find(&self[at..]).map(|(s, _)| self[at + s])

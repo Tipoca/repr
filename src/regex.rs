@@ -602,11 +602,6 @@ another matching engine with fixed memory requirements.
 // #[cfg(doctest)]
 // doc_comment::doctest!("../README.md");
 
-#[cfg(feature = "std")]
-pub use re::*;
-#[cfg(feature = "std")]
-pub use re_unicode::{escape, Match, Matches, Regex};
-
 /**
 Match regular expressions on arbitrary bytes.
 
@@ -698,19 +693,8 @@ performance on `&str`.
 pub mod bytes {
 }
 
-mod compile;
 #[cfg(feature = "perf-dfa")]
 mod dfa;
 mod pikevm;
-mod pool;
 mod sparse;
 mod utf8;
-
-/// The `internal` module exists to support suspicious activity, such as
-/// testing different matching engines and supporting the `regex-debug` CLI
-/// utility.
-#[doc(hidden)]
-#[cfg(feature = "std")]
-pub mod internal {
-    pub use super::compile::Compiler;
-}

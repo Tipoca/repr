@@ -21,7 +21,7 @@ on large bitsets.
 use crate::context::Context;
 use crate::exec::ProgramCache;
 use crate::repr::Integral;
-use crate::program::{InstPtr, Program};
+use crate::program::{Index, Program};
 
 type Bits = u32;
 
@@ -72,7 +72,7 @@ impl<I: Integral> Cache<I> {
 /// engine must keep track of old capture group values. We use the explicit
 /// stack to do it.
 #[derive(Clone, Copy, Debug)]
-struct Job<I: Integral> { ip: InstPtr, at: I }
+struct Job<I: Integral> { ip: Index, at: I }
 
 impl<'a, 'm, 'r, I: Integral> Bounded<'a, 'm, 'r, I> {
     /// Execute the backtracking matching engine.
@@ -181,7 +181,7 @@ impl<'a, 'm, 'r, I: Integral> Bounded<'a, 'm, 'r, I> {
         matched
     }
 
-    fn step(&mut self, mut ip: InstPtr, mut at: usize, c: I) -> bool {
+    fn step(&mut self, mut ip: Index, mut at: usize, c: I) -> bool {
         use super::program::Inst::*;
         loop {
             // This loop is an optimization to avoid constantly pushing/popping
@@ -229,7 +229,7 @@ impl<'a, 'm, 'r, I: Integral> Bounded<'a, 'm, 'r, I> {
         }
     }
 
-    fn has_visited(&mut self, ip: InstPtr, at: usize) -> bool {
+    fn has_visited(&mut self, ip: Index, at: usize) -> bool {
         let k = ip * (self.input.len() + 1) + at;
         let k1 = k / BIT_SIZE;
         let k2 = usize_to_u32(1 << (k & (BIT_SIZE - 1)));
