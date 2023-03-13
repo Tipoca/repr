@@ -133,6 +133,47 @@ impl<I: ~const Integral> Repr<I> {
     pub const fn repeat(self, count: usize) -> Self {
         Self::prod(vec![self; count].into_iter())
     }
+}
+
+#[unconst]
+impl<I: ~const Integral> Repr<I> {
+    pub const fn is_always_utf8(&self) -> bool {
+        unimplemented!()
+    }
+
+    pub const fn is_all_assertions(&self) -> bool {
+        unimplemented!()
+    }
+
+    pub const fn is_anchored_start(&self) -> bool {
+        match self {
+            Self::Zero(Zero::StartText) => true,
+            _ => false
+        }
+    }
+
+    pub const fn is_anchored_end(&self) -> bool {
+        match self {
+            Self::Zero(Zero::EndText) => true,
+            _ => false
+        }
+    }
+
+    pub const fn is_line_anchored_start(&self) -> bool {
+        unimplemented!()
+    }
+
+    pub const fn is_line_anchored_end(&self) -> bool {
+        unimplemented!()
+    }
+
+    pub const fn is_any_anchored_start(&self) -> bool {
+        unimplemented!()
+    }
+
+    pub const fn is_any_anchored_end(&self) -> bool {
+        unimplemented!()
+    }
 
     /// Returns true if and only if this repetition operator makes it possible
     /// to match the empty string.
@@ -152,18 +193,12 @@ impl<I: ~const Integral> Repr<I> {
         }
     }
 
-    pub const fn is_anchored_start(&self) -> bool {
-        match self {
-            Self::Zero(Zero::StartText) => true,
-            _ => false
-        }
+    pub const fn is_literal(&self) -> bool {
+        unimplemented!()
     }
 
-    pub const fn is_anchored_end(&self) -> bool {
-        match self {
-            Self::Zero(Zero::EndText) => true,
-            _ => false
-        }
+    pub const fn is_alternation_literal(&self) -> bool {
+        unimplemented!()
     }
 }
 
@@ -200,7 +235,7 @@ impl<I: ~const Integral> Repr<I> {
 
     /// Returns an iterator over all non-overlapping successive leftmost-first
     /// matches.
-    pub const fn find_iter(self, context: &Context<I>) -> Partition<'_, Self> {
+    pub const fn find_iter(self, context: &Context<I>) -> Partition<'_, I> {
         Partition { repr: self, context, last_end: 0, last_match: None }
     }
 }

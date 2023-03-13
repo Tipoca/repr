@@ -9,7 +9,6 @@ use super::find_byte::find_byte;
 use super::error::Error;
 use super::exec::{Exec, ExecNoSync};
 use super::re_builder::RegexBuilder;
-use super::re_trait::{self, RegularExpression};
 
 /// Escapes all regular expression meta characters in `text`.
 ///

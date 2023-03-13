@@ -7,7 +7,6 @@ use crate::repr::{Repr, Integral, Zero};
 use super::error::Error;
 use super::exec::Exec;
 use super::re_builder::RegexSetBuilder;
-use super::re_trait::RegularExpression;
 
 /// Match multiple (possibly overlapping) regular expressions in a single scan.
 ///

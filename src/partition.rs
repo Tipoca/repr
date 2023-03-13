@@ -8,17 +8,17 @@ use crate::repr::{Repr, Integral};
 #[unconst]
 /// An iterator over all non-overlapping successive leftmost-first matches.
 #[derive(Debug)]
-pub struct Partition<'t, I: ~const Integral> {
+pub struct Partition<'c, I: ~const Integral> {
     repr: Repr<I>,
-    context: &'t Context<I>,
+    context: &'c Context<I>,
     last_end: usize,
     last_match: Option<usize>,
 }
 
 #[unconst]
-impl<'t, I: ~const Integral> Partition<'t, I> {
+impl<'c, I: ~const Integral> Partition<'c, I> {
     /// Return the context being searched.
-    pub fn context(&self) -> &'t Context<I> {
+    pub fn context(&self) -> &'c Context<I> {
         self.context
     }
 
@@ -29,7 +29,7 @@ impl<'t, I: ~const Integral> Partition<'t, I> {
 }
 
 #[unconst]
-impl<'t, I: ~const Integral> Iterator for Partition<'t, I> {
+impl<'c, I: ~const Integral> Iterator for Partition<'c, I> {
     type Item = (usize, usize);
 
     fn next(&mut self) -> Option<(usize, usize)> {
@@ -59,6 +59,6 @@ impl<'t, I: ~const Integral> Iterator for Partition<'t, I> {
 }
 
 #[unconst]
-impl<'t, I: ~const Integral> FusedIterator for Partition<'t, I>
-    // R::Text: 't + AsRef<[u8]>,
+impl<'c, I: ~const Integral> FusedIterator for Partition<'c, I>
+    // R::Text: 'c + AsRef<[u8]>,
 {}

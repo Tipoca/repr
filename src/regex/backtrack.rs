@@ -16,10 +16,10 @@
 // the bitset has to be zeroed on each execution, which becomes quite expensive
 // on large bitsets.
 
+use crate::context::Context;
 use crate::repr::Integral;
 
 use super::exec::ProgramCache;
-use super::input::Input;
 use super::prog::{InstPtr, Program};
 
 type Bits = u32;
@@ -44,7 +44,7 @@ pub fn should_exec(num_insts: usize, text_len: usize) -> bool {
 #[derive(Debug)]
 pub struct Bounded<'a, 'm, 'r, I: Integral> {
     prog: &'r Program<I>,
-    input: Input<I>,
+    input: Context<I>,
     matches: &'m mut [bool],
     m: &'a mut Cache<I>,
 }

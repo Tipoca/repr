@@ -733,9 +733,7 @@ mod utf8;
 pub mod internal {
     pub use super::compile::Compiler;
     pub use super::exec::{Exec, ExecBuilder};
-    pub use super::literal::LiteralSearcher;
     pub use super::prog::{Inst, InstInterval, InstZero, Program};
 }
 
-pub use literal::LiteralSearcher;
 pub use prog::{Inst, InstInterval, InstZero, Program};

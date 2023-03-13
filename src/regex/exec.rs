@@ -7,20 +7,19 @@ use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
 use unconst::unconst;
 
 use crate::{Repr, Integral, Seq, literal::Literals};
+use crate::context::Context;
+use crate::literal::LiteralSearcher;
 
 use super::backtrack;
 use super::compile::Compiler;
 #[cfg(feature = "perf-dfa")]
 use super::dfa;
 use super::error::Error;
-use super::input::Input;
-use super::literal::LiteralSearcher;
 use super::pikevm;
 use super::pool::{Pool, PoolGuard};
 use super::prog::Program;
 use super::re_builder::RegexOptions;
 use super::re_set;
-use super::re_trait::RegularExpression;
 use super::re_unicode;
 
 /// `Exec` manages the execution of a regular expression.
@@ -311,9 +310,7 @@ impl<I: Integral> ExecBuilder<I> {
 }
 
 #[unconst]
-impl<'c, I: ~const Integral> RegularExpression for ExecNoSync<'c, I> {
-    type Text = Input<I>;
-
+impl<'c, I: ~const Integral> ExecNoSync<'c, I> {
     /// Returns the end of a match location, possibly occurring before the
     /// end location of the correct leftmost-first match.
     #[cfg_attr(feature = "perf-inline", inline(always))]
@@ -809,7 +806,7 @@ impl<'c, I: Integral> ExecNoSync<'c, I> {
             self.cache.value(),
             matches,
             quit_after_match,
-            Input::new(text),
+            Context::new(text),
             start,
             end,
         )
@@ -827,7 +824,7 @@ impl<'c, I: Integral> ExecNoSync<'c, I> {
             &self.ro.nfa,
             self.cache.value(),
             matches,
-            Input::new(text),
+            Context::new(text),
             start,
             end,
         )
