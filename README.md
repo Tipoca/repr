@@ -12,13 +12,9 @@
 - Fixed points
 - Spherical conic (tennis ball)
 
-**`Or`**
-
-- Can we optimise it by assuring its lhs and rhs always have no common prefix?
-
 **`Map`**
 
-- The functional equivalent to grouping and capturing. 
+- The functional equivalent to grouping and capturing.
 
 **`Xor`**
 
