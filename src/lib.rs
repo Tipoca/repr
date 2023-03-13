@@ -67,7 +67,7 @@ mod wrappers;
 
 pub mod char;
 pub mod constants;
-pub mod literal;
+pub mod derivative;
 pub mod macros;
 pub mod repr;
 
