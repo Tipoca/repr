@@ -880,10 +880,6 @@ impl<I: Integral> ExecReadOnly<I> {
         if let Some(MatchType::Nfa) = hint {
             return hint.unwrap();
         }
-        // If the NFA is empty, then we'll never match anything.
-        if self.nfa.insts.is_empty() {
-            return MatchType::Nothing;
-        }
         if let Some(literalty) = self.choose_literal_match_type() {
             return literalty;
         }
@@ -953,8 +949,6 @@ enum MatchType {
     Seq(MatchSeqType),
     /// An NFA variant.
     Nfa,
-    /// No match is ever possible, so don't ever try to search.
-    Nothing,
 }
 
 #[derive(Clone, Copy, Debug)]
