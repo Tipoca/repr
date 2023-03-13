@@ -60,7 +60,6 @@ mod partition;
 mod pattern;
 mod pool;
 mod program;
-mod re;
 mod seq;
 mod unicode;
 mod wrappers;

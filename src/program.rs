@@ -6,7 +6,7 @@ use core::slice;
 use unconst::unconst;
 
 use crate::interval::Interval;
-use crate::literal::LiteralSearcher;
+use crate::derivative::LiteralSearcher;
 use crate::repr::{Integral, Zero};
 
 /// `Index` represents the index of an instruction in a regex program.

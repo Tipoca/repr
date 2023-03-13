@@ -12,24 +12,6 @@ pub struct ExecNoSync<'c, I: ~const Integral> {
     cache: PoolGuard<'c, ProgramCache<I>>,
 }
 
-#[unconst]
-impl<'c, I: ~const Integral> ExecNoSync<'c, I> {
-    /// Finds the start and end location of the leftmost-first match, starting
-    /// at the given location.
-    #[cfg_attr(feature = "perf-inline", inline(always))]
-    fn find_at(&self, text: &[u8], start: usize) -> Option<(usize, usize)> {
-        if !self.is_anchor_end_match(text) {
-            return None;
-        }
-        match self.ro.match_type {
-            #[cfg(feature = "perf-literal")]
-            MatchType::Seq(ty) => self.find_literals(ty, text, start),
-            MatchType::Nfa => self.find_nfa(text, start),
-            MatchType::Nothing => None,
-        }
-    }
-}
-
 impl<'c, I: Integral> ExecNoSync<'c, I> {
     /// Executes the NFA engine to return whether there is a match or not.
     ///

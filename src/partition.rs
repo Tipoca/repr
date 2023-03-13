@@ -104,8 +104,8 @@ impl<'r, 'c, I: Integral> Iterator for Matches<'r, 'c, I> {
     type Item = Match<'c, I>;
 
     fn next(&mut self) -> Option<Match<'c, I>> {
-        let text = self.0.context();
-        self.0.next().map(|(s, e)| Match::new(text, s, e))
+        let context = self.0.context();
+        self.0.next().map(|(s, e)| Match::new(context, s, e))
     }
 }
 

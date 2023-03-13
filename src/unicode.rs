@@ -4,7 +4,7 @@ use unconst::unconst;
 
 use crate::context::Context;
 use crate::interval::Interval;
-use crate::literal::LiteralSearcher;
+use crate::derivative::LiteralSearcher;
 use crate::repr::{Repr, Integral, Zero};
 
 #[unconst]
