@@ -10,8 +10,8 @@ use crate::repr::{Repr, Integral};
 /// An iterator over all non-overlapping successive leftmost-first ranges.
 #[derive(Debug)]
 pub struct Partition<'c, I: ~const Integral> {
-    repr: Repr<I>,
     context: &'c Context<I>,
+    repr: Repr<I>,
     last_end: usize,
     last_match: Option<usize>,
 }
@@ -37,25 +37,25 @@ impl<'c, I: ~const Integral> Iterator for Partition<'c, I> {
         if self.last_end > self.context.as_ref().len() {
             return None;
         }
-        let (s, e) = match self.repr.find_at(self.context, self.last_end) {
+        let (start, end) = match self.repr.find_at(self.context, self.last_end) {
             None => return None,
-            Some((s, e)) => (s, e),
+            Some((start, end)) => (start, end),
         };
-        if s == e {
+        if start == end {
             // This is an empty match. To ensure we make progress, start
             // the next search at the smallest possible starting position
             // of the next match following this one.
-            self.last_end = e + 1;
+            self.last_end = end + 1;
             // Don't accept empty matches immediately following a match.
             // Just move on to the next match.
-            if Some(e) == self.last_match {
+            if Some(end) == self.last_match {
                 return self.next();
             }
         } else {
-            self.last_end = e;
+            self.last_end = end;
         }
-        self.last_match = Some(e);
-        Some((s, e))
+        self.last_match = Some(end);
+        Some((start, end))
     }
 }
 
