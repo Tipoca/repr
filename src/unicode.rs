@@ -2,7 +2,10 @@ use core::char::from_u32;
 
 use unconst::unconst;
 
-use crate::repr::Integral;
+use crate::context::Context;
+use crate::regex::LiteralSearcher;
+use crate::regex::InstZero;
+use crate::repr::{Integral, Zero};
 
 #[unconst]
 impl const Integral for char {
@@ -22,31 +25,76 @@ impl const Integral for char {
     }
 }
 
-// pub trait Char {
-//     /// Returns true iff the character is absent.
-//     #[inline]
-//     pub fn is_none(self) -> bool {
-//         self.0 == u32::MAX
-//     }
+/// An abstraction over input used in the matching engines.
+impl Context<char> {
+    /// Return true if the given empty width instruction matches at the
+    /// input position given.
+    fn is_empty_match(&self, at: usize, empty: &InstZero) -> bool {
+        match empty.look {
+            Zero::StartLine => {
+                let c = &self[at - 1];
+                at == 0 || c == '\n'
+            }
+            Zero::EndLine => {
+                let c = &self[at + 1];
+                at == self.len() || c == '\n'
+            }
+            Zero::StartText => at == 0,
+            Zero::EndText => at == self.len(),
+            Zero::WordBoundary => {
+                let (c1, c2) = (&self[at - 1], &self[at + 1]);
+                is_word_char(c1) != is_word_char(c2)
+            }
+            Zero::NotWordBoundary => {
+                let (c1, c2) = (&self[at - 1], &self[at + 1]);
+                is_word_char(c1) == is_word_char(c2)
+            }
+            Zero::WordBoundaryAscii => {
+                let (c1, c2) = (&self[at - 1], &self[at + 1]);
+                is_word_byte(c1) != is_word_byte(c2)
+            }
+            Zero::NotWordBoundaryAscii => {
+                let (c1, c2) = (&self[at - 1], &self[at + 1]);
+                is_word_byte(c1) == is_word_byte(c2)
+            }
+            Zero::Any => unimplemented!()
+        }
+    }
 
-//     /// Returns true iff the character is a word character.
-//     ///
-//     /// If the character is absent, then false is returned.
-//     pub fn is_word_char(self) -> bool {
-//         // is_word_character can panic if the Unicode data for \w isn't
-//         // available. However, our compiler ensures that if a Unicode word
-//         // boundary is used, then the data must also be available. If it isn't,
-//         // then the compiler returns an error.
-//         from_u32(self.0).map_or(false, regex_syntax::is_word_character)
-//     }
+    /// Scan the input for a matching prefix.
+    fn prefix_at(&self, prefixes: &LiteralSearcher<char>, at: usize)
+        -> Option<char>
+    {
+        prefixes.find(&self[at..]).map(|(s, _)| self[at + s])
+    }
+}
 
-//     /// Returns true iff the byte is a word byte.
-//     ///
-//     /// If the byte is absent, then false is returned.
-//     pub fn is_word_byte(self) -> bool {
-//         match from_u32(self.0) {
-//             Some(c) if c <= '\u{7F}' => regex_syntax::is_word_byte(c as u8),
-//             None | Some(_) => false,
-//         }
-//     }
-// }
+#[unconst]
+/// Returns true iff the character is a word character.
+///
+/// If the character is absent, then false is returned.
+pub const fn is_word_char(c: char) -> bool {
+    // is_word_character can panic if the Unicode data for \w isn't
+    // available. However, our compiler ensures that if a Unicode word
+    // boundary is used, then the data must also be available. If it isn't,
+    // then the compiler returns an error.
+    from_u32(c).map_or(false, regex_syntax::is_word_character)
+}
+
+#[unconst]
+/// Returns true iff the byte is a word byte.
+///
+/// If the byte is absent, then false is returned.
+pub const fn is_word_byte(c: char) -> bool {
+    match from_u32(c) {
+        Some(c) if c <= '\u{7F}' => regex_syntax::is_word_byte(c as u8),
+        None | Some(_) => false,
+    }
+}
+
+#[unconst]
+/// Returns true iff the character is absent.
+#[inline]
+pub const fn is_none(c: char) -> bool {
+    c == u32::MAX
+}
