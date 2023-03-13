@@ -210,6 +210,7 @@ pub struct Exec<I: Integral> {
 
 /// `ExecReadOnly` comprises all read only state for a regex. Namely, all such
 /// state is determined at compile time and never changes during search.
+#[derive(Debug)]
 struct ExecReadOnly<I: Integral> {
     /// A compiled program that is used in the NFA simulation and backtracking.
     /// It can be byte-based or Unicode codepoint based.
@@ -337,7 +338,7 @@ impl<I: ~const Integral> Exec<I> {
     #[cfg_attr(feature = "perf-inline", inline(always))]
     pub const fn is_anchor_end_match(&self, context: &Context<I>) -> bool {
         // Only do this check if the haystack is big (>1MB).
-        if context.len() > (1 << 20) && &self.ro.nfa.is_anchored_end {
+        if context.len() > (1 << 20) && self.ro.nfa.is_anchored_end {
             let lcs = &self.ro.suffixes.lcs();
             if lcs.len() >= 1 && !lcs.is_suffix(context) {
                 return false;
@@ -981,14 +982,14 @@ pub type ProgramCache<I: Integral>
 
 #[derive(Debug)]
 pub struct ProgramCacheInner<I: Integral> {
-    // pub pikevm: pikevm::Cache,
+    pub pikevm: pikevm::Cache,
     pub backtrack: backtrack::Cache<I>,
 }
 
 impl<I: Integral> ProgramCacheInner<I> {
     fn new(ro: &ExecReadOnly<I>) -> Self {
         ProgramCacheInner {
-            // pikevm: pikevm::Cache::new(&ro.nfa),
+            pikevm: pikevm::Cache::new(&ro.nfa),
             backtrack: backtrack::Cache::new(&ro.nfa),
         }
     }

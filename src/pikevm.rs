@@ -41,12 +41,14 @@ pub struct Fsm<'r, I: Integral> {
     context: Context<I>,
 }
 
+type Thread = SparseSet<usize>;
+
 /// A cached allocation that can be reused on each execution.
 #[derive(Clone, Debug)]
 pub struct Cache {
     /// A pair of ordered sets of opcodes (each opcode is an NFA state) for tracking NFA states.
-    clist: SparseSet,
-    nlist: SparseSet,
+    clist: Thread,
+    nlist: Thread,
     /// An explicit stack used for following epsilon transitions.
     /// A representation of an explicit stack frame when following epsilon
     /// transitions. This is used to avoid recursion.
@@ -60,8 +62,8 @@ impl Cache {
     /// and captures.
     pub const fn new<I: Integral>(_prog: &Program<I>) -> Self {
         Cache {
-            clist: SparseSet::new(0),
-            nlist: SparseSet::new(0),
+            clist: Thread::new(0),
+            nlist: Thread::new(0),
             stack: Vec::new()
         }
     }
@@ -99,8 +101,8 @@ impl<'r, I: ~const Integral> Fsm<'r, I> {
 
     fn exec_(
         &mut self,
-        mut clist: &mut SparseSet,
-        mut nlist: &mut SparseSet,
+        mut clist: &mut Thread,
+        mut nlist: &mut Thread,
         matches: &mut [bool],
         quit_after_match: bool,
         mut at: I,
@@ -197,7 +199,7 @@ impl<'r, I: ~const Integral> Fsm<'r, I> {
     /// at_next may be EOF.
     fn step(
         &mut self,
-        nlist: &mut SparseSet,
+        nlist: &mut Thread,
         matches: &mut [bool],
         ip: usize,
         at: I,
@@ -210,25 +212,25 @@ impl<'r, I: ~const Integral> Fsm<'r, I> {
                 }
                 true
             }
-            Inst::One(ref inst) => {
-                if inst.c == at.char() {
-                    self.add(nlist, inst.goto, at_next);
+            Inst::One { goto, seq } => {
+                if seq == at.char() {
+                    self.add(nlist, goto, at_next);
                 }
                 false
             }
-            Inst::Interval(ref inst) => {
-                if inst.matches(at.char()) {
-                    self.add(nlist, inst.goto, at_next);
+            Inst::Interval { goto, interval } => {
+                if interval.has(at.char()) {
+                    self.add(nlist, goto, at_next);
                 }
                 false
             }
-            Inst::Zero(_) | Inst::Split(_) => false,
+            _ => false,
         }
     }
 
     /// Follows epsilon transitions and adds them for processing to nlist,
     /// starting at and including ip.
-    fn add(&mut self, nlist: &mut SparseSet, ip: Index, at: I) {
+    fn add(&mut self, nlist: &mut Thread, ip: Index, at: I) {
         self.stack.push(ip);
         while let Some(ip) = self.stack.pop() {
             self.add_step(nlist, ip, at);
@@ -236,7 +238,7 @@ impl<'r, I: ~const Integral> Fsm<'r, I> {
     }
 
     /// A helper function for add that avoids excessive pushing to the stack.
-    fn add_step(&mut self, nlist: &mut SparseSet, mut ip: usize, at: I) {
+    fn add_step(&mut self, nlist: &mut Thread, mut ip: usize, at: I) {
         // Instead of pushing and popping to the stack, we mutate ip as we
         // traverse the set of states. We only push to the stack when we
         // absolutely need recursion (restoring captures or following a
@@ -248,8 +250,8 @@ impl<'r, I: ~const Integral> Fsm<'r, I> {
             }
             nlist.insert(ip);
             match self.prog[ip] {
-                Inst::Zero { goto, look } => {
-                    if self.context.is_empty_match(at, look) {
+                Inst::Zero { goto, zero } => {
+                    if self.context.is_empty_match(at, zero) {
                         ip = goto;
                     }
                 }
@@ -257,7 +259,7 @@ impl<'r, I: ~const Integral> Fsm<'r, I> {
                     self.stack.push(goto2);
                     ip = goto1;
                 }
-                Inst::Match(_) | Inst::One(_) | Inst::Interval(_) => {
+                _ => {
                     return;
                 }
             }
