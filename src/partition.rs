@@ -29,13 +29,17 @@ pub struct Partition<'c, I: ~const Integral> {
 
 #[unconst]
 impl<'c, I: ~const Integral> Partition<'c, I> {
+    pub const fn new(context: &Context<I>, repr: Repr<I>) -> Self {
+        Partition { context, repr, last_end: 0, last_match: None }
+    }
+
     /// Return the context being searched.
-    pub fn context(&self) -> &'c Context<I> {
+    pub const fn context(&self) -> &'c Context<I> {
         self.context
     }
 
     /// Return the underlying regex.
-    pub fn repr(&self) -> &Repr<I> {
+    pub const fn repr(&self) -> &Repr<I> {
         &self.repr
     }
 }

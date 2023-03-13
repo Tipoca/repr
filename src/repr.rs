@@ -7,9 +7,7 @@ use core::{
 
 use unconst::unconst;
 
-use crate::context::Context;
 use crate::interval::Interval;
-use crate::partition::Partition;
 use crate::seq::Seq;
 
 #[unconst]
@@ -219,30 +217,6 @@ impl<I: ~const Integral> Repr<I> {
 /// isn't possible in the current public API.
 #[unconst]
 impl<I: ~const Integral> Repr<I> {
-    /// Returns the location of the shortest match.
-    pub const fn shortest_match_at(&self, context: &Context<I>, start: usize)
-        -> Option<usize>
-    {
-        None
-    }
-
-    /// Returns whether the regex matches the context given.
-    pub const fn is_match_at(&self, context: &Context<I>, start: usize) -> bool {
-        false
-    }
-
-    /// Returns the leftmost-first match location if one exists.
-    pub const fn find_at(&self, context: &Context<I>, start: usize)
-        -> Option<(usize, usize)>
-    {
-
-    }
-
-    /// Returns an iterator over all non-overlapping successive leftmost-first
-    /// matches.
-    pub const fn find_iter(self, context: &Context<I>) -> Partition<'_, I> {
-        Partition { repr: self, context, last_end: 0, last_match: None }
-    }
 }
 
 /// - `Copy` + `Clone`: possibility of `!` exponentiation
