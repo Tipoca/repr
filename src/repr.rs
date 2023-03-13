@@ -198,7 +198,12 @@ impl<I: ~const Integral> Repr<I> {
     }
 
     pub const fn is_alternation_literal(&self) -> bool {
-        unimplemented!()
+        match self {
+            Repr::One(_) => true,
+            Repr::Or(lhs, rhs)
+                => lhs.is_alternation_literal() && rhs.is_alternation_literal(),
+            _ => false
+        }
     }
 }
 

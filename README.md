@@ -18,6 +18,11 @@
 - lookahead/behind, multiple futures, communication and discard, `ignore` combinator
 - Split, subspace
 
+**`Add` and `And`**
+
+- Are they better to be `Vec<Repr<I>>` instead of linked list?
+- Should they be normalised so they always have (((0, 1), 2), ..) structures? 
+
 **`Rem`** (partial match)
 
 **`Sh`** (shift position?)

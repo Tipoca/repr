@@ -17,6 +17,14 @@ scale, even if you're willing to live with the memory requirements. Namely,
 the bitset has to be zeroed on each execution, which becomes quite expensive
 on large bitsets.
 */
+/// Sets the matching engine to use a bounded backtracking engine no
+/// matter what optimizations are possible.
+///
+/// One must use this with care, since the bounded backtracking engine
+/// uses memory proportion to `len(regex) * len(context)`.
+///
+/// This overrides whatever was previously set via the `automatic` or
+/// `nfa` methods.
 
 use crate::context::Context;
 use crate::exec::ProgramCache;

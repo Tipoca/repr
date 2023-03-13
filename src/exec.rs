@@ -138,7 +138,7 @@ pub struct ExecBuilder<I: Integral> {
 /// Parsed represents a set of parsed regular expressions and their detected
 /// literals.
 struct Parsed<I: ~const Integral> {
-    expr: Repr<I>,
+    reprs: Vec<Repr<I>>,
     prefixes: Literals<I>,
     suffixes: Literals<I>,
 }
@@ -163,41 +163,6 @@ impl<I: ~const Integral> ExecBuilder<I> {
         }
     }
 
-    /// Set the matching engine to be automatically determined.
-    ///
-    /// This is the default state and will apply whatever optimizations are
-    /// possible, such as running a DFA.
-    ///
-    /// This overrides whatever was previously set via the `nfa` or
-    /// `bounded_backtracking` methods.
-    pub fn automatic(mut self) -> Self {
-        self.match_type = None;
-        self
-    }
-
-    /// Sets the matching engine to use the NFA algorithm no matter what
-    /// optimizations are possible.
-    ///
-    /// This overrides whatever was previously set via the `automatic` or
-    /// `bounded_backtracking` methods.
-    pub fn nfa(mut self) -> Self {
-        self.match_type = Some(MatchType::Nfa(MatchNfaType::PikeVM));
-        self
-    }
-
-    /// Sets the matching engine to use a bounded backtracking engine no
-    /// matter what optimizations are possible.
-    ///
-    /// One must use this with care, since the bounded backtracking engine
-    /// uses memory proportion to `len(regex) * len(text)`.
-    ///
-    /// This overrides whatever was previously set via the `automatic` or
-    /// `nfa` methods.
-    pub fn bounded_backtracking(mut self) -> Self {
-        self.match_type = Some(MatchType::Nfa(MatchNfaType::Backtrack));
-        self
-    }
-
     /// Parse the current set of patterns into their AST and extract literals.
     fn parse(&self) -> Parsed<I> {
         let mut prefixes = Some(Literals::empty());
@@ -205,46 +170,46 @@ impl<I: ~const Integral> ExecBuilder<I> {
         let is_set = true;
         // If we're compiling a regex set and that set has any anchored
         // expressions, then disable all literal optimizations.
-        for repr in &self.options.repr {
-            if cfg!(feature = "perf-literal") {
-                if !repr.is_anchored_start() && repr.is_any_anchored_start() {
-                    // Partial anchors unfortunately make it hard to use
-                    // prefixes, so disable them.
-                    prefixes = None;
-                } else if is_set && repr.is_anchored_start() {
-                    // Regex sets with anchors do not go well with literal
-                    // optimizations.
-                    prefixes = None;
-                }
-                prefixes = prefixes.and_then(|mut prefixes| {
-                    if !prefixes.union_prefixes(&repr) {
-                        None
-                    } else {
-                        Some(prefixes)
-                    }
-                });
-
-                if !repr.is_anchored_end() && repr.is_any_anchored_end() {
-                    // Partial anchors unfortunately make it hard to use
-                    // suffixes, so disable them.
-                    suffixes = None;
-                } else if is_set && repr.is_anchored_end() {
-                    // Regex sets with anchors do not go well with literal
-                    // optimizations.
-                    suffixes = None;
-                }
-                suffixes = suffixes.and_then(|mut suffixes| {
-                    if !suffixes.union_suffixes(&repr) {
-                        None
-                    } else {
-                        Some(suffixes)
-                    }
-                });
+        let mut reprs = Vec::new();
+        let mut current = &self.options.repr;
+        while let Repr::Add(lhs, rhs) = current {
+            if !repr.is_anchored_start() && repr.is_any_anchored_start() {
+                // Partial anchors unfortunately make it hard to use
+                // prefixes, so disable them.
+                prefixes = None;
+            } else if is_set && repr.is_anchored_start() {
+                // Regex sets with anchors do not go well with literal
+                // optimizations.
+                prefixes = None;
             }
+            prefixes = prefixes.and_then(|mut prefixes| {
+                if !prefixes.union_prefixes(&repr) {
+                    None
+                } else {
+                    Some(prefixes)
+                }
+            });
+
+            if !repr.is_anchored_end() && repr.is_any_anchored_end() {
+                // Partial anchors unfortunately make it hard to use
+                // suffixes, so disable them.
+                suffixes = None;
+            } else if is_set && repr.is_anchored_end() {
+                // Regex sets with anchors do not go well with literal
+                // optimizations.
+                suffixes = None;
+            }
+            suffixes = suffixes.and_then(|mut suffixes| {
+                if !suffixes.union_suffixes(&repr) {
+                    None
+                } else {
+                    Some(suffixes)
+                }
+            });
             exprs.push(repr);
         }
         Parsed {
-            expr,
+            reprs,
             prefixes: prefixes.unwrap_or_else(Literals::empty),
             suffixes: suffixes.unwrap_or_else(Literals::empty),
         }
@@ -255,7 +220,7 @@ impl<I: ~const Integral> ExecBuilder<I> {
         let parsed = self.parse();
         let mut nfa = Compiler::new()
             .size_limit(self.options.size_limit)
-            .compile(&parsed.expr);
+            .compile(&parsed.reprs);
 
         #[cfg(feature = "perf-literal")]
         let ac = self.build_aho_corasick(&parsed);
@@ -277,10 +242,10 @@ impl<I: ~const Integral> ExecBuilder<I> {
 
     #[cfg(feature = "perf-literal")]
     fn build_aho_corasick(&self, parsed: &Parsed<I>) -> Option<AhoCorasick<u32>> {
-        if parsed.expr.len() != 1 {
+        if parsed.reprs.len() != 1 {
             return None;
         }
-        let lits = match alternation_literals(&parsed.expr[0]) {
+        let lits = match or_constants(&parsed.reprs[0]) {
             None => return None,
             Some(lits) => lits,
         };
@@ -321,7 +286,7 @@ impl<I: Integral> Clone for Exec<I> {
 
 impl<I: Integral> ExecReadOnly<I> {
     fn choose_match_type(&self, hint: Option<MatchType>) -> MatchType {
-        if let Some(MatchType::Nfa(_)) = hint {
+        if let Some(MatchType::Nfa) = hint {
             return hint.unwrap();
         }
         // If the NFA is empty, then we'll never match anything.
@@ -332,7 +297,7 @@ impl<I: Integral> ExecReadOnly<I> {
             return literalty;
         }
         // We're so totally hosed.
-        MatchType::Nfa(MatchNfaType::Auto)
+        MatchType::Nfa
     }
 
     /// If a plain literal scan can be used, then a corresponding literal
@@ -396,7 +361,7 @@ enum MatchType {
     #[cfg(feature = "perf-literal")]
     Literal(MatchLiteralType),
     /// An NFA variant.
-    Nfa(MatchNfaType),
+    Nfa,
     /// No match is ever possible, so don't ever try to search.
     Nothing,
 }
@@ -415,22 +380,6 @@ enum MatchLiteralType {
     AhoCorasick,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum MatchNfaType {
-    /// Choose between Backtrack and PikeVM.
-    Auto,
-    /// NFA bounded backtracking.
-    ///
-    /// (This is only set by tests, since it never makes sense to always want
-    /// backtracking.)
-    Backtrack,
-    /// The Pike VM.
-    ///
-    /// (This is only set by tests, since it never makes sense to always want
-    /// the Pike VM.)
-    PikeVM,
-}
-
 /// `ProgramCache` maintains reusable allocations for each matching engine
 /// available to a particular program.
 ///
@@ -442,14 +391,14 @@ pub type ProgramCache<I: Integral>
 
 #[derive(Debug)]
 pub struct ProgramCacheInner<I: Integral> {
-    pub pikevm: pikevm::Cache,
+    // pub pikevm: pikevm::Cache,
     pub backtrack: backtrack::Cache<I>,
 }
 
 impl<I: Integral> ProgramCacheInner<I> {
     fn new(ro: &ExecReadOnly<I>) -> Self {
         ProgramCacheInner {
-            pikevm: pikevm::Cache::new(&ro.nfa),
+            // pikevm: pikevm::Cache::new(&ro.nfa),
             backtrack: backtrack::Cache::new(&ro.nfa),
         }
     }
@@ -458,7 +407,7 @@ impl<I: Integral> ProgramCacheInner<I> {
 /// Alternation literals checks if the given HIR is a simple alternation of
 /// literals, and if so, returns them. Otherwise, this returns None.
 #[cfg(feature = "perf-literal")]
-fn alternation_literals<I: Integral>(repr: &Repr<I>) -> Option<Vec<Vec<u8>>> {
+fn or_constants<I: Integral>(repr: &Repr<I>) -> Option<Vec<Vec<u8>>> {
     // This is pretty hacky, but basically, if `is_alternation_literal` is
     // true, then we can make several assumptions about the structure of our
     // HIR. This is what justifies the `unreachable!` statements below.
@@ -467,17 +416,17 @@ fn alternation_literals<I: Integral>(repr: &Repr<I>) -> Option<Vec<Vec<u8>>> {
     // optimization pipeline, because this is a terribly inflexible way to go
     // about things.
 
-
     if !repr.is_alternation_literal() {
         return None;
     }
-    let alts = match *repr {
-        Repr::Or(ref alts, ref rhs) => alts,
-        _ => return None, // one literal isn't worth it
-    };
+    let mut constants = Vec::new();
+    let mut current = repr;
+    // One literal isn't worth it.
+    while let Repr::Or(lhs, rhs) = current {
 
-    let extendlit = |seq: &Seq<I>, dst: &mut Vec<u8>| {
-        let mut buf = [0; 4];
+    }
+
+    let extendlit = |seq: &Seq<I>, dst: &mut Vec<I>| {
         dst.extend_from_slice(seq.encode_utf8(&mut buf).as_bytes());
     };
 
@@ -485,7 +434,7 @@ fn alternation_literals<I: Integral>(repr: &Repr<I>) -> Option<Vec<Vec<u8>>> {
     for alt in alts {
         let mut lit = vec![];
         match *alt {
-            Repr::One(ref x) => extendlit(x, &mut lit),
+            Repr::One(ref seq) => extendlit(seq, &mut lit),
             Repr::And(ref exprs) => {
                 for e in exprs {
                     match *e {

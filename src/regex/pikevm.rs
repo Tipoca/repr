@@ -1,21 +1,23 @@
-// This module implements the Pike VM. That is, it guarantees linear time
-// search of a regex on any text with memory use proportional to the size of
-// the regex.
-//
-// It is equal in power to the backtracking engine in this crate, except the
-// backtracking engine is typically faster on small regexes/texts at the
-// expense of a bigger memory footprint.
-//
-// It can do more than the DFA can (specifically, record capture locations
-// and execute Unicode word boundary assertions), but at a slower speed.
-// Specifically, the Pike VM executes a DFA implicitly by repeatedly expanding
-// epsilon transitions. That is, the Pike VM engine can be in multiple states
-// at once where as the DFA is only ever in one state at a time.
-//
-// Therefore, the Pike VM is generally treated as the fallback when the other
-// matching engines either aren't feasible to run or are insufficient.
+/*!
+This module implements the Pike VM. That is, it guarantees linear time
+search of a regex on any text with memory use proportional to the size of
+the regex.
 
-use std::mem;
+It is equal in power to the backtracking engine in this crate, except the
+backtracking engine is typically faster on small regexes/texts at the
+expense of a bigger memory footprint.
+
+It can do more than the DFA can (specifically, record capture locations
+and execute Unicode word boundary assertions), but at a slower speed.
+Specifically, the Pike VM executes a DFA implicitly by repeatedly expanding
+epsilon transitions. That is, the Pike VM engine can be in multiple states
+at once where as the DFA is only ever in one state at a time.
+
+Therefore, the Pike VM is generally treated as the fallback when the other
+matching engines either aren't feasible to run or are insufficient.
+*/
+
+use core::mem;
 
 use crate::repr::Integral;
 
