@@ -4,7 +4,7 @@ use std::result;
 use regex_syntax::utf8::Utf8Sequences;
 
 use crate::interval::Interval;
-use crate::repr::{Repr, Range, Integral, Zero};
+use crate::repr::{Repr, Integral, Zero};
 
 use super::prog::{
     Inst, InstOne, InstZero, InstPtr, InstInterval, InstSplit, Program,
