@@ -120,6 +120,9 @@ Linearity (which)
 
 **Let's not say 'communication'**
 
+- local ↔︎ global
+- context solution
+
 ![Drawing Hands](https://upload.wikimedia.org/wikipedia/en/b/ba/DrawingHands.jpg)
 
 **Algorithms (TODO)**
