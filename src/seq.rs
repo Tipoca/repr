@@ -1,6 +1,4 @@
-use alloc::{
-    vec::Vec
-};
+use alloc::vec::Vec;
 use core::ops::Deref;
 
 use unconst::unconst;

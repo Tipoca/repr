@@ -7,7 +7,9 @@ use core::{
 
 use unconst::unconst;
 
+use crate::context::Context;
 use crate::interval::Interval;
+use crate::partition::Partition;
 use crate::seq::Seq;
 
 #[unconst]
@@ -165,6 +167,44 @@ impl<I: ~const Integral> Repr<I> {
     }
 }
 
+/// This trait is my attempt at reducing code duplication and to standardize
+/// the internal API. Specific duplication that is avoided are the `find`
+/// and `capture` iterators, which are slightly tricky.
+///
+/// It's not clear whether this trait is worth it, and it also isn't
+/// clear whether it's useful as a public trait or not. Methods like
+/// `next_after_empty` reak of bad design, but the rest of the methods seem
+/// somewhat reasonable. One particular thing this trait would expose would be
+/// the ability to start the search of a regex anywhere in a haystack, which
+/// isn't possible in the current public API.
+#[unconst]
+impl<I: ~const Integral> Repr<I> {
+    /// Returns the location of the shortest match.
+    pub const fn shortest_match_at(&self, context: &Context<I>, start: usize)
+        -> Option<usize>
+    {
+        None
+    }
+
+    /// Returns whether the regex matches the context given.
+    pub const fn is_match_at(&self, context: &Context<I>, start: usize) -> bool {
+        false
+    }
+
+    /// Returns the leftmost-first match location if one exists.
+    pub const fn find_at(&self, context: &Context<I>, start: usize)
+        -> Option<(usize, usize)>
+    {
+
+    }
+
+    /// Returns an iterator over all non-overlapping successive leftmost-first
+    /// matches.
+    pub const fn find_iter(self, context: &Context<I>) -> Partition<'_, Self> {
+        Partition { repr: self, context, last_end: 0, last_match: None }
+    }
+}
+
 #[unconst]
 impl Repr<char> {
     /// `.` expression that matches any character except for `\n`. To build an
@@ -199,24 +239,6 @@ pub trait Integral: Copy + ~const Clone
     const MAX: Self;
     fn succ(self) -> Self;
     fn pred(self) -> Self;
-}
-
-#[unconst]
-impl const Integral for char {
-    const MIN: Self = '\x00';
-    const MAX: Self = '\u{10FFFF}';
-    fn succ(self) -> Self {
-        match self {
-            '\u{D7FF}' => '\u{E000}',
-            c => char::from_u32((c as u32).checked_add(1).unwrap()).unwrap(),
-        }
-    }
-    fn pred(self) -> Self {
-        match self {
-            '\u{E000}' => '\u{D7FF}',
-            c => char::from_u32((c as u32).checked_sub(1).unwrap()).unwrap(),
-        }
-    }
 }
 
 /// An anchor assertion. An anchor assertion match always has zero length.

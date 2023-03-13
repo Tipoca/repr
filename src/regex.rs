@@ -713,7 +713,6 @@ mod error;
 mod exec;
 mod expand;
 mod find_byte;
-mod input;
 mod literal;
 #[cfg(feature = "pattern")]
 mod pattern;
@@ -722,7 +721,6 @@ mod pool;
 mod prog;
 mod re_builder;
 mod re_set;
-mod re_trait;
 mod re_unicode;
 mod sparse;
 mod utf8;
@@ -736,5 +734,8 @@ pub mod internal {
     pub use super::compile::Compiler;
     pub use super::exec::{Exec, ExecBuilder};
     pub use super::literal::LiteralSearcher;
-    pub use super::prog::{Inst, InstInterval, Program};
+    pub use super::prog::{Inst, InstInterval, InstZero, Program};
 }
+
+pub use literal::LiteralSearcher;
+pub use prog::{Inst, InstInterval, InstZero, Program};

@@ -48,11 +48,14 @@ let re = (wh | '.') * 1.. & '@' & (wh * 1.. & '.') * 1.. & wh * 2..4;
 
 extern crate alloc; 
 
+mod context;
 mod conversions;
 mod interval;
 mod operators;
+mod partition;
 mod regex;
 mod seq;
+mod unicode;
 mod wrappers;
 
 pub mod char;
@@ -62,7 +65,9 @@ pub mod macros;
 pub mod repr;
 
 pub use constants::perl::{DIGIT, WORD};
+pub use context::Context;
 pub use interval::Interval;
+pub use partition::Partition;
 pub use crate::repr::{Repr, Integral, Zero};
 pub use seq::Seq;
 
