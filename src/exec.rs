@@ -329,7 +329,7 @@ impl<I: ~const Integral> Exec<I> {
             #[cfg(feature = "perf-literal")]
             MatchType::Seq(ty)
                 => self.find_literals(ty, context, start).is_some(),
-            MatchType::Nfa => self.match_nfa_type(context, start),
+            MatchType::Nfa => self.match_nfa(context, start),
             MatchType::Nothing => false,
         }
     }
@@ -385,8 +385,12 @@ impl<I: ~const Integral> Exec<I> {
         }
     }
 
-    /// Like match_nfa, but allows specification of the type of NFA engine.
-    pub const fn match_nfa_type(&self, context: &Context<I>, start: usize)
+    /// Executes the NFA engine to return whether there is a match or not.
+    ///
+    /// Ideally, we could use shortest_nfa(...).is_some() and get the same
+    /// performance characteristics, but regex sets don't have captures, which
+    /// shortest_nfa depends on.
+    pub const fn match_nfa(&self, context: &Context<I>, start: usize)
         -> bool
     {
         self.exec_nfa(
@@ -512,13 +516,13 @@ impl<I: ~const Integral> Exec<I> {
             MatchType::Seq(ty) => {
                 self.find_literals(ty, context, start).map(|(_, e)| e)
             }
-            MatchType::Nfa => self.shortest_nfa_type(context, start),
+            MatchType::Nfa => self.shortest_nfa(context, start),
             MatchType::Nothing => None,
         }
     }
 
-    /// Like shortest_nfa, but allows specification of the type of NFA engine.
-    const fn shortest_nfa_type(&self, context: &Context<I>, start: usize) -> Option<usize> {
+    /// Finds the shortest match using an NFA.
+    const fn shortest_nfa(&self, context: &Context<I>, start: usize) -> Option<usize> {
         None
     }
 
@@ -572,6 +576,13 @@ impl<I: ~const Integral> Exec<I> {
             MatchType::Nothing => None,
         };
         output.map(|(s, e)| Match::new(context, s, e))
+    }
+
+    /// Like find, but executes an NFA engine.
+    fn find_nfa(&self, context: &Context<I>, start: usize)
+        -> Option<(usize, usize)>
+    {
+        None
     }
 
     /// Returns an iterator for each successive non-overlapping match in
@@ -661,6 +672,42 @@ impl<I: ~const Integral> Exec<I> {
         start: usize,
     ) -> bool {
         self.many_matches_at(matches, context, start)
+    }
+
+    /// Finds which regular expressions match the given text.
+    ///
+    /// `matches` should have length equal to the number of regexes being
+    /// searched.
+    ///
+    /// This is only useful when one wants to know which regexes in a set
+    /// match some text.
+    pub fn many_matches_at(
+        &self,
+        matches: &mut [bool],
+        context: &Context<I>,
+        start: usize,
+    ) -> bool {
+        use self::MatchType::*;
+        if !self.is_anchor_end_match(context) {
+            return false;
+        }
+        match self.ro.match_type {
+            #[cfg(feature = "perf-literal")]
+            Seq(ty) => {
+                debug_assert_eq!(matches.len(), 1);
+                matches[0] = self.find_literals(ty, context, start).is_some();
+                matches[0]
+            }
+            Nfa => self.exec_nfa(
+                matches,
+                false,
+                false,
+                context,
+                start,
+                context.len(),
+            ),
+            Nothing => false,
+        }
     }
 }
 
