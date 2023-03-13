@@ -603,7 +603,7 @@ another matching engine with fixed memory requirements.
 // doc_comment::doctest!("../README.md");
 
 #[cfg(feature = "std")]
-pub use re_set::*;
+pub use re::*;
 #[cfg(feature = "std")]
 pub use re_unicode::{escape, Match, Matches, Regex};
 
@@ -698,15 +698,11 @@ performance on `&str`.
 pub mod bytes {
 }
 
-mod backtrack;
 mod compile;
 #[cfg(feature = "perf-dfa")]
 mod dfa;
-mod find_byte;
 mod pikevm;
 mod pool;
-mod re_set;
-mod re_unicode;
 mod sparse;
 mod utf8;
 

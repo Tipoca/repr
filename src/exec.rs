@@ -407,7 +407,7 @@ impl<'c, I: ~const Integral> ExecNoSync<'c, I> {
     /// For single regular expressions, this is equivalent to calling
     /// shortest_match(...).is_some().
     #[cfg_attr(feature = "perf-inline", inline(always))]
-    fn is_match_at(&self, text: &[u8], start: usize) -> bool {
+    pub fn is_match_at(&self, text: &[u8], start: usize) -> bool {
         if !self.is_anchor_end_match(text) {
             return false;
         }

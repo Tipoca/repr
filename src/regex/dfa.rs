@@ -36,11 +36,11 @@ articles on regexes is strongly recommended: <https://swtch.com/~rsc/regexp/>
 implementation.)
 */
 
-use std::collections::HashMap;
-use std::fmt;
-use std::iter::repeat;
-use std::mem;
-use std::sync::Arc;
+use core::collections::HashMap;
+use core::fmt;
+use core::iter::repeat;
+use core::mem;
+use core::sync::Arc;
 
 use crate::repr::Integral;
 

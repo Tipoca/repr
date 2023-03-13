@@ -57,6 +57,7 @@ mod options;
 mod partition;
 mod pattern;
 mod program;
+mod re;
 mod regex;
 mod seq;
 mod unicode;

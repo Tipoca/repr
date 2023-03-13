@@ -1,26 +1,27 @@
-// This is the backtracking matching engine. It has the same exact capability
-// as the full NFA simulation, except it is artificially restricted to small
-// regexes on small inputs because of its memory requirements.
-//
-// In particular, this is a *bounded* backtracking engine. It retains worst
-// case linear time by keeping track of the states that it has visited (using a
-// bitmap). Namely, once a state is visited, it is never visited again. Since a
-// state is keyed by `(instruction index, input index)`, we have that its time
-// complexity is `O(mn)` (i.e., linear in the size of the search text).
-//
-// The backtracking engine can beat out the NFA simulation on small
-// regexes/inputs because it doesn't have to keep track of multiple copies of
-// the capture groups. In benchmarks, the backtracking engine is roughly twice
-// as fast as the full NFA simulation. Note though that its performance doesn't
-// scale, even if you're willing to live with the memory requirements. Namely,
-// the bitset has to be zeroed on each execution, which becomes quite expensive
-// on large bitsets.
+/*!
+This is the backtracking matching engine. It has the same exact capability
+as the full NFA simulation, except it is artificially restricted to small
+regexes on small inputs because of its memory requirements.
+
+In particular, this is a *bounded* backtracking engine. It retains worst
+case linear time by keeping track of the states that it has visited (using a
+bitmap). Namely, once a state is visited, it is never visited again. Since a
+state is keyed by `(instruction index, input index)`, we have that its time
+complexity is `O(mn)` (i.e., linear in the size of the search text).
+
+The backtracking engine can beat out the NFA simulation on small
+regexes/inputs because it doesn't have to keep track of multiple copies of
+the capture groups. In benchmarks, the backtracking engine is roughly twice
+as fast as the full NFA simulation. Note though that its performance doesn't
+scale, even if you're willing to live with the memory requirements. Namely,
+the bitset has to be zeroed on each execution, which becomes quite expensive
+on large bitsets.
+*/
 
 use crate::context::Context;
+use crate::exec::ProgramCache;
 use crate::repr::Integral;
-
-use super::exec::ProgramCache;
-use super::program::{InstPtr, Program};
+use crate::program::{InstPtr, Program};
 
 type Bits = u32;
 
