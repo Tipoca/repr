@@ -1,12 +1,11 @@
-use std::fmt;
-use std::mem;
-use std::ops::Deref;
-use std::slice;
+use core::fmt;
+use core::mem;
+use core::ops::Deref;
+use core::slice;
 
 use crate::interval::Interval;
+use crate::literal::LiteralSearcher;
 use crate::repr::{Integral, Zero};
-
-use super::literal::LiteralSearcher;
 
 /// `InstPtr` represents the index of an instruction in a regex program.
 pub type InstPtr = usize;

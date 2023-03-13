@@ -22,6 +22,64 @@ use super::re_builder::RegexOptions;
 use super::re_set;
 use super::re_unicode;
 
+/// A compiled regular expression for matching Unicode strings.
+///
+/// It is represented as either a sequence of bytecode instructions (dynamic)
+/// or as a specialized Rust function (native). It can be used to search, split
+/// or replace text. All searching is done with an implicit `.*?` at the
+/// beginning and end of an expression. To force an expression to match the
+/// whole string (or a prefix or a suffix), you must use an anchor like `^` or
+/// `$` (or `\A` and `\z`).
+///
+/// While this crate will handle Unicode strings (whether in the regular
+/// expression or in the search text), all positions returned are **byte
+/// indices**. Every byte index is guaranteed to be at a Unicode code point
+/// boundary.
+///
+/// The lifetimes `'r` and `'t` in this crate correspond to the lifetime of a
+/// compiled regular expression and text to search, respectively.
+///
+/// The only methods that allocate new strings are the string replacement
+/// methods. All other methods (searching and splitting) return borrowed
+/// pointers into the string given.
+///
+/// # Examples
+///
+/// Find the location of a US phone number:
+///
+/// ```rust
+/// # use regex::Regex;
+/// let re = Regex::new("[0-9]{3}-[0-9]{3}-[0-9]{4}").unwrap();
+/// let mat = re.find("phone: 111-222-3333").unwrap();
+/// assert_eq!((mat.start(), mat.end()), (7, 19));
+/// ```
+///
+/// # Using the `std::str::pattern` methods with `Regex`
+///
+/// > **Note**: This section requires that this crate is compiled with the
+/// > `pattern` Cargo feature enabled, which **requires nightly Rust**.
+///
+/// Since `Regex` implements `Pattern`, you can use regexes with methods
+/// defined on `&str`. For example, `is_match`, `find`, `find_iter`
+/// and `split` can be replaced with `str::contains`, `str::find`,
+/// `str::match_indices` and `str::split`.
+///
+/// Here are some examples:
+///
+/// ```rust,ignore
+/// # use regex::Regex;
+/// let re = Regex::new(r"\d+").unwrap();
+/// let haystack = "a111b222c";
+///
+/// assert!(haystack.contains(&re));
+/// assert_eq!(haystack.find(&re), Some(1));
+/// assert_eq!(haystack.match_indices(&re).collect::<Vec<_>>(),
+///            vec![(1, "111"), (5, "222")]);
+/// assert_eq!(haystack.split(&re).collect::<Vec<_>>(), vec!["a", "b", "c"]);
+/// ```
+/// 
+/// =====================================================
+/// 
 /// `Exec` manages the execution of a regular expression.
 ///
 /// In particular, this manages the various compiled forms of a single regular

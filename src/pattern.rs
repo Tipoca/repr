@@ -1,5 +1,4 @@
 use core::str::pattern::{Pattern, Searcher, SearchStep};
-use crate::regex::{Regex, Matches};
 
 use unconst::unconst;
 
