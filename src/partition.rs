@@ -5,8 +5,9 @@ use unconst::unconst;
 use crate::context::Context;
 use crate::repr::{Repr, Integral};
 
+
 #[unconst]
-/// An iterator over all non-overlapping successive leftmost-first matches.
+/// An iterator over all non-overlapping successive leftmost-first ranges.
 #[derive(Debug)]
 pub struct Partition<'c, I: ~const Integral> {
     repr: Repr<I>,

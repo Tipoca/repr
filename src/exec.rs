@@ -423,29 +423,21 @@ fn or_constants<I: Integral>(repr: &Repr<I>) -> Option<Vec<Vec<u8>>> {
     let mut current = repr;
     // One literal isn't worth it.
     while let Repr::Or(lhs, rhs) = current {
-
-    }
-
-    let extendlit = |seq: &Seq<I>, dst: &mut Vec<I>| {
-        dst.extend_from_slice(seq.encode_utf8(&mut buf).as_bytes());
-    };
-
-    let mut lits = vec![];
-    for alt in alts {
-        let mut lit = vec![];
-        match *alt {
-            Repr::One(ref seq) => extendlit(seq, &mut lit),
+        let mut constant = Seq::empty();
+        match *lhs {
+            Repr::One(ref seq) => constant = constant.mul(seq),
             Repr::And(ref exprs) => {
                 for e in exprs {
                     match *e {
-                        Repr::One(ref x) => extendlit(x, &mut lit),
+                        Repr::One(ref x) => constant = constant.mul(x),
                         _ => unreachable!("expected literal, got {:?}", e),
                     }
                 }
             }
-            _ => unreachable!("expected literal or concat, got {:?}", alt),
+            _ => unreachable!("expected literal or concat, got {:?}", lhs),
         }
-        lits.push(lit);
+        constants.push(constant);
     }
-    Some(lits)
+
+    Some(constants)
 }
