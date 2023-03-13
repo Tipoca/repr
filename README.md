@@ -43,7 +43,7 @@
 | `a` | `a` | `One(a)` | | len(a) |
 | ε (empty) | `*`, ⊤ | - | | 0 |
 | `ab`/`a` · `b` (concatenation) | `a` ⊗ `b` (multiplicative conjunction/times) | `Mul(a, b)`/`a * b` | ⊗ (tensor product) | len(a) + len(b) |
-| `a\|b` (alternation) | `a` ⊕ `b` (additive disjuction/plus) | `Or(a, b)`/`a \| b` | + (coproduct) | max(len(a), len(b))
+| `a\|b` (alternation) | `a` ⊕ `b` (additive disjuction/plus) | `Or(a, b)`/`a \| b` | + (coproduct/sum) | max(len(a), len(b))
 | `a*` (kleen star) | `!a` (of course, exponential conjunction) | `Exp(a)` | □ (necessity) |
 | `a*?` (non greedy) | `?a` (why not, exponential disjunction) | `Exp(a)` | ◊ (possibility) |
 | `a?` () | `a` | `Or(Zero, a)` | |
