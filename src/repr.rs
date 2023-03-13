@@ -83,14 +83,15 @@ impl<I: ~const Integral> Repr<I> {
         }
     }
 
-    // TODO(rnarkk) better to rename it to `dual`?
-    pub const fn not(self) -> Self {
+    pub const fn dual(self) -> Self {
         match self {
             // Self::Interval(i) => {
 
             // },
-            Self::Mul(lhs, rhs) => Self::Add(box lhs.not(), box rhs.not()),
-            Self::And(lhs, rhs) => Self::Or(box lhs.not(), box rhs.not()),
+            Self::Mul(lhs, rhs) => Self::Add(box lhs.dual(), box rhs.dual()),
+            Self::Or(lhs, rhs) => Self::And(box lhs.dual(), box rhs.dual()),
+            Self::Add(lhs, rhs) => Self::Mul(box lhs.dual(), box rhs.dual()),
+            Self::And(lhs, rhs) => Self::Or(box lhs.dual(), box rhs.dual()),
             _ => unimplemented!()
         }
     }
