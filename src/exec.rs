@@ -5,10 +5,10 @@ use core::panic::AssertUnwindSafe;
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
 use unconst::unconst;
 
-use crate::{Repr, Integral, Seq};
+use crate::{Repr, Integral, Seq, Partition, Context};
 use crate::backtrack;
 use crate::compile::Compiler;
-use crate::literal::{Literals, LiteralSearcher};
+use crate::derivative::{Literals, LiteralSearcher};
 use crate::options::Options;
 use crate::pool::Pool;
 use crate::program::Program;
@@ -121,6 +121,272 @@ struct ExecReadOnly<I: Integral> {
     /// match_type encodes as much upfront knowledge about how we're going to
     /// execute a search as possible.
     match_type: MatchType,
+}
+
+#[unconst]
+impl<I: ~const Integral> Exec<I> {
+    /// Returns true if and only if there is a match for the regex in the
+    /// string given.
+    ///
+    /// It is recommended to use this method if all you need to do is test
+    /// a match, since the underlying matching engine may be able to do less
+    /// work.
+    ///
+    /// # Example
+    ///
+    /// Test if some text contains at least one word with exactly 13
+    /// Unicode word characters:
+    ///
+    /// ```rust
+    /// # use regex::Regex;
+    /// # fn main() {
+    /// let text = "I categorically deny having triskaidekaphobia.";
+    /// assert!(Regex::new(r"\b\w{13}\b").unwrap().is_match(text));
+    /// # }
+    /// ```
+    /// ===================================================
+    /// Returns true if and only if one of the regexes in this set matches
+    /// the text given.
+    ///
+    /// This method should be preferred if you only need to test whether any
+    /// of the regexes in the set should match, but don't care about *which*
+    /// regexes matched. This is because the underlying matching engine will
+    /// quit immediately after seeing the first match instead of continuing to
+    /// find all matches.
+    ///
+    /// Note that as with searches using `Regex`, the expression is unanchored
+    /// by default. That is, if the regex does not start with `^` or `\A`, or
+    /// end with `$` or `\z`, then it is permitted to match anywhere in the
+    /// text.
+    ///
+    /// # Example
+    ///
+    /// Tests whether a set matches some text:
+    ///
+    /// ```rust
+    /// # use regex::RegexSet;
+    /// let set = RegexSet::new(&[r"\w+", r"\d+"]).unwrap();
+    /// assert!(set.is_match("foo"));
+    /// assert!(!set.is_match("☃"));
+    /// ```
+    pub const fn is_match(&self, context: &Context<I>) -> bool {
+        self.is_match_at(context, 0)
+    }
+
+    /// Returns true if and only if the regex matches text.
+    ///
+    /// For single regular expressions, this is equivalent to calling
+    /// shortest_match(...).is_some().
+    /// ==============================================================
+    /// Returns the same as is_match, but starts the search at the given
+    /// offset.
+    ///
+    /// The significance of the starting point is that it takes the surrounding
+    /// context into consideration. For example, the `\A` anchor can only
+    /// match when `start == 0`.
+    pub const fn is_match_at(&self, context: &Context<I>, start: usize) -> bool {
+        if !self.is_anchor_end_match(context) {
+            return false;
+        }
+        // We need to do this dance because shortest_match relies on the NFA
+        // filling in captures[1], but a RegexSet has no captures. In other
+        // words, a RegexSet can't (currently) use shortest_match. ---AG
+        match self.ro.match_type {
+            #[cfg(feature = "perf-literal")]
+            MatchType::Seq(ty)
+                => self.find_literals(ty, context, start).is_some(),
+            MatchType::Nfa => self.match_nfa_type(context, start),
+            MatchType::Nothing => false,
+        }
+    }
+
+    #[cfg_attr(feature = "perf-inline", inline(always))]
+    pub const fn is_anchor_end_match(&self, context: &Context<I>) -> bool {
+        // Only do this check if the haystack is big (>1MB).
+        if context.len() > (1 << 20) && &self.ro.nfa.is_anchored_end {
+            let lcs = &self.ro.suffixes.lcs();
+            if lcs.len() >= 1 && !lcs.is_suffix(context) {
+                return false;
+            }
+        }
+        true
+    }
+
+    /// Finds the leftmost-first match using only literal search.
+    #[cfg(feature = "perf-literal")]
+    #[cfg_attr(feature = "perf-inline", inline(always))]
+    pub const fn find_literals(
+        &self,
+        ty: MatchSeqType,
+        context: &Context<I>,
+        start: usize,
+    ) -> Option<(usize, usize)> {
+        use self::MatchSeqType::*;
+        match ty {
+            Unanchored => {
+                let lits = &self.ro.nfa.prefixes;
+                lits.find(&context[start..]).map(|(s, e)| (start + s, start + e))
+            }
+            AnchoredStart => {
+                let lits = &self.ro.nfa.prefixes;
+                if start == 0 || !self.ro.nfa.is_anchored_start {
+                    lits.find_start(&context[start..])
+                        .map(|(s, e)| (start + s, start + e))
+                } else {
+                    None
+                }
+            }
+            AnchoredEnd => {
+                let lits = &self.ro.suffixes;
+                lits.find_end(&context[start..])
+                    .map(|(s, e)| (start + s, start + e))
+            }
+            AhoCorasick => self
+                .ro
+                .ac
+                .as_ref()
+                .unwrap()
+                .find(&context[start..])
+                .map(|m| (start + m.start(), start + m.end())),
+        }
+    }
+
+    /// Like match_nfa, but allows specification of the type of NFA engine.
+    pub const fn match_nfa_type(&self, context: &Context<I>, start: usize)
+        -> bool
+    {
+        self.exec_nfa(
+            &mut [false],
+            true,
+            false,
+            context,
+            start,
+            context.len(),
+        )
+    }
+
+    pub const fn exec_nfa(
+        &self,
+        matches: &mut [bool],
+        quit_after_match: bool,
+        quit_after_match_with_pos: bool,
+        context: &Context<I>,
+        start: usize,
+        end: usize,
+    ) -> bool {
+        let bt = if backtrack::should_exec(self.ro.nfa.len(), context.len()) {
+            true
+        } else {
+            false
+        };
+        // The backtracker can't return the shortest match position as it is
+        // implemented today. So if someone calls `shortest_match` and we need
+        // to run an NFA, then use the PikeVM.
+        if quit_after_match_with_pos || false {
+            self.exec_pikevm(
+                matches,
+                quit_after_match,
+                context,
+                start,
+                end,
+            )
+        } else {
+            self.exec_backtrack(matches, context, start, end)
+        }
+    }
+
+    /// Always run the NFA algorithm.
+    pub const fn exec_pikevm(
+        &self,
+        matches: &mut [bool],
+        quit_after_match: bool,
+        context: &Context<I>,
+        start: usize,
+        end: usize,
+    ) -> bool {
+        pikevm::Fsm::exec(
+            &self.ro.nfa,
+            self.cache.value(),
+            matches,
+            quit_after_match,
+            context,
+            start,
+            end,
+        )
+    }
+
+    /// Always runs the NFA using bounded backtracking.
+    pub const fn exec_backtrack(
+        &self,
+        matches: &mut [bool],
+        context: &Context<I>,
+        start: usize,
+        end: usize,
+    ) -> bool {
+        backtrack::Bounded::exec(
+            &self.ro.nfa,
+            self.cache.value(),
+            matches,
+            context,
+            start,
+            end,
+        )
+    }
+
+    /// Returns the end location of a match in the text given.
+    ///
+    /// This method may have the same performance characteristics as
+    /// `is_match`, except it provides an end location for a match. In
+    /// particular, the location returned *may be shorter* than the proper end
+    /// of the leftmost-first match.
+    ///
+    /// # Example
+    ///
+    /// Typically, `a+` would match the entire first sequence of `a` in some
+    /// text, but `shortest_match` can give up as soon as it sees the first
+    /// `a`.
+    ///
+    /// ```rust
+    /// # use regex::Regex;
+    /// # fn main() {
+    /// let text = "aaaaa";
+    /// let pos = Regex::new(r"a+").unwrap().shortest_match(text);
+    /// assert_eq!(pos, Some(1));
+    /// # }
+    /// ```
+    pub const fn shortest_match(&self, context: &Context<I>) -> Option<usize> {
+        self.shortest_match_at(context, 0)
+    }
+
+    /// Returns the end of a match location, possibly occurring before the
+    /// end location of the correct leftmost-first match.
+    /// ================================================================
+    /// Returns the same as shortest_match, but starts the search at the given
+    /// offset.
+    ///
+    /// The significance of the starting point is that it takes the surrounding
+    /// context into consideration. For example, the `\A` anchor can only
+    /// match when `start == 0`.
+    #[cfg_attr(feature = "perf-inline", inline(always))]
+    pub const fn shortest_match_at(&self, context: &Context<I>, start: usize)
+        -> Option<usize>
+    {
+        if !self.is_anchor_end_match(context) {
+            return None;
+        }
+        match self.ro.match_type {
+            MatchType::Seq(ty) => {
+                self.find_literals(ty, context, start).map(|(_, e)| e)
+            }
+            MatchType::Nfa => self.shortest_nfa_type(context, start),
+            MatchType::Nothing => None,
+        }
+    }
+
+    /// Like shortest_nfa, but allows specification of the type of NFA engine.
+    const fn shortest_nfa_type(&self, context: &Context<I>, start: usize) -> Option<usize> {
+        None
+    }
 }
 
 /// Facilitates the construction of an executor by exposing various knobs
@@ -320,24 +586,24 @@ impl<I: Integral> ExecReadOnly<I> {
             }
             if ro.ac.is_some() {
                 return Some(MatchType::Seq(
-                    MatchLiteralType::AhoCorasick,
+                    MatchSeqType::AhoCorasick,
                 ));
             }
             if ro.nfa.prefixes.complete() {
                 return if ro.nfa.is_anchored_start {
-                    Some(MatchType::Seq(MatchLiteralType::AnchoredStart))
+                    Some(MatchType::Seq(MatchSeqType::AnchoredStart))
                 } else {
-                    Some(MatchType::Seq(MatchLiteralType::Unanchored))
+                    Some(MatchType::Seq(MatchSeqType::Unanchored))
                 };
             }
             if ro.suffixes.complete() {
                 return if ro.nfa.is_anchored_end {
-                    Some(MatchType::Seq(MatchLiteralType::AnchoredEnd))
+                    Some(MatchType::Seq(MatchSeqType::AnchoredEnd))
                 } else {
                     // This case shouldn't happen. When the regex isn't
                     // anchored, then complete prefixes should imply complete
                     // suffixes.
-                    Some(MatchType::Seq(MatchLiteralType::Unanchored))
+                    Some(MatchType::Seq(MatchSeqType::Unanchored))
                 };
             }
             None
@@ -359,7 +625,7 @@ enum MatchType {
     /// A single or multiple literal search. This is only used when the regex
     /// can be decomposed into a literal search.
     #[cfg(feature = "perf-literal")]
-    Literal(MatchLiteralType),
+    Seq(MatchSeqType),
     /// An NFA variant.
     Nfa,
     /// No match is ever possible, so don't ever try to search.
@@ -368,7 +634,7 @@ enum MatchType {
 
 #[derive(Clone, Copy, Debug)]
 #[cfg(feature = "perf-literal")]
-enum MatchLiteralType {
+enum MatchSeqType {
     /// Match literals anywhere in text.
     Unanchored,
     /// Match literals only at the start of text.
