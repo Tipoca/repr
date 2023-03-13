@@ -205,23 +205,23 @@ impl<'a, 'm, 'r, I: Integral> Bounded<'a, 'm, 'r, I> {
                     self.m.jobs.push(Job { ip: goto2, at });
                     ip = goto1;
                 }
-                Inst::Zero { goto, look } => {
-                    if self.context.is_empty_match(at, look) {
+                Inst::Zero { goto, zero } => {
+                    if self.context.is_empty_match(at, zero) {
                         ip = goto;
                     } else {
                         return false;
                     }
                 }
-                Inst::One { goto, c } => {
-                    if c == self.context[at] {
+                Inst::One { goto, seq } => {
+                    if seq == self.context[at] {
                         ip = goto;
                         at = self.context[at + 1];
                     } else {
                         return false;
                     }
                 }
-                Inst::Interval { goto, i } => {
-                    if i.has(self.context[at]) {
+                Inst::Interval { goto, interval } => {
+                    if interval.has(self.context[at]) {
                         ip = goto;
                         at = self.context[at + 1];
                     } else {
