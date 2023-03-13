@@ -27,7 +27,7 @@
 
 **Comparisons**
 
-| regex | linear logic | repr | type theory/<br/>category theory | len |
+| regular expression/<br/>set theory | linear logic | repr | type theory/<br/>category theory | len |
 | - | - | - | - | - |
 | a ∈ L (match) | `a` : `A` (judgement) | | |
 | ∅ | 0 | `Zero` | | |
