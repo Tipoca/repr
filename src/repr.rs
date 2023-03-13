@@ -43,10 +43,7 @@ impl<I: ~const Integral> Repr<I> {
     pub const fn one(i: I) -> Self {
         Self::One(Seq::one(i))
     }
-    
-    pub const fn not(self) -> Self {
-        Self::Not(box self)
-    }
+
     
     pub const fn mul(self, other: Self) -> Self {
         match (self, other) {
@@ -81,6 +78,20 @@ impl<I: ~const Integral> Repr<I> {
     
     pub const fn le(&self, other: &Self) -> bool {
         match self {
+            // Self::Or(lhs, rhs) => other == lhs || other == rhs,
+            _ => unimplemented!()
+        }
+    }
+
+    // TODO(rnarkk) better to rename it to `dual`?
+    pub const fn not(self) -> Self {
+        match self {
+            // Self::Interval(i) => {
+
+            // },
+            Self::Mul(lhs, rhs) => Self::Add(box lhs.not(), box rhs.not()),
+            Self::And(lhs, rhs) => Self::Or(box lhs.not(), box rhs.not()),
+            _ => unimplemented!()
         }
     }
     

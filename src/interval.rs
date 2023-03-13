@@ -127,18 +127,18 @@ impl<I: ~const Integral> Interval<I> {
         ret
     }
 
-    // TODO(rnarkk) Why not simply `other.0 <= self.0 && self.1 <= other.1`
-    /// Returns true if and only if this range is a subset of the other range.
-    pub const fn le(&self, other: &Self) -> bool {
-        (other.0 <= self.0 && self.0 <= other.1)
-        && (other.0 <= self.1 && self.1 <= other.1)
-    }
-
     /// Negate this Interval.
     ///
     /// For all `a` where `a` is any element, if `a` is in this interval, then it will not be in this set after negation.
     pub const fn not(self) -> (Option<Self>, Option<Self>) {
         Self::full().sub(self)
+    }
+
+        // TODO(rnarkk) Why not simply `other.0 <= self.0 && self.1 <= other.1`
+    /// Returns true if and only if this range is a subset of the other range.
+    pub const fn le(&self, other: &Self) -> bool {
+        (other.0 <= self.0 && self.0 <= other.1)
+        && (other.0 <= self.1 && self.1 <= other.1)
     }
 
     pub const fn len(&self) -> usize {
