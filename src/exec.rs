@@ -1,26 +1,22 @@
-use std::cell::RefCell;
-use std::panic::AssertUnwindSafe;
-use std::sync::Arc;
+use alloc::sync::Arc;
+use core::cell::RefCell;
+use core::panic::AssertUnwindSafe;
 
-#[cfg(feature = "perf-literal")]
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
 use unconst::unconst;
 
 use crate::{Repr, Integral, Seq, literal::Literals};
 use crate::context::Context;
 use crate::literal::LiteralSearcher;
+use crate::options::Options;
 
 use super::backtrack;
 use super::compile::Compiler;
 #[cfg(feature = "perf-dfa")]
 use super::dfa;
-use super::error::Error;
 use super::pikevm;
 use super::pool::{Pool, PoolGuard};
 use super::prog::Program;
-use super::re_builder::RegexOptions;
-use super::re_set;
-use super::re_unicode;
 
 /// A compiled regular expression for matching Unicode strings.
 ///
@@ -158,43 +154,35 @@ struct ExecReadOnly<I: Integral> {
 // `Debug`.
 #[allow(missing_debug_implementations)]
 pub struct ExecBuilder<I: Integral> {
-    options: RegexOptions<I>,
+    options: Options<I>,
     match_type: Option<MatchType>,
 }
 
+#[unconst]
 /// Parsed represents a set of parsed regular expressions and their detected
 /// literals.
-struct Parsed<I: Integral> {
-    exprs: Vec<Repr<I>>,
+struct Parsed<I: ~const Integral> {
+    expr: Repr<I>,
     prefixes: Literals<I>,
     suffixes: Literals<I>,
 }
 
-impl<I: Integral> ExecBuilder<I> {
+#[unconst]
+impl<I: ~const Integral> ExecBuilder<I> {
     /// Create a regex execution builder.
     ///
     /// This uses default settings for everything except the regex itself,
     /// which must be provided. Further knobs can be set by calling methods,
     /// and then finally, `build` to actually create the executor.
-    pub fn new(re: &str) -> Self {
-        Self::new_many(&[re])
-    }
-
+    /// ==============
     /// Like new, but compiles the union of the given regular expressions.
     ///
     /// Note that when compiling 2 or more regular expressions, capture groups
     /// are completely unsupported. (This means both `find` and `captures`
     /// won't work.)
-    pub fn new_many(reprs: Vec<Repr<I>>) -> Self {
-        let mut opts = RegexOptions::default();
-        opts.reprs = reprs;
-        Self::new_options(opts)
-    }
-
-    /// Create a regex execution builder.
-    pub fn new_options(opts: RegexOptions<I>) -> Self {
+    pub const fn new(options: Options<I>) -> Self {
         ExecBuilder {
-            options: opts,
+            options,
             match_type: None,
         }
     }
@@ -235,14 +223,13 @@ impl<I: Integral> ExecBuilder<I> {
     }
 
     /// Parse the current set of patterns into their AST and extract literals.
-    fn parse(&self) -> Result<Parsed<I>, Error> {
-        let mut exprs = Vec::with_capacity(self.options.reprs.len());
+    fn parse(&self) -> Parsed<I> {
         let mut prefixes = Some(Literals::empty());
         let mut suffixes = Some(Literals::empty());
-        let is_set = self.options.reprs.len() > 1;
+        let is_set = true;
         // If we're compiling a regex set and that set has any anchored
         // expressions, then disable all literal optimizations.
-        for repr in &self.options.reprs {
+        for repr in &self.options.repr {
             if cfg!(feature = "perf-literal") {
                 if !repr.is_anchored_start() && repr.is_any_anchored_start() {
                     // Partial anchors unfortunately make it hard to use
@@ -280,43 +267,43 @@ impl<I: Integral> ExecBuilder<I> {
             }
             exprs.push(repr);
         }
-        Ok(Parsed {
-            exprs,
+        Parsed {
+            expr,
             prefixes: prefixes.unwrap_or_else(Literals::empty),
             suffixes: suffixes.unwrap_or_else(Literals::empty),
-        })
+        }
     }
 
     /// Build an executor that can run a regular expression.
-    pub fn build(self) -> Result<Exec<I>, Error> {
-        // Special case when we have no patterns to compile.
-        // This can happen when compiling a regex set.
-        if self.options.reprs.is_empty() {
-            let ro = Arc::new(ExecReadOnly {
-                nfa: Program::new(),
-                dfa: Program::new(),
-                dfa_reverse: Program::new(),
-                suffixes: LiteralSearcher::empty(),
-                #[cfg(feature = "perf-literal")]
-                ac: None,
-                match_type: MatchType::Nothing,
-            });
-            let pool = ExecReadOnly::new_pool(&ro);
-            return Ok(Exec { ro, pool });
-        }
-        let parsed = self.parse()?;
+    pub fn build(self) -> Exec<I> {
+        // // Special case when we have no patterns to compile.
+        // // This can happen when compiling a regex set.
+        // if self.options.repr.is_empty() {
+        //     let ro = Arc::new(ExecReadOnly {
+        //         nfa: Program::new(),
+        //         dfa: Program::new(),
+        //         dfa_reverse: Program::new(),
+        //         suffixes: LiteralSearcher::empty(),
+        //         #[cfg(feature = "perf-literal")]
+        //         ac: None,
+        //         match_type: MatchType::Nothing,
+        //     });
+        //     let pool = ExecReadOnly::new_pool(&ro);
+        //     return Exec { ro, pool };
+        // }
+        let parsed = self.parse();
         let mut nfa = Compiler::new()
             .size_limit(self.options.size_limit)
-            .compile(&parsed.exprs)?;
+            .compile(&parsed.expr)?;
         let mut dfa = Compiler::new()
             .size_limit(self.options.size_limit)
             .dfa(true)
-            .compile(&parsed.exprs)?;
+            .compile(&parsed.expr)?;
         let mut dfa_reverse = Compiler::new()
             .size_limit(self.options.size_limit)
             .dfa(true)
             .reverse(true)
-            .compile(&parsed.exprs)?;
+            .compile(&parsed.expr)?;
 
         #[cfg(feature = "perf-literal")]
         let ac = self.build_aho_corasick(&parsed);
@@ -338,15 +325,15 @@ impl<I: Integral> ExecBuilder<I> {
 
         let ro = Arc::new(ro);
         let pool = ExecReadOnly::new_pool(&ro);
-        Ok(Exec { ro, pool })
+        Exec { ro, pool }
     }
 
     #[cfg(feature = "perf-literal")]
     fn build_aho_corasick(&self, parsed: &Parsed<I>) -> Option<AhoCorasick<u32>> {
-        if parsed.exprs.len() != 1 {
+        if parsed.expr.len() != 1 {
             return None;
         }
-        let lits = match alternation_literals(&parsed.exprs[0]) {
+        let lits = match alternation_literals(&parsed.expr[0]) {
             None => return None,
             Some(lits) => lits,
         };
@@ -990,16 +977,6 @@ impl<I: Integral> Exec<I> {
             ro: &self.ro, // a clone is too expensive here! (and not needed)
             cache: self.pool.get(),
         }
-    }
-
-    /// Build a Regex from this executor.
-    pub fn into_regex(self) -> re_unicode::Regex<I> {
-        re_unicode::Regex::from(self)
-    }
-
-    /// Build a RegexSet from this executor.
-    pub fn into_regex_set(self) -> re_set::RegexSet<I> {
-        re_set::RegexSet::from(self)
     }
 }
 

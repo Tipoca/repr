@@ -1,14 +1,12 @@
 use std::borrow::Cow;
 use std::iter::FusedIterator;
-use std::ops::Range;
 
+use crate::exec::{Exec, ExecNoSync};
+use crate::Partition;
 use crate::repr::{Integral, Repr};
+use crate::options::Options;
 
 use super::find_byte::find_byte;
-
-use super::error::Error;
-use super::exec::{Exec, ExecNoSync};
-use super::re_builder::RegexBuilder;
 
 /// Escapes all regular expression meta characters in `text`.
 ///
@@ -29,29 +27,10 @@ pub struct Match<'t> {
 }
 
 impl<'t> Match<'t> {
-    /// Returns the starting byte offset of the match in the haystack.
-    #[inline]
-    pub fn start(&self) -> usize {
-        self.start
-    }
-
-    /// Returns the ending byte offset of the match in the haystack.
-    #[inline]
-    pub fn end(&self) -> usize {
-        self.end
-    }
-
-    /// Returns the range over the starting and ending byte offsets of the
-    /// match in the haystack.
-    #[inline]
-    pub fn range(&self) -> Range<usize> {
-        self.start..self.end
-    }
-
     /// Returns the matched text.
     #[inline]
     pub fn as_str(&self) -> &'t str {
-        &self.text[self.range()]
+        &self.text[self.start..self.end]
     }
 
     /// Creates a new match from the given haystack and byte offsets.
@@ -61,26 +40,11 @@ impl<'t> Match<'t> {
     }
 }
 
-impl<'t> From<Match<'t>> for Range<usize> {
-    fn from(m: Match<'t>) -> Range<usize> {
-        m.range()
-    }
-}
-
-
 #[derive(Clone)]
 pub struct Regex<I: Integral>(Exec<I>);
 
 /// Core regular expression methods.
 impl<I: Integral> Regex<I> {
-    /// Compiles a regular expression. Once compiled, it can be used repeatedly
-    /// to search, split or replace text in a string.
-    ///
-    /// If an invalid expression is given, then an error is returned.
-    pub fn new(repr: Repr<I>) -> Result<Regex<I>, Error> {
-        RegexBuilder::new(repr).build()
-    }
-
     /// Returns true if and only if there is a match for the regex in the
     /// string given.
     ///
@@ -149,56 +113,6 @@ impl<I: Integral> Regex<I> {
     /// ```
     pub fn find_iter<'r, 't>(&'r self, text: &'t str) -> Matches<'r, 't, I> {
         Matches(self.0.searcher().find_iter(text))
-    }
-
-    /// Returns an iterator of substrings of `text` delimited by a match of the
-    /// regular expression. Namely, each element of the iterator corresponds to
-    /// text that *isn't* matched by the regular expression.
-    ///
-    /// This method will *not* copy the text given.
-    ///
-    /// # Example
-    ///
-    /// To split a string delimited by arbitrary amounts of spaces or tabs:
-    ///
-    /// ```rust
-    /// # use regex::Regex;
-    /// # fn main() {
-    /// let re = Regex::new(r"[ \t]+").unwrap();
-    /// let fields: Vec<&str> = re.split("a b \t  c\td    e").collect();
-    /// assert_eq!(fields, vec!["a", "b", "c", "d", "e"]);
-    /// # }
-    /// ```
-    pub fn split<'r, 't>(&'r self, text: &'t str) -> Split<'r, 't, I> {
-        Split { finder: self.find_iter(text), last: 0 }
-    }
-
-    /// Returns an iterator of at most `limit` substrings of `text` delimited
-    /// by a match of the regular expression. (A `limit` of `0` will return no
-    /// substrings.) Namely, each element of the iterator corresponds to text
-    /// that *isn't* matched by the regular expression. The remainder of the
-    /// string that is not split will be the last element in the iterator.
-    ///
-    /// This method will *not* copy the text given.
-    ///
-    /// # Example
-    ///
-    /// Get the first two words in some text:
-    ///
-    /// ```rust
-    /// # use regex::Regex;
-    /// # fn main() {
-    /// let re = Regex::new(r"\W+").unwrap();
-    /// let fields: Vec<&str> = re.splitn("Hey! How are you?", 3).collect();
-    /// assert_eq!(fields, vec!("Hey", "How", "are you?"));
-    /// # }
-    /// ```
-    pub fn splitn<'r, 't>(
-        &'r self,
-        text: &'t str,
-        limit: usize,
-    ) -> SplitN<'r, 't, I> {
-        SplitN { splits: self.split(text), n: limit }
     }
 }
 
@@ -271,84 +185,6 @@ impl<I: Integral> Regex<I> {
     }
 }
 
-/// Yields all substrings delimited by a regular expression match.
-///
-/// `'r` is the lifetime of the compiled regular expression and `'t` is the
-/// lifetime of the string being split.
-#[derive(Debug)]
-pub struct Split<'r, 't, I: Integral> {
-    finder: Matches<'r, 't, I>,
-    last: usize,
-}
-
-impl<'r, 't, I: Integral> Iterator for Split<'r, 't, I> {
-    type Item = &'t str;
-
-    fn next(&mut self) -> Option<&'t str> {
-        let text = self.finder.0.text();
-        match self.finder.next() {
-            None => {
-                if self.last > text.len() {
-                    None
-                } else {
-                    let s = &text[self.last..];
-                    self.last = text.len() + 1; // Next call will return None
-                    Some(s)
-                }
-            }
-            Some(m) => {
-                let matched = &text[self.last..m.start()];
-                self.last = m.end();
-                Some(matched)
-            }
-        }
-    }
-}
-
-impl<'r, 't, I: Integral> FusedIterator for Split<'r, 't, I> {}
-
-/// Yields at most `N` substrings delimited by a regular expression match.
-///
-/// The last substring will be whatever remains after splitting.
-///
-/// `'r` is the lifetime of the compiled regular expression and `'t` is the
-/// lifetime of the string being split.
-#[derive(Debug)]
-pub struct SplitN<'r, 't, I: Integral> {
-    splits: Split<'r, 't, I>,
-    n: usize,
-}
-
-impl<'r, 't, I: Integral> Iterator for SplitN<'r, 't, I> {
-    type Item = &'t str;
-
-    fn next(&mut self) -> Option<&'t str> {
-        if self.n == 0 {
-            return None;
-        }
-
-        self.n -= 1;
-        if self.n > 0 {
-            return self.splits.next();
-        }
-
-        let text = self.splits.finder.0.text();
-        if self.splits.last > text.len() {
-            // We've already returned all substrings.
-            None
-        } else {
-            // self.n == 0, so future calls will return None immediately
-            Some(&text[self.splits.last..])
-        }
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        (0, Some(self.n))
-    }
-}
-
-impl<'r, 't, I: Integral> FusedIterator for SplitN<'r, 't, I> {}
-
 /// An iterator over all non-overlapping matches for a particular string.
 ///
 /// The iterator yields a `Match` value. The iterator stops when no more
@@ -357,7 +193,7 @@ impl<'r, 't, I: Integral> FusedIterator for SplitN<'r, 't, I> {}
 /// `'r` is the lifetime of the compiled regular expression and `'t` is the
 /// lifetime of the matched string.
 #[derive(Debug)]
-pub struct Matches<'r, 't, I: Integral>(re_trait::Matches<'t, ExecNoSync<'r, I>>);
+pub struct Matches<'r, 't, I: Integral>(Partition<'t, ExecNoSync<'r, I>>);
 
 impl<'r, 't, I: Integral> Iterator for Matches<'r, 't, I> {
     type Item = Match<'t>;
@@ -377,14 +213,3 @@ fn no_expansion<T: AsRef<str>>(t: &T) -> Option<Cow<'_, str>> {
         None => Some(Cow::Borrowed(s)),
     }
 }
-
-/// `NoExpand` indicates literal string replacement.
-///
-/// It can be used with `replace` and `replace_all` to do a literal string
-/// replacement without expanding `$name` to their corresponding capture
-/// groups. This can be both convenient (to avoid escaping `$`, for example)
-/// and performant (since capture groups don't need to be found).
-///
-/// `'t` is the lifetime of the literal text.
-#[derive(Clone, Debug)]
-pub struct NoExpand<'t>(pub &'t str);

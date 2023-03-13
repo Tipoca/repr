@@ -606,13 +606,9 @@ compile_error!("`std` feature is currently required to build this crate");
 // doc_comment::doctest!("../README.md");
 
 #[cfg(feature = "std")]
-pub use error::Error;
-#[cfg(feature = "std")]
-pub use re_builder::*;
-#[cfg(feature = "std")]
 pub use re_set::*;
 #[cfg(feature = "std")]
-pub use re_unicode::{escape, Match, Matches, NoExpand, Regex, Split, SplitN};
+pub use re_unicode::{escape, Match, Matches, Regex};
 
 /**
 Match regular expressions on arbitrary bytes.
@@ -709,14 +705,10 @@ mod backtrack;
 mod compile;
 #[cfg(feature = "perf-dfa")]
 mod dfa;
-mod error;
-mod exec;
-mod expand;
 mod find_byte;
 mod pikevm;
 mod pool;
 mod prog;
-mod re_builder;
 mod re_set;
 mod re_unicode;
 mod sparse;
@@ -729,7 +721,6 @@ mod utf8;
 #[cfg(feature = "std")]
 pub mod internal {
     pub use super::compile::Compiler;
-    pub use super::exec::{Exec, ExecBuilder};
     pub use super::prog::{Inst, InstInterval, InstZero, Program};
 }
 

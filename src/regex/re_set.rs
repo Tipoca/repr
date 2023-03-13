@@ -2,11 +2,9 @@ use std::iter;
 use std::slice;
 use std::vec;
 
+use crate::exec::Exec;
+use crate::options::Options;
 use crate::repr::{Repr, Integral, Zero};
-
-use super::error::Error;
-use super::exec::Exec;
-use super::re_builder::RegexSetBuilder;
 
 /// Match multiple (possibly overlapping) regular expressions in a single scan.
 ///
@@ -140,8 +138,8 @@ impl<I: Integral> RegexSet<I> {
     /// let set = RegexSet::new(&[r"\w+", r"\d+"]).unwrap();
     /// assert!(set.is_match("foo"));
     /// ```
-    pub fn new(reprs: Vec<Repr<I>>) -> Result<RegexSet<I>, Error> {
-        RegexSetBuilder::new(reprs).build()
+    pub fn new(repr: Repr<I>) -> Exec<I> {
+        Options::new(repr).build()
     }
 
     /// Create a new empty regex set.
@@ -153,8 +151,8 @@ impl<I: Integral> RegexSet<I> {
     /// let set = RegexSet::empty();
     /// assert!(set.is_empty());
     /// ```
-    pub fn empty() -> RegexSet<I> {
-        RegexSetBuilder::new(vec![Repr::Zero(Zero::Any)]).build().unwrap()
+    pub fn empty() -> Exec<I> {
+        Options::new(vec![Repr::Zero(Zero::Any)]).build()
     }
 
     /// Returns true if and only if one of the regexes in this set matches
