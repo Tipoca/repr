@@ -37,7 +37,7 @@ enum MaybeInst<I: Integral> {
     Zero(Zero),
     One(Seq<I>),
     Interval(Interval<I>),
-    Split,
+    Or,
     Split1(Index),
     Split2(Index),
 }
@@ -54,17 +54,6 @@ pub enum Inst<I: Integral> {
     /// each match instruction gets its own unique value. The value corresponds
     /// to the Nth regex in the set.
     Match(usize),
-    /// Representation of the Split instruction.
-    /// Split causes the program to diverge to one of two paths in the
-    /// program, preferring goto1.
-    Split {
-        /// The first instruction to try. A match resulting from following goto1
-        /// has precedence over a match resulting from following goto2.
-        goto1: Index,
-        /// The second instruction to try. A match resulting from following goto1
-        /// has precedence over a match resulting from following goto2.
-        goto2: Index,
-    },
     /// Representation of the `Zero` instruction.
     /// Zero represents a zero-width assertion in a regex program. A
     /// zero-width assertion does not consume any of the input text.
@@ -95,6 +84,17 @@ pub enum Inst<I: Integral> {
         /// The set of Unicode scalar value ranges to test.
         interval: Interval<I>
     },
+    /// Representation of the Or instruction.
+    /// Or causes the program to diverge to one of two paths in the
+    /// program, preferring goto1.
+    Or {
+        /// The first instruction to try. A match resulting from following goto1
+        /// has precedence over a match resulting from following goto2.
+        goto1: Index,
+        /// The second instruction to try. A match resulting from following goto1
+        /// has precedence over a match resulting from following goto2.
+        goto2: Index,
+    },
 }
 
 impl<I: Integral> MaybeInst<I> {
@@ -103,9 +103,9 @@ impl<I: Integral> MaybeInst<I> {
             Self::Zero(zero) => Inst::Zero { goto, zero },
             Self::One(seq) => Inst::One { goto, seq },
             Self::Interval(interval) => Inst::Interval { goto, interval },
-            Self::Split => Self::Split1(goto),
-            Self::Split1(goto1) => Inst::Split { goto1, goto2: goto },
-            Self::Split2(goto2) => Inst::Split { goto1: goto, goto2 },
+            Self::Or => Self::Split1(goto),
+            Self::Split1(goto1) => Inst::Or { goto1, goto2: goto },
+            Self::Split2(goto2) => Inst::Or { goto1: goto, goto2 },
             _ => unreachable!(
                 "not all instructions were compiled! \
                  found uncompiled instruction: {:?}",
@@ -117,9 +117,9 @@ impl<I: Integral> MaybeInst<I> {
 
     fn fill_split(&mut self, goto1: Index, goto2: Index) {
         let filled = match *self {
-            Self::Split => Inst::Split { goto1, goto2 },
+            Self::Or => Inst::Or { goto1, goto2 },
             _ => unreachable!(
-                "must be called on Split instruction, \
+                "must be called on Or instruction, \
                  instead it was called on: {:?}",
                 self
             ),
@@ -129,9 +129,9 @@ impl<I: Integral> MaybeInst<I> {
 
     fn half_fill_split_goto1(&mut self, goto1: Index) {
         let half_filled = match *self {
-            Self::Split => goto1,
+            Self::Or => goto1,
             _ => unreachable!(
-                "must be called on Split instruction, \
+                "must be called on Or instruction, \
                  instead it was called on: {:?}",
                 self
             ),
@@ -141,9 +141,9 @@ impl<I: Integral> MaybeInst<I> {
 
     fn half_fill_split_goto2(&mut self, goto2: Index) {
         let half_filled = match *self {
-            Self::Split => goto2,
+            Self::Or => goto2,
             _ => unreachable!(
-                "must be called on Split instruction, \
+                "must be called on Or instruction, \
                  instead it was called on: {:?}",
                 self
             ),
@@ -218,8 +218,7 @@ impl<I: ~const Integral> Compiler<I> {
         let mut dotstar_patch = Patch { hole: Hole::None, entry: 0 };
         self.compiled.is_anchored_start = expr.is_anchored_start();
         self.compiled.is_anchored_end = expr.is_anchored_end();
-        let patch =
-            self.c(expr).unwrap_or_else(|| self.next_inst());
+        let patch = self.c(expr).unwrap_or_else(|| self.next_inst());
         self.compiled.start = patch.entry;
         self.fill_to_next(patch.hole);
         self.compiled.matches = vec![self.insts.len()];
@@ -418,7 +417,7 @@ impl<I: ~const Integral> Compiler<I> {
     }
 
     fn c_full(&mut self) -> Patch {
-        self.c(&Repr::Exp(box Repr::Interval(Interval::full()))).unwrap()
+        self.c(&Repr::Exp(box Repr::Interval(Interval::full())))
     }
 
     fn c_one(&mut self, seq: Seq<I>) -> Patch {
@@ -428,7 +427,7 @@ impl<I: ~const Integral> Compiler<I> {
 
     fn c_interval(&mut self, seq: Interval<I>) -> Patch {
         let hole = if seq.0 == seq.1 {
-            self.push_hole(MaybeInst::One(seq.0))
+            self.push_hole(MaybeInst::One(Seq::one(seq.0)))
         } else {
             self.extra_inst_bytes += size_of::<I>() * 2;
             self.push_hole(MaybeInst::Interval(seq))
@@ -442,9 +441,9 @@ impl<I: ~const Integral> Compiler<I> {
     }
 
     fn c_mul(&mut self, lhs: Repr<I>, rhs: Repr<I>) -> Patch {
-        let Patch { mut hole, entry } = if let Some(p) = self.c(&lhs)? {
+        let Patch { mut hole, entry } = if let Some(p) = self.c(&lhs) {
             p
-        } else if let Some(p) = self.c(&rhs)? {
+        } else if let Some(p) = self.c(&rhs) {
             p
         };
         if let Some(p) = self.c(&lhs) {
@@ -476,7 +475,7 @@ impl<I: ~const Integral> Compiler<I> {
             self.fill_to_next(prev_hole.0);
         }
         let split = self.push_split_hole();
-        if let Some(Patch { hole, entry }) = self.c(lhs)? {
+        if let Some(Patch { hole, entry }) = self.c(lhs) {
             holes.push(hole);
             prev_hole = (self.fill_split(split, Some(entry), None), false);
         } else {
@@ -484,7 +483,7 @@ impl<I: ~const Integral> Compiler<I> {
             holes.push(split1);
             prev_hole = (split2, true);
         }
-        if let Some(Patch { hole, entry }) = self.c(&rhs)? {
+        if let Some(Patch { hole, entry }) = self.c(&rhs) {
             holes.push(hole);
             if prev_hole.1 {
                 self.fill_split(prev_hole.0, None, Some(entry));
@@ -503,7 +502,7 @@ impl<I: ~const Integral> Compiler<I> {
     fn c_exp(&mut self, repr: &Repr<I>) -> Option<Patch> {
         let split_entry = self.insts.len();
         let split = self.push_split_hole();
-        let Patch { hole: hole_rep, entry: entry_rep } = match self.c(repr)? {
+        let Patch { hole: hole_rep, entry: entry_rep } = match self.c(repr) {
             Some(p) => p,
             None => return self.pop_split_hole(),
         };
@@ -515,7 +514,7 @@ impl<I: ~const Integral> Compiler<I> {
     fn c_repeat_zero_or_one(&mut self, expr: &Repr<I>) -> Option<Patch> {
         let split_entry = self.insts.len();
         let split = self.push_split_hole();
-        let Patch { hole: hole_rep, entry: entry_rep } = match self.c(expr)? {
+        let Patch { hole: hole_rep, entry: entry_rep } = match self.c(expr) {
             Some(p) => p,
             None => return self.pop_split_hole(),
         };
@@ -652,7 +651,7 @@ impl<I: ~const Integral> Compiler<I> {
 
     fn push_split_hole(&mut self) -> Hole {
         let hole = self.insts.len();
-        self.insts.push(MaybeInst::Split);
+        self.insts.push(MaybeInst::Or);
         Hole::One(hole)
     }
 
