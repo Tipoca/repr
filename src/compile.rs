@@ -1,8 +1,11 @@
+use alloc::vec::Vec;
 use core::mem::size_of;
 
+use crate::Seq;
 use crate::interval::Interval;
 use crate::program::{Index, Inst, Program};
 use crate::repr::{Repr, Integral, Zero};
+use crate::sparse::SparseSet;
 
 #[derive(Debug)]
 struct Patch {
@@ -10,26 +13,38 @@ struct Patch {
     entry: Index,
 }
 
-/// A compiler translates a regular expression AST to a sequence of
-/// instructions. The sequence of instructions represents an NFA.
-// `Compiler` is only public via the `internal` module, so avoid deriving
-// `Debug`.
-#[allow(missing_debug_implementations)]
+#[derive(Debug)]
+enum Hole {
+    None,
+    One(Index),
+    Many(Vec<Hole>),
+}
+
+impl Hole {
+    fn dup_one(self) -> (Self, Self) {
+        match self {
+            Hole::One(i) => (Hole::One(i), Hole::One(i)),
+            _ => unreachable!("must be called on single hole")
+        }
+    }
+}
+
+/// A compiler translates a `Repr` to a sequence of instructions. The sequence of instructions represents an NFA.
 pub struct Compiler<I: Integral> {
     insts: Vec<MaybeInst<I>>,
     compiled: Program<I>,
     size_limit: usize,
     suffix_cache: SuffixCache,
-    // This keeps track of extra bytes allocated while compiling the regex
-    // program. Currently, this corresponds to two things. First is the heap
-    // memory allocated by Unicode character classes ('InstInterval'). Second is
-    // a "fake" amount of memory used by empty sub-expressions, so that enough
-    // empty sub-expressions will ultimately trigger the compiler to bail
-    // because of a size limit restriction. (That empty sub-expressions don't
-    // add to heap memory usage is more-or-less an implementation detail.) In
-    // the second case, if we don't bail, then an excessively large repetition
-    // on an empty sub-expression can result in the compiler using a very large
-    // amount of CPU time.
+    /*
+    This keeps track of extra bytes allocated while compiling the regex
+    program. Currently, this corresponds to two things.
+    1. First is the heap memory allocated by Unicode character classes ('InstInterval').
+    2. Second is a "fake" amount of memory used by empty sub-expressions, so that enough empty sub-expressions will ultimately trigger the compiler to bail because of a size limit restriction. (That empty sub-expressions don't
+    add to heap memory usage is more-or-less an implementation detail.) In
+    the second case, if we don't bail, then an excessively large repetition
+    on an empty sub-expression can result in the compiler using a very large
+    amount of CPU time.
+    */
     extra_inst_bytes: usize,
 }
 
@@ -39,27 +54,12 @@ impl<I: Integral> Compiler<I> {
     /// Various options can be set before calling `compile` on an expression.
     pub fn new() -> Self {
         Compiler {
-            insts: vec![],
+            insts: Vec::new(),
             compiled: Program::new(),
             size_limit: 10 * (1 << 20),
             suffix_cache: SuffixCache::new(1000),
             extra_inst_bytes: 0,
         }
-    }
-
-    /// The size of the resulting program is limited by size_limit. If
-    /// the program approximately exceeds the given size (in bytes), then
-    /// compilation will stop and return an error.
-    pub fn size_limit(mut self, size_limit: usize) -> Self {
-        self.size_limit = size_limit;
-        self
-    }
-
-    /// When set, the machine returned is suitable for matching text in
-    /// reverse. In particular, all concatenations are flipped.
-    pub fn reverse(mut self, yes: bool) -> Self {
-        self.compiled.is_reverse = yes;
-        self
     }
 
     /// Compile a regular expression given its AST.
@@ -130,96 +130,98 @@ impl<I: Integral> Compiler<I> {
         Ok(self.compiled)
     }
 
-    /// Compile expr into self.insts, returning a patch on success,
-    /// or an error if we run out of memory.
-    ///
-    /// All of the c_* methods of the compiler share the contract outlined
-    /// here.
-    ///
-    /// The main thing that a c_* method does is mutate `self.insts`
-    /// to add a list of mostly compiled instructions required to execute
-    /// the given expression. `self.insts` contains MaybeInsts rather than
-    /// Insts because there is some backpatching required.
-    ///
-    /// The `Patch` value returned by each c_* method provides metadata
-    /// about the compiled instructions emitted to `self.insts`. The
-    /// `entry` member of the patch refers to the first instruction
-    /// (the entry point), while the `hole` member contains zero or
-    /// more offsets to partial instructions that need to be backpatched.
-    /// The c_* routine can't know where its list of instructions are going to
-    /// jump to after execution, so it is up to the caller to patch
-    /// these jumps to point to the right place. So compiling some
-    /// expression, e, we would end up with a situation that looked like:
-    ///
-    /// ```text
-    /// self.insts = [ ..., i1, i2, ..., iexit1, ..., iexitn, ...]
-    ///                     ^              ^             ^
-    ///                     |                \         /
-    ///                   entry                \     /
-    ///                                         hole
-    /// ```
-    ///
-    /// To compile two expressions, e1 and e2, concatenated together we
-    /// would do:
-    ///
-    /// ```ignore
-    /// let patch1 = self.c(e1);
-    /// let patch2 = self.c(e2);
-    /// ```
-    ///
-    /// while leaves us with a situation that looks like
-    ///
-    /// ```text
-    /// self.insts = [ ..., i1, ..., iexit1, ..., i2, ..., iexit2 ]
-    ///                     ^        ^            ^        ^
-    ///                     |        |            |        |
-    ///                entry1        hole1   entry2        hole2
-    /// ```
-    ///
-    /// Then to merge the two patches together into one we would backpatch
-    /// hole1 with entry2 and return a new patch that enters at entry1
-    /// and has hole2 for a hole. In fact, if you look at the c_concat
-    /// method you will see that it does exactly this, though it handles
-    /// a list of expressions rather than just the two that we use for
-    /// an example.
-    ///
-    /// Ok(None) is returned when an expression is compiled to no
-    /// instruction, and so no patch.entry value makes sense.
-    fn c(&mut self, expr: &Repr<I>) -> Option<Patch> {
+    /**
+    Compile expr into self.insts, returning a patch on success,
+    or an error if we run out of memory.
+
+    All of the c_* methods of the compiler share the contract outlined
+    here.
+
+    The main thing that a c_* method does is mutate `self.insts`
+    to add a list of mostly compiled instructions required to execute
+    the given expression. `self.insts` contains MaybeInsts rather than
+    Insts because there is some backpatching required.
+
+    The `Patch` value returned by each c_* method provides metadata
+    about the compiled instructions emitted to `self.insts`. The
+    `entry` member of the patch refers to the first instruction
+    (the entry point), while the `hole` member contains zero or
+    more offsets to partial instructions that need to be backpatched.
+    The c_* routine can't know where its list of instructions are going to
+    jump to after execution, so it is up to the caller to patch
+    these jumps to point to the right place. So compiling some
+    expression, e, we would end up with a situation that looked like:
+
+    ```text
+    self.insts = [ ..., i1, i2, ..., iexit1, ..., iexitn, ...]
+                        ^              ^             ^
+                        |                \         /
+                      entry                \     /
+                                            hole
+    ```
+
+    To compile two expressions, e1 and e2, concatenated together we
+    would do:
+
+    ```ignore
+    let patch1 = self.c(e1);
+    let patch2 = self.c(e2);
+    ```
+
+    while leaves us with a situation that looks like
+
+    ```text
+    self.insts = [ ..., i1, ..., iexit1, ..., i2, ..., iexit2 ]
+                        ^        ^            ^        ^
+                        |        |            |        |
+                   entry1        hole1   entry2        hole2
+    ```
+
+    Then to merge the two patches together into one we would backpatch
+    hole1 with entry2 and return a new patch that enters at entry1
+    and has hole2 for a hole. In fact, if you look at the c_mul
+    method you will see that it does exactly this, though it handles
+    a list of expressions rather than just the two that we use for
+    an example.
+
+    Ok(None) is returned when an expression is compiled to no
+    instruction, and so no patch.entry value makes sense.
+    */
+    fn c(&mut self, expr: &Repr<I>) -> Patch {
         self.check_size();
         match *expr {
             Repr::Zero(Zero::Any) => self.c_empty(),
-            Repr::One(c) => self.c_one(c),
-            Repr::Interval(seq) => self.c_interval(seq),
-            // Anchor(hir::Anchor::StartLine) if self.compiled.is_reverse => {
+            Repr::One(seq) => self.c_one(seq),
+            Repr::Interval(interval) => self.c_interval(interval),
+            // Repr::Zero(Zero::StartLine) if self.compiled.is_reverse => {
             //     self.byte_classes.set_range(b'\n', b'\n');
-            //     self.c_empty_look(prog::Zero::EndLine)
+            //     self.c_zero(prog::Zero::EndLine)
             // }
-            // Anchor(hir::Anchor::StartLine) => {
+            // Repr::Zero(Zero::StartLine) => {
             //     self.byte_classes.set_range(b'\n', b'\n');
-            //     self.c_empty_look(prog::Zero::StartLine)
+            //     self.c_zero(prog::Zero::StartLine)
             // }
-            // Anchor(hir::Anchor::EndLine) if self.compiled.is_reverse => {
+            // Repr::Zero(Zero::EndLine) if self.compiled.is_reverse => {
             //     self.byte_classes.set_range(b'\n', b'\n');
-            //     self.c_empty_look(prog::Zero::StartLine)
+            //     self.c_zero(prog::Zero::StartLine)
             // }
-            // Anchor(hir::Anchor::EndLine) => {
+            // Repr::Zero(Zero::EndLine) => {
             //     self.byte_classes.set_range(b'\n', b'\n');
-            //     self.c_empty_look(prog::Zero::EndLine)
+            //     self.c_zero(prog::Zero::EndLine)
             // }
-            // Anchor(hir::Anchor::StartText) if self.compiled.is_reverse => {
-            //     self.c_empty_look(prog::Zero::EndText)
+            // Repr::Zero(Zero::StartText) if self.compiled.is_reverse => {
+            //     self.c_zero(prog::Zero::EndText)
             // }
-            // Anchor(hir::Anchor::StartText) => {
-            //     self.c_empty_look(prog::Zero::StartText)
+            // Repr::Zero(Zero::StartText) => {
+            //     self.c_zero(prog::Zero::StartText)
             // }
-            // Anchor(hir::Anchor::EndText) if self.compiled.is_reverse => {
-            //     self.c_empty_look(prog::Zero::StartText)
+            // Repr::Zero(Zero::EndText) if self.compiled.is_reverse => {
+            //     self.c_zero(prog::Zero::StartText)
             // }
-            // Anchor(hir::Anchor::EndText) => {
-            //     self.c_empty_look(prog::Zero::EndText)
+            // Repr::Zero(Zero::EndText) => {
+            //     self.c_zero(prog::Zero::EndText)
             // }
-            // WordBoundary(hir::WordBoundary::Unicode) => {
+            // Repr::Zero(Zero::Unicode) => {
             //     if !cfg!(feature = "unicode-perl") {
             //         return Err(Error::Syntax(
             //             "Unicode word boundaries are unavailable when \
@@ -236,9 +238,9 @@ impl<I: Integral> Compiler<I> {
             //     // when it sees an ASCII byte that maps to a byte class with
             //     // non-ASCII bytes. This ensures that never happens.
             //     self.byte_classes.set_range(0, 0x7F);
-            //     self.c_empty_look(prog::Zero::WordBoundary)
+            //     self.c_zero(prog::Zero::WordBoundary)
             // }
-            // WordBoundary(hir::WordBoundary::UnicodeNegate) => {
+            // Repr::Zero(Zero::UnicodeNegate) => {
             //     if !cfg!(feature = "unicode-perl") {
             //         return Err(Error::Syntax(
             //             "Unicode word boundaries are unavailable when \
@@ -250,24 +252,18 @@ impl<I: Integral> Compiler<I> {
             //     self.byte_classes.set_word_boundary();
             //     // See comments above for why we set the ASCII range here.
             //     self.byte_classes.set_range(0, 0x7F);
-            //     self.c_empty_look(prog::Zero::NotWordBoundary)
+            //     self.c_zero(prog::Zero::NotWordBoundary)
             // }
-            // WordBoundary(hir::WordBoundary::Ascii) => {
+            // Repr::Zero(Zero::Ascii) => {
             //     self.byte_classes.set_word_boundary();
-            //     self.c_empty_look(prog::Zero::WordBoundaryAscii)
+            //     self.c_zero(prog::Zero::WordBoundaryAscii)
             // }
-            // WordBoundary(hir::WordBoundary::AsciiNegate) => {
+            // Repr::Zero(Zero::AsciiNegate) => {
             //     self.byte_classes.set_word_boundary();
-            //     self.c_empty_look(prog::Zero::NotWordBoundaryAscii)
+            //     self.c_zero(prog::Zero::NotWordBoundaryAscii)
             // }
-            Repr::And(ref lhs, ref rhs) => {
-                if self.compiled.is_reverse {
-                    self.c_concat(rhs, lhs)
-                } else {
-                    self.c_concat(lhs, rhs)
-                }
-            }
-            Repr::Or(ref lhs, ref rhs) => self.c_alternate(lhs, rhs),
+            Repr::Mul(ref lhs, ref rhs) => self.c_mul(lhs, rhs),
+            Repr::Or(ref lhs, ref rhs) => self.c_or(lhs, rhs),
             Repr::Exp(ref repr) => self.c_exp(repr),
             _ => unimplemented!()
         }
@@ -283,58 +279,57 @@ impl<I: Integral> Compiler<I> {
         // stop compilation if there are too many empty sub-expressions
         // (e.g., via a large repetition).
         self.extra_inst_bytes += size_of::<Inst<I>>();
-        Ok(None)
+        None
     }
 
-    fn c_dotstar(&mut self) -> Patch {
+    fn c_full(&mut self) -> Patch {
         self.c(&Repr::Exp(box Repr::Interval(Interval::full()))).unwrap()
     }
 
-    fn c_one(&mut self, c: I) -> Option<Patch> {
+    fn c_one(&mut self, c: I) -> Patch {
         let hole = self.push_hole(InstHole::One(c));
-        Ok(Some(Patch { hole, entry: self.insts.len() - 1 }))
+        Patch { hole, entry: self.insts.len() - 1 }
     }
 
-    fn c_interval(&mut self, seq: Interval<I>) -> Option<Patch> {
+    fn c_interval(&mut self, seq: Interval<I>) -> Patch {
         let hole = if seq.0 == seq.1 {
             self.push_hole(InstHole::One(seq.0))
         } else {
             self.extra_inst_bytes += size_of::<I>() * 2;
             self.push_hole(InstHole::Interval(seq))
         };
-        Ok(Some(Patch { hole, entry: self.insts.len() - 1 }))
+        Patch { hole, entry: self.insts.len() - 1 }
     }
 
-    fn c_empty_look(&mut self, look: Zero) -> Option<Patch> {
+    fn c_zero(&mut self, look: Zero) -> Patch {
         let hole = self.push_hole(InstHole::Zero(look));
-        Ok(Some(Patch { hole, entry: self.insts.len() - 1 }))
+        Patch { hole, entry: self.insts.len() - 1 }
     }
 
-    fn c_concat(&mut self, lhs: Repr<I>, rhs: Repr<I>) -> Option<Patch>
-    {
+    fn c_mul(&mut self, lhs: Repr<I>, rhs: Repr<I>) -> Patch {
         let Patch { mut hole, entry } = if let Some(p) = self.c(&lhs)? {
             p
         } else if let Some(p) = self.c(&rhs)? {
             p
         };
-        if let Some(p) = self.c(&lhs)? {
+        if let Some(p) = self.c(&lhs) {
             self.fill(hole, p.entry);
             hole = p.hole;
         }
-        if let Some(p) = self.c(&rhs)? {
+        if let Some(p) = self.c(&rhs) {
             self.fill(hole, p.entry);
             hole = p.hole;
         }
-        Ok(Some(Patch { hole, entry }))
+        Patch { hole, entry }
     }
 
-    fn c_alternate(&mut self, lhs: &Repr<I>, rhs: &Repr<I>) -> Option<Patch> {
+    fn c_or(&mut self, lhs: &Repr<I>, rhs: &Repr<I>) -> Patch {
         // Initial entry point is always the first split.
         let first_split_entry = self.insts.len();
 
         // Save up all of the holes from each alternate. They will all get
         // patched to point to the same location.
-        let mut holes = vec![];
+        let mut holes = Vec::new();
 
         // true indicates that the hole is a split where we want to fill
         // the second branch.
@@ -367,19 +362,19 @@ impl<I: Integral> Compiler<I> {
             // branches will go to the same place anyway.
             holes.push(prev_hole.0);
         }
-        Ok(Some(Patch { hole: Hole::Many(holes), entry: first_split_entry }))
+        Patch { hole: Hole::Many(holes), entry: first_split_entry }
     }
 
-    fn c_exp(&mut self, rep: &Repr<I>) -> Option<Patch> {
-        self.c_repeat_zero_or_more(&rep)
-        // match range {
-        //     Range::Full(0, 1) => self.c_repeat_zero_or_one(&rep),
-        //     Range::From(0) => ,
-        //     Range::From(1) => self.c_repeat_one_or_more(&rep),
-        //     Range::Full(n, m) if n == m => self.c_repeat_range(&rep, n, n),
-        //     Range::From(m) => self.c_repeat_range_min_or_more(&rep, m),
-        //     Range::Full(n, m) => self.c_repeat_range(&rep, n, m)
-        // }
+    fn c_exp(&mut self, repr: &Repr<I>) -> Option<Patch> {
+        let split_entry = self.insts.len();
+        let split = self.push_split_hole();
+        let Patch { hole: hole_rep, entry: entry_rep } = match self.c(repr)? {
+            Some(p) => p,
+            None => return self.pop_split_hole(),
+        };
+        self.fill(hole_rep, split_entry);
+        let split_hole = self.fill_split(split, Some(entry_rep), None);
+        Some(Patch { hole: split_hole, entry: split_entry })
     }
 
     fn c_repeat_zero_or_one(&mut self, expr: &Repr<I>) -> Option<Patch> {
@@ -394,19 +389,6 @@ impl<I: Integral> Compiler<I> {
         Some(Patch { hole: Hole::Many(holes), entry: split_entry })
     }
 
-    fn c_repeat_zero_or_more(&mut self, expr: &Repr<I>) -> Option<Patch> {
-        let split_entry = self.insts.len();
-        let split = self.push_split_hole();
-        let Patch { hole: hole_rep, entry: entry_rep } = match self.c(expr)? {
-            Some(p) => p,
-            None => return self.pop_split_hole(),
-        };
-
-        self.fill(hole_rep, split_entry);
-        let split_hole = self.fill_split(split, Some(entry_rep), None);
-        Some(Patch { hole: split_hole, entry: split_entry })
-    }
-
     // fn c_repeat_range(
     //     &mut self,
     //     expr: &Repr<I>,
@@ -415,7 +397,7 @@ impl<I: Integral> Compiler<I> {
     // ) -> Option<Patch> {
     //     let (min, max) = (u32_to_usize(min), u32_to_usize(max));
     //     debug_assert!(min <= max);
-    //     let patch_concat = self.c_concat(iter::repeat(expr).take(min));
+    //     let patch_concat = self.c_mul(iter::repeat(expr).take(min));
     //     if min == max {
     //         return Ok(patch_concat);
     //     }
@@ -442,7 +424,7 @@ impl<I: Integral> Compiler<I> {
     //     // This is *incredibly* inefficient because the splits end
     //     // up forming a chain, which has to be resolved everything a
     //     // transition is followed.
-    //     let mut holes = vec![];
+    //     let mut holes = Vec::new();
     //     let mut prev_hole = patch_concat.hole;
     //     for _ in min..max {
     //         self.fill_to_next(prev_hole);
@@ -484,11 +466,8 @@ impl<I: Integral> Compiler<I> {
         self.fill(hole, next);
     }
 
-    fn fill_split(
-        &mut self,
-        hole: Hole,
-        goto1: Option<Index>,
-        goto2: Option<Index>,
+    fn fill_split(&mut self, hole: Hole, goto1: Option<Index>,
+                  goto2: Option<Index>,
     ) -> Hole {
         match hole {
             Hole::None => Hole::None,
@@ -510,7 +489,7 @@ impl<I: Integral> Compiler<I> {
                 ),
             },
             Hole::Many(holes) => {
-                let mut new_holes = vec![];
+                let mut new_holes = Vec::new();
                 for hole in holes {
                     new_holes.push(self.fill_split(hole, goto1, goto2));
                 }
@@ -543,7 +522,7 @@ impl<I: Integral> Compiler<I> {
 
     fn pop_split_hole(&mut self) -> Option<Patch> {
         self.insts.pop();
-        Ok(None)
+        None
     }
 
     fn check_size(&self) {
@@ -551,22 +530,6 @@ impl<I: Integral> Compiler<I> {
             self.extra_inst_bytes + (self.insts.len() * size_of::<Inst<I>>());
         if size > self.size_limit {
             panic!("Size limit exceeds");
-        }
-    }
-}
-
-#[derive(Debug)]
-enum Hole {
-    None,
-    One(Index),
-    Many(Vec<Hole>),
-}
-
-impl Hole {
-    fn dup_one(self) -> (Self, Self) {
-        match self {
-            Hole::One(i) => (Hole::One(i), Hole::One(i)),
-            _ => unreachable!("must be called on single hole")
         }
     }
 }
@@ -659,16 +622,16 @@ impl<I: Integral> MaybeInst<I> {
 #[derive(Clone)]
 enum InstHole<I: Integral> {
     Zero(Zero),
-    One(I),
+    One(Seq<I>),
     Interval(Interval<I>),
 }
 
 impl<I: Integral> InstHole<I> {
     fn fill(&self, goto: Index) -> Inst<I> {
         match *self {
-            InstHole::Zero(look) => Inst::Zero { goto, look },
-            InstHole::One(c) => Inst::One { goto, c },
-            InstHole::Interval(ref i) => Inst::Interval { goto, i },
+            InstHole::Zero(zero) => Inst::Zero { goto, zero },
+            InstHole::One(seq) => Inst::One { goto, seq },
+            InstHole::Interval(ref interval) => Inst::Interval { goto, interval },
         }
     }
 }
@@ -695,11 +658,7 @@ impl<I: Integral> InstHole<I> {
 /// This uses similar idea to [`SparseSet`](../sparse/struct.SparseSet.html),
 /// except it uses hashes as original indices and then compares full keys for
 /// validation against `dense` array.
-#[derive(Debug)]
-struct SuffixCache {
-    sparse: Box<[usize]>,
-    dense: Vec<SuffixCacheEntry>,
-}
+type SuffixCache = SparseSet<SuffixCacheEntry>;
 
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
 struct SuffixCacheEntry {
@@ -715,13 +674,6 @@ struct SuffixCacheKey {
 }
 
 impl SuffixCache {
-    fn new(size: usize) -> Self {
-        SuffixCache {
-            sparse: vec![0usize; size].into(),
-            dense: Vec::with_capacity(size),
-        }
-    }
-
     fn get(&mut self, key: SuffixCacheKey, pc: Index) -> Option<Index> {
         let hash = self.hash(&key);
         let pos = &mut self.sparse[hash];
@@ -733,10 +685,6 @@ impl SuffixCache {
         *pos = self.dense.len();
         self.dense.push(SuffixCacheEntry { key, pc });
         None
-    }
-
-    fn clear(&mut self) {
-        self.dense.clear();
     }
 
     fn hash(&self, suffix: &SuffixCacheKey) -> usize {

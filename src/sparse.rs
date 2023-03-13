@@ -16,10 +16,10 @@ use core::{
 /// reuse allocations, so the initial allocation cost is bareable. However,
 /// its other properties listed above are extremely useful.
 #[derive(Clone)]
-pub struct SparseSet {
+pub struct SparseSet<T: Default> {
     /// Dense contains the instruction pointers in the order in which they
     /// were inserted.
-    dense: Vec<usize>,
+    dense: Vec<T>,
     /// Sparse maps instruction pointers to their location in dense.
     ///
     /// An instruction pointer is in the set if and only if
@@ -27,11 +27,11 @@ pub struct SparseSet {
     sparse: Box<[usize]>,
 }
 
-impl SparseSet {
-    pub fn new(size: usize) -> SparseSet {
+impl<T: Default> SparseSet<T> {
+    pub fn new(size: usize) -> Self {
         SparseSet {
             dense: Vec::with_capacity(size),
-            sparse: vec![0; size].into_boxed_slice(),
+            sparse: vec![T::default(); size].into_boxed_slice(),
         }
     }
 
@@ -71,13 +71,13 @@ impl SparseSet {
     }
 }
 
-impl Debug for SparseSet {
+impl<T: Default> Debug for SparseSet<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "SparseSet({:?})", self.dense)
     }
 }
 
-impl Deref for SparseSet {
+impl<T: Default> Deref for SparseSet<T> {
     type Target = [usize];
 
     fn deref(&self) -> &Self::Target {
@@ -85,7 +85,7 @@ impl Deref for SparseSet {
     }
 }
 
-impl<'a> IntoIterator for &'a SparseSet {
+impl<'a, T: Default> IntoIterator for &'a SparseSet<T> {
     type Item = &'a usize;
     type IntoIter = Iter<'a, usize>;
     

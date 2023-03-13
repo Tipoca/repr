@@ -5,6 +5,7 @@ use core::slice;
 
 use unconst::unconst;
 
+use crate::Seq;
 use crate::interval::Interval;
 use crate::derivative::LiteralSearcher;
 use crate::repr::{Integral, Zero};
@@ -133,16 +134,16 @@ impl<I: ~const Integral> Debug for Program<I> {
                 Inst::Split { goto1, goto2 } => {
                     write!(f, "{:04} Split({}, {})", pc, goto1, goto2)?;
                 }
-                Inst::Zero { goto, look } => {
-                    let s = format!("{:?}", look);
+                Inst::Zero { goto, zero } => {
+                    let s = format!("{:?}", zero);
                     write!(f, "{:04} {}", pc, with_goto(pc, goto, s))?;
                 }
-                Inst::One { goto, c } => {
-                    let s = format!("{:?}", c);
+                Inst::One { goto, seq } => {
+                    let s = format!("{:?}", seq);
                     write!(f, "{:04} {}", pc, with_goto(pc, goto, s))?;
                 }
-                Inst::Interval { goto, i } => {
-                    let ranges = format!("{:?}-{:?}", i.0, i.1);
+                Inst::Interval { goto, interval } => {
+                    let ranges = format!("{:?}-{:?}", interval.0, interval.1);
                     write!(f, "{:04} {}", pc, with_goto(pc, goto, ranges))?;
                 }
             }
@@ -210,7 +211,7 @@ pub enum Inst<I: Integral> {
         /// succeeds.
         goto: Index,
         /// The type of zero-width assertion to check.
-        look: Zero,
+        zero: Zero,
     },
     /// Representation of the Char instruction.
     /// Char requires the regex program to match the character in InstOne at
@@ -220,7 +221,7 @@ pub enum Inst<I: Integral> {
         /// succeeds.
         goto: Index,
         /// The character to test.
-        c: I,
+        seq: Seq<I>,
     },
     /// Representation of the Ranges instruction.
     /// Ranges requires the regex program to match the character at the current
@@ -230,7 +231,7 @@ pub enum Inst<I: Integral> {
         /// succeeds.
         goto: Index,
         /// The set of Unicode scalar value ranges to test.
-        i: Interval<I>
+        interval: Interval<I>
     },
 }
 
