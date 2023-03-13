@@ -1,6 +1,8 @@
 use alloc::vec::Vec;
 use core::mem::size_of;
 
+use unconst::unconst;
+
 use crate::Seq;
 use crate::interval::Interval;
 use crate::program::{Index, Program};
@@ -29,7 +31,7 @@ impl Hole {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 enum MaybeInst<I: Integral> {
     Compiled(Inst<I>),
     Zero(Zero),
@@ -40,9 +42,9 @@ enum MaybeInst<I: Integral> {
     Split2(Index),
 }
 
-// Endofunctor?
+// Endofunctor? Effect?
 /// Inst is an instruction code in a Regex program.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Inst<I: Integral> {
     /// Match indicates that the program has reached a match state.
     ///
@@ -100,20 +102,10 @@ impl<I: Integral> MaybeInst<I> {
         let maybeinst = match *self {
             Self::Zero(zero) => Inst::Zero { goto, zero },
             Self::One(seq) => Inst::One { goto, seq },
-            Self::Interval(ref interval) => Inst::Interval { goto, interval },
+            Self::Interval(interval) => Inst::Interval { goto, interval },
             Self::Split => Self::Split1(goto),
-            Self::Split1(goto1) => {
-                Self::Compiled(Inst::Split {
-                    goto1,
-                    goto2: goto,
-                })
-            }
-            Self::Split2(goto2) => {
-                Self::Compiled(Inst::Split {
-                    goto1: goto,
-                    goto2,
-                })
-            }
+            Self::Split1(goto1) => Inst::Split { goto1, goto2: goto },
+            Self::Split2(goto2) => Inst::Split { goto1: goto, goto2 },
             _ => unreachable!(
                 "not all instructions were compiled! \
                  found uncompiled instruction: {:?}",
@@ -190,11 +182,12 @@ pub struct Compiler<I: Integral> {
     extra_inst_bytes: usize,
 }
 
-impl<I: Integral> Compiler<I> {
+#[unconst]
+impl<I: ~const Integral> Compiler<I> {
     /// Create a new regular expression compiler.
     ///
     /// Various options can be set before calling `compile` on an expression.
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Compiler {
             insts: Vec::new(),
             compiled: Program::new(),

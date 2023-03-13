@@ -5,10 +5,8 @@ use core::slice;
 
 use unconst::unconst;
 
-use crate::Seq;
-use crate::interval::Interval;
 use crate::derivative::LiteralSearcher;
-use crate::repr::{Integral, Zero};
+use crate::repr::{Integral};
 
 /// `Index` represents the index of an instruction in a regex program.
 pub type Index = usize;
