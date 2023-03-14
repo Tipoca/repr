@@ -2,18 +2,15 @@ use alloc::sync::Arc;
 use core::cell::RefCell;
 use core::panic::AssertUnwindSafe;
 
-use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
 use unconst::unconst;
 
-use crate::{Repr, Integral, Seq, Partition, Context, pikevm};
+use crate::{Repr, Integral, Seq, Partition, Context};
 use crate::backtrack;
-use crate::compile::{Compiler, Program};
-use crate::derivative::{Literals, LiteralSearcher};
+use crate::compile::{Program, Mode, SeqMode};
 use crate::options::Options;
-use crate::partition::Match;
+use crate::partition::{Match, SetMatches};
+use crate::pikevm;
 use crate::pool::Pool;
-
-// use super::pikevm;
 
 /// A compiled regular expression for matching Unicode strings.
 ///
@@ -195,7 +192,7 @@ use crate::pool::Pool;
 #[derive(Debug)]
 pub struct Exec<I: Integral> {
     /// All read only state.
-    ro: Arc<ExecReadOnly<I>>,
+    ro: Arc<Program<I>>,
     /// A pool of reusable values for the various matching engines.
     ///
     /// Note that boxing this value is not strictly necessary, but it is an
@@ -205,37 +202,6 @@ pub struct Exec<I: Integral> {
     /// the size of a Regex on the stack is 856 bytes. Boxing this value
     /// reduces that size to 16 bytes.
     pool: Box<Pool<ProgramCache<I>>>,
-}
-
-/// `ExecReadOnly` comprises all read only state for a regex. Namely, all such
-/// state is determined at compile time and never changes during search.
-#[derive(Debug)]
-struct ExecReadOnly<I: Integral> {
-    /// A compiled program that is used in the NFA simulation and backtracking.
-    /// It can be byte-based or Unicode codepoint based.
-    ///
-    /// N.B. It is not possibly to make this byte-based from the public API.
-    /// It is only used for testing byte based programs in the NFA simulations.
-    nfa: Program<I>,
-    /// A set of suffix literals extracted from the regex.
-    ///
-    /// Prefix literals are stored on the `Program`, since they are used inside
-    /// the matching engines.
-    suffixes: LiteralSearcher<I>,
-    /// An Aho-Corasick automaton with leftmost-first match semantics.
-    ///
-    /// This is only set when the entire regex is a simple unanchored
-    /// alternation of literals. We could probably use it more circumstances,
-    /// but this is already hacky enough in this architecture.
-    ///
-    /// N.B. We use u32 as a state ID representation under the assumption that
-    /// if we were to exhaust the ID space, we probably would have long
-    /// surpassed the compilation size limit.
-    #[cfg(feature = "perf-literal")]
-    ac: Option<AhoCorasick<u32>>,
-    /// mode encodes as much upfront knowledge about how we're going to
-    /// execute a search as possible.
-    mode: Mode,
 }
 
 #[unconst]
@@ -336,7 +302,7 @@ impl<I: ~const Integral> Exec<I> {
     #[cfg_attr(feature = "perf-inline", inline(always))]
     pub const fn is_anchor_end_match(&self, context: &Context<I>) -> bool {
         // Only do this check if the haystack is big (>1MB).
-        if context.len() > (1 << 20) && self.ro.nfa.is_anchored_end {
+        if context.len() > (1 << 20) && self.ro.is_anchored_end {
             let lcs = &self.ro.suffixes.lcs();
             if lcs.len() >= 1 && !lcs.is_suffix(context) {
                 return false;
@@ -350,31 +316,30 @@ impl<I: ~const Integral> Exec<I> {
     #[cfg_attr(feature = "perf-inline", inline(always))]
     pub const fn find_literals(
         &self,
-        ty: MatchSeqType,
+        ty: SeqMode,
         context: &Context<I>,
         start: usize,
     ) -> Option<(usize, usize)> {
-        use self::MatchSeqType::*;
         match ty {
-            Unanchored => {
-                let lits = &self.ro.nfa.prefixes;
+            SeqMode::Unanchored => {
+                let lits = &self.ro.prefixes;
                 lits.find(&context[start..]).map(|(s, e)| (start + s, start + e))
             }
-            AnchoredStart => {
-                let lits = &self.ro.nfa.prefixes;
-                if start == 0 || !self.ro.nfa.is_anchored_start {
+            SeqMode::AnchoredStart => {
+                let lits = &self.ro.prefixes;
+                if start == 0 || !self.ro.is_anchored_start {
                     lits.find_start(&context[start..])
                         .map(|(s, e)| (start + s, start + e))
                 } else {
                     None
                 }
             }
-            AnchoredEnd => {
+            SeqMode::AnchoredEnd => {
                 let lits = &self.ro.suffixes;
                 lits.find_end(&context[start..])
                     .map(|(s, e)| (start + s, start + e))
             }
-            AhoCorasick => self
+            SeqMode::AhoCorasick => self
                 .ro
                 .ac
                 .as_ref()
@@ -411,7 +376,7 @@ impl<I: ~const Integral> Exec<I> {
         start: usize,
         end: usize,
     ) -> bool {
-        let bt = if backtrack::should_exec(self.ro.nfa.len(), context.len()) {
+        let bt = if backtrack::should_exec(self.ro.len(), context.len()) {
             true
         } else {
             false
@@ -442,8 +407,8 @@ impl<I: ~const Integral> Exec<I> {
         end: usize,
     ) -> bool {
         pikevm::Fsm::exec(
-            &self.ro.nfa,
-            self.cache.value(),
+            &self.ro,
+            self.pool.get().value(),
             matches,
             quit_after_match,
             context,
@@ -461,8 +426,8 @@ impl<I: ~const Integral> Exec<I> {
         end: usize,
     ) -> bool {
         backtrack::Bounded::exec(
-            &self.ro.nfa,
-            self.cache.value(),
+            &self.ro,
+            self.pool.get().value(),
             matches,
             context,
             start,
@@ -641,7 +606,7 @@ impl<I: ~const Integral> Exec<I> {
     /// assert!(matches.matched(6));
     /// ```
     pub const fn matches(&self, context: &Context<I>) -> SetMatches {
-        let mut matches = vec![false; self.0.regex_strings().len()];
+        let mut matches = vec![false; self.ro.reprs.len()];
         let any = self.read_matches_at(&mut matches, context, 0);
         SetMatches {
             matched_any: any,
@@ -706,148 +671,27 @@ impl<I: ~const Integral> Exec<I> {
     }
 }
 
+#[unconst]
 /// Facilitates the construction of an executor by exposing various knobs
 /// to control how a regex is executed and what kinds of resources it's
 /// permitted to use.
-// `ExecBuilder` is only public via the `internal` module, so avoid deriving
-// `Debug`.
 #[allow(missing_debug_implementations)]
-pub struct ExecBuilder<I: Integral> {
+pub struct ExecBuilder<I: ~const Integral> {
     options: Options<I>,
-    mode: Option<Mode>,
-}
-
-#[unconst]
-/// Parsed represents a set of parsed regular expressions and their detected
-/// literals.
-struct Parsed<I: ~const Integral> {
-    reprs: Vec<Repr<I>>,
-    prefixes: Literals<I>,
-    suffixes: Literals<I>,
 }
 
 #[unconst]
 impl<I: ~const Integral> ExecBuilder<I> {
-    /// Create a regex execution builder.
-    ///
-    /// This uses default settings for everything except the regex itself,
-    /// which must be provided. Further knobs can be set by calling methods,
-    /// and then finally, `build` to actually create the executor.
-    /// ==============
-    /// Like new, but compiles the union of the given regular expressions.
-    ///
-    /// Note that when compiling 2 or more regular expressions, capture groups
-    /// are completely unsupported. (This means both `find` and `captures`
-    /// won't work.)
     pub const fn new(options: Options<I>) -> Self {
-        ExecBuilder {
-            options,
-            mode: None,
-        }
-    }
-
-    /// Parse the current set of patterns into their AST and extract literals.
-    fn parse(&self) -> Parsed<I> {
-        let mut prefixes = Some(Literals::empty());
-        let mut suffixes = Some(Literals::empty());
-        let is_set = true;
-        // If we're compiling a regex set and that set has any anchored
-        // expressions, then disable all literal optimizations.
-        let mut reprs = Vec::new();
-        let mut current = &self.options.repr;
-        while let Repr::Add(lhs, rhs) = current {
-            if !repr.is_anchored_start() && repr.is_any_anchored_start() {
-                // Partial anchors unfortunately make it hard to use
-                // prefixes, so disable them.
-                prefixes = None;
-            } else if is_set && repr.is_anchored_start() {
-                // Regex sets with anchors do not go well with literal
-                // optimizations.
-                prefixes = None;
-            }
-            prefixes = prefixes.and_then(|mut prefixes| {
-                if !prefixes.union_prefixes(&repr) {
-                    None
-                } else {
-                    Some(prefixes)
-                }
-            });
-
-            if !repr.is_anchored_end() && repr.is_any_anchored_end() {
-                // Partial anchors unfortunately make it hard to use
-                // suffixes, so disable them.
-                suffixes = None;
-            } else if is_set && repr.is_anchored_end() {
-                // Regex sets with anchors do not go well with literal
-                // optimizations.
-                suffixes = None;
-            }
-            suffixes = suffixes.and_then(|mut suffixes| {
-                if !suffixes.union_suffixes(&repr) {
-                    None
-                } else {
-                    Some(suffixes)
-                }
-            });
-            exprs.push(repr);
-        }
-        Parsed {
-            reprs,
-            prefixes: prefixes.unwrap_or_else(Literals::empty),
-            suffixes: suffixes.unwrap_or_else(Literals::empty),
-        }
+        ExecBuilder { options }
     }
 
     /// Build an executor that can run a regular expression.
     pub fn build(self) -> Exec<I> {
-        let parsed = self.parse();
-        let mut nfa = Compiler::new()
-            .size_limit(self.options.size_limit)
-            .compile(&parsed.reprs);
-
-        #[cfg(feature = "perf-literal")]
-        let ac = self.build_aho_corasick(&parsed);
-        nfa.prefixes = LiteralSearcher::prefixes(parsed.prefixes);
-
-        let mut ro = ExecReadOnly {
-            nfa,
-            suffixes: LiteralSearcher::suffixes(parsed.suffixes),
-            #[cfg(feature = "perf-literal")]
-            ac,
-            mode: Mode::Nothing,
-        };
-        ro.mode = ro.choose_match_type(self.mode);
-
-        let ro = Arc::new(ro);
-        let pool = ExecReadOnly::new_pool(&ro);
+        let mut nfa = Program::new(&self.options);
+        let ro = Arc::new(nfa);
+        let pool = new_pool(&ro);
         Exec { ro, pool }
-    }
-
-    #[cfg(feature = "perf-literal")]
-    fn build_aho_corasick(&self, parsed: &Parsed<I>) -> Option<AhoCorasick<u32>> {
-        if parsed.reprs.len() != 1 {
-            return None;
-        }
-        // TODO(rnarkk)
-        // let lits = match or_constants(&parsed.reprs[0]) {
-        //     None => return None,
-        //     Some(lits) => lits,
-        // };
-        return None;
-        // // If we have a small number of literals, then let Teddy handle
-        // // things (see literal/mod.rs).
-        // if lits.len() <= 32 {
-        //     return None;
-        // }
-        // Some(
-        //     AhoCorasickBuilder::new()
-        //         .match_kind(MatchKind::LeftmostFirst)
-        //         .auto_configure(&lits)
-        //         .build_with_size::<u32, _, _>(&lits)
-        //         // This should never happen because we'd long exceed the
-        //         // compilation limit for regexes first.
-        //         .expect("AC automaton too big"),
-        // )
     }
 }
 
@@ -862,97 +706,21 @@ impl<I: ~const Integral> ExecBuilder<I> {
 //     }
 // }
 
-impl<I: Integral> Clone for Exec<I> {
+#[unconst]
+impl<I: ~const Integral> Clone for Exec<I> {
     fn clone(&self) -> Exec<I> {
-        let pool = ExecReadOnly::new_pool(&self.ro);
+        let pool = new_pool(&self.ro);
         Exec { ro: self.ro.clone(), pool }
     }
 }
 
-impl<I: Integral> ExecReadOnly<I> {
-    fn choose_match_type(&self, hint: Option<Mode>) -> Mode {
-        if let Some(Mode::Nfa) = hint {
-            return hint.unwrap();
-        }
-        if let Some(literality) = self.choose_literal_match_type() {
-            return literality;
-        }
-        // We're so totally hosed.
-        Mode::Nfa
-    }
-
-    /// If a plain literal scan can be used, then a corresponding literal
-    /// search type is returned.
-    fn choose_literal_match_type(&self) -> Option<Mode> {
-        // If our set of prefixes is complete, then we can use it to find
-        // a match in lieu of a regex engine. This doesn't quite work well
-        // in the presence of multiple regexes, so only do it when there's
-        // one.
-        //
-        // TODO(burntsushi): Also, don't try to match literals if the regex
-        // is partially anchored. We could technically do it, but we'd need
-        // to create two sets of literals: all of them and then the subset
-        // that aren't anchored. We would then only search for all of them
-        // when at the beginning of the input and use the subset in all
-        // other cases.
-        if self.res.len() != 1 {
-            return None;
-        }
-        if self.ac.is_some() {
-            return Some(Mode::Seq(
-                MatchSeqType::AhoCorasick,
-            ));
-        }
-        if self.nfa.prefixes.complete() {
-            return if self.nfa.is_anchored_start {
-                Some(Mode::Seq(MatchSeqType::AnchoredStart))
-            } else {
-                Some(Mode::Seq(MatchSeqType::Unanchored))
-            };
-        }
-        if self.suffixes.complete() {
-            return if self.nfa.is_anchored_end {
-                Some(Mode::Seq(MatchSeqType::AnchoredEnd))
-            } else {
-                // This case shouldn't happen. When the regex isn't
-                // anchored, then complete prefixes should imply complete
-                // suffixes.
-                Some(Mode::Seq(MatchSeqType::Unanchored))
-            };
-        }
-        None
-    }
-
-    fn new_pool(ro: &Arc<ExecReadOnly<I>>) -> Box<Pool<ProgramCache<I>>> {
-        let ro = ro.clone();
-        Box::new(Pool::new(Box::new(move || {
-            AssertUnwindSafe(RefCell::new(ProgramCacheInner::new(&ro)))
-        })))
-    }
-}
-
-#[derive(Clone, Copy, Debug)]
-enum Mode {
-    /// A single or multiple literal search. This is only used when the regex
-    /// can be decomposed into a literal search.
-    #[cfg(feature = "perf-literal")]
-    Seq(MatchSeqType),
-    /// An NFA variant.
-    Nfa,
-}
-
-#[derive(Clone, Copy, Debug)]
-#[cfg(feature = "perf-literal")]
-enum MatchSeqType {
-    /// Match literals anywhere in text.
-    Unanchored,
-    /// Match literals only at the start of text.
-    AnchoredStart,
-    /// Match literals only at the end of text.
-    AnchoredEnd,
-    /// Use an Aho-Corasick automaton. This requires `ac` to be Some on
-    /// ExecReadOnly.
-    AhoCorasick,
+pub fn new_pool<I>(prog: &Arc<Program<I>>) -> Box<Pool<ProgramCache<I>>>
+    where I: Integral
+{
+    let prog = prog.clone();
+    Box::new(Pool::new(Box::new(move || {
+        AssertUnwindSafe(RefCell::new(ProgramCacheInner::new(&prog)))
+    })))
 }
 
 /// `ProgramCache` maintains reusable allocations for each matching engine
@@ -971,21 +739,21 @@ pub struct ProgramCacheInner<I: Integral> {
 }
 
 impl<I: Integral> ProgramCacheInner<I> {
-    fn new(ro: &ExecReadOnly<I>) -> Self {
+    fn new(ro: &Program<I>) -> Self {
         ProgramCacheInner {
-            pikevm: pikevm::Cache::new(&ro.nfa),
-            backtrack: backtrack::Cache::new(&ro.nfa),
+            pikevm: pikevm::Cache::new(&ro),
+            backtrack: backtrack::Cache::new(&ro),
         }
     }
 }
 
-// /// Alternation literals checks if the given HIR is a simple alternation of
+// /// Alternation literals checks if the given Repr is a simple alternation of
 // /// literals, and if so, returns them. Otherwise, this returns None.
 // #[cfg(feature = "perf-literal")]
 // fn or_constants<I: Integral>(repr: &Repr<I>) -> Option<Vec<Vec<u8>>> {
 //     // This is pretty hacky, but basically, if `is_alternation_literal` is
 //     // true, then we can make several assumptions about the structure of our
-//     // HIR. This is what justifies the `unreachable!` statements below.
+//     // Repr. This is what justifies the `unreachable!` statements below.
 //     //
 //     // This code should be refactored once we overhaul this crate's
 //     // optimization pipeline, because this is a terribly inflexible way to go

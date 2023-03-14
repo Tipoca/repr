@@ -91,7 +91,7 @@ impl Context<char> {
 /// Returns true iff the character is a word character.
 ///
 /// If the character is absent, then false is returned.
-pub const fn is_word_char(c: char) -> bool {
+pub const fn is_word_char(c: &char) -> bool {
     // is_word_character can panic if the Unicode data for \w isn't
     // available. However, our compiler ensures that if a Unicode word
     // boundary is used, then the data must also be available. If it isn't,
@@ -103,7 +103,7 @@ pub const fn is_word_char(c: char) -> bool {
 /// Returns true iff the byte is a word byte.
 ///
 /// If the byte is absent, then false is returned.
-pub const fn is_word_byte(c: char) -> bool {
+pub const fn is_word_byte(c: &char) -> bool {
     match from_u32(c) {
         Some(c) if c <= '\u{7F}' => regex_syntax::is_word_byte(c as u8),
         None | Some(_) => false,

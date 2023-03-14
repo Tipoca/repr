@@ -1,4 +1,3 @@
-use crate::context::Context;
 use crate::pool::PoolGuard;
 
 /// `ExecNoSync` is like `Exec`, except it embeds a reference to a cache. This
@@ -10,8 +9,4 @@ pub struct ExecNoSync<'c, I: ~const Integral> {
     ro: &'c Arc<ExecReadOnly<I>>,
     /// Caches for the various matching engines.
     cache: PoolGuard<'c, ProgramCache<I>>,
-}
-
-impl<'c, I: Integral> ExecNoSync<'c, I> {
-
 }

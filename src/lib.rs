@@ -45,6 +45,7 @@ let re = (wh | '.') * 1.. & '@' & (wh * 1.. & '.') * 1.. & wh * 2..4;
 // #![feature(negative_impls)]
 // #![feature(specialization)]
 #![feature(step_trait)]
+#![feature(stmt_expr_attributes)]
 
 extern crate alloc; 
 

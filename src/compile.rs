@@ -6,10 +6,12 @@ use core::{
     slice
 };
 
+use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
 use unconst::unconst;
 
-use crate::derivative::LiteralSearcher;
+use crate::derivative::{LiteralSearcher, Parsed};
 use crate::interval::Interval;
+use crate::options::Options;
 use crate::repr::{Repr, Integral, Zero};
 use crate::seq::Seq;
 use crate::sparse::SparseSet;
@@ -17,10 +19,16 @@ use crate::sparse::SparseSet;
 /// `Index` represents the index of an instruction in a regex program.
 pub type Index = usize;
 
+#[unconst]
 /// Program is a sequence of instructions and various facts about those
 /// instructions.
+/// 
+/// `Program` comprises all read only state for a regex. Namely, all such
+/// state is determined at compile time and never changes during search.
+/// 
+/// A compiled program that is used in the NFA simulation and backtracking.
 #[derive(Clone)]
-pub struct Program<I: Integral> {
+pub struct Program<I: ~const Integral> {
     /// A sequence of instructions that represents an NFA.
     pub insts: Vec<Inst<I>>,
     /// Pointers to each Match instruction in the sequence.
@@ -41,6 +49,20 @@ pub struct Program<I: Integral> {
     pub has_unicode_word_boundary: bool,
     /// A possibly empty machine for very quickly matching prefix literals.
     pub prefixes: LiteralSearcher<I>,
+    /// A possibly empty machine for very quickly matching suffixe literals.
+    pub suffixes: LiteralSearcher<I>,
+    #[cfg(feature = "perf-literal")]
+    /// An Aho-Corasick automaton with leftmost-first match semantics.
+    ///
+    /// This is only set when the entire regex is a simple unanchored
+    /// alternation of literals. We could probably use it more circumstances,
+    /// but this is already hacky enough in this architecture.
+    ///
+    /// N.B. We use u32 as a state ID representation under the assumption that
+    /// if we were to exhaust the ID space, we probably would have long
+    /// surpassed the compilation size limit.
+    #[cfg(feature = "perf-literal")]
+    pub ac: Option<AhoCorasick<u32>>,
     /// A limit on the size of the cache that the DFA is allowed to use while
     /// matching.
     ///
@@ -57,13 +79,53 @@ pub struct Program<I: Integral> {
     /// simultaneously, then the DFA cache is not shared. Instead, copies are
     /// made.
     pub dfa_size_limit: usize,
+    /// mode encodes as much upfront knowledge about how we're going to
+    /// execute a search as possible.
+    pub mode: Mode,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum Mode {
+    /// A single or multiple literal search. This is only used when the regex
+    /// can be decomposed into a literal search.
+    #[cfg(feature = "perf-literal")]
+    Seq(SeqMode),
+    /// An NFA variant.
+    Nfa,
+}
+
+#[derive(Clone, Copy, Debug)]
+#[cfg(feature = "perf-literal")]
+pub enum SeqMode {
+    /// Match literals anywhere in text.
+    Unanchored,
+    /// Match literals only at the start of text.
+    AnchoredStart,
+    /// Match literals only at the end of text.
+    AnchoredEnd,
+    /// Use an Aho-Corasick automaton. This requires `ac` to be Some on
+    /// ExecReadOnly.
+    AhoCorasick,
 }
 
 #[unconst]
 impl<I: ~const Integral> Program<I> {
+    /// Various options can be set before calling `compile` on an expression.
+    pub const fn new(options: &Options<I>) -> Self {
+        let parsed = Parsed::parse(&options.repr);
+        let compiler = Compiler::new(options);
+        let mut output = compiler.compile(&parsed.reprs);
+        output.prefixes = LiteralSearcher::prefixes(parsed.prefixes);
+        output.suffixes = LiteralSearcher::suffixes(parsed.suffixes);
+        #[cfg(feature = "perf-literal")]
+        output.ac = output.build_aho_corasick(&parsed);
+        output.choose_mode();
+        output
+    }
+
     /// Creates an empty instruction sequence. Fields are given default
     /// values.
-    pub fn new() -> Self {
+    pub fn default() -> Self {
         Program {
             insts: vec![],
             matches: vec![],
@@ -73,7 +135,63 @@ impl<I: ~const Integral> Program<I> {
             is_anchored_end: false,
             has_unicode_word_boundary: false,
             prefixes: LiteralSearcher::empty(),
+            suffixes: LiteralSearcher::empty(),
             dfa_size_limit: 2 * (1 << 20),
+            #[cfg(feature = "perf-literal")]
+            ac: Default::default(),
+            mode: Mode::Nfa,
+        }
+    }
+
+    #[cfg(feature = "perf-literal")]
+    fn build_aho_corasick(&self, parsed: &Parsed<I>) -> Option<AhoCorasick<u32>> {
+        if parsed.reprs.len() != 1 {
+            return None;
+        }
+        // TODO(rnarkk)
+        // let lits = match or_constants(&parsed.reprs[0]) {
+        //     None => return None,
+        //     Some(lits) => lits,
+        // };
+        return None;
+        // // If we have a small number of literals, then let Teddy handle
+        // // things (see literal/mod.rs).
+        // if lits.len() <= 32 {
+        //     return None;
+        // }
+        // Some(
+        //     AhoCorasickBuilder::new()
+        //         .match_kind(MatchKind::LeftmostFirst)
+        //         .auto_configure(&lits)
+        //         .build_with_size::<u32, _, _>(&lits)
+        //         // This should never happen because we'd long exceed the
+        //         // compilation limit for regexes first.
+        //         .expect("AC automaton too big"),
+        // )
+    }
+
+    /// If a plain literal scan can be used, then a corresponding literal
+    /// search type is returned.
+    fn choose_mode(&mut self) {
+        if self.ac.is_some() {
+            self.mode = Mode::Seq(SeqMode::AhoCorasick);
+        }
+        if self.prefixes.complete() {
+            if self.is_anchored_start {
+                self.mode = Mode::Seq(SeqMode::AnchoredStart);
+            } else {
+                self.mode = Mode::Seq(SeqMode::Unanchored);
+            };
+        }
+        if self.suffixes.complete() {
+            return if self.is_anchored_end {
+                self.mode = Mode::Seq(SeqMode::AnchoredEnd);
+            } else {
+                // This case shouldn't happen. When the regex isn't
+                // anchored, then complete prefixes should imply complete
+                // suffixes.
+                self.mode = Mode::Seq(SeqMode::Unanchored);
+            };
         }
     }
 
@@ -135,8 +253,8 @@ impl<I: ~const Integral> Debug for Program<I> {
         for (pc, inst) in self.iter().enumerate() {
             match *inst {
                 Inst::Match(slot) => write!(f, "{:04} Match({:?})", pc, slot)?,
-                Inst::Split { goto1, goto2 } => {
-                    write!(f, "{:04} Split({}, {})", pc, goto1, goto2)?;
+                Inst::Or { goto1, goto2 } => {
+                    write!(f, "{:04} Or({}, {})", pc, goto1, goto2)?;
                 }
                 Inst::Zero { goto, zero } => {
                     let s = format!("{:?}", zero);
@@ -357,11 +475,11 @@ impl<I: ~const Integral> Compiler<I> {
     /// Create a new regular expression compiler.
     ///
     /// Various options can be set before calling `compile` on an expression.
-    pub const fn new() -> Self {
+    pub const fn new(options: &Options<I>) -> Self {
         Compiler {
             insts: Vec::new(),
-            compiled: Program::new(),
-            size_limit: 10 * (1 << 20),
+            compiled: Program::default(),
+            size_limit: options.size_limit,
             suffix_cache: SuffixCache::new(1000),
             extra_inst_bytes: 0,
         }

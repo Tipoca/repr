@@ -91,7 +91,7 @@ impl<'a, 'm, 'r, I: Integral> Bounded<'a, 'm, 'r, I> {
         prog: &'r Program<I>,
         cache: &ProgramCache<I>,
         matches: &'m mut [bool],
-        context: Context<I>,
+        context: &Context<I>,
         start: usize,
         end: usize,
     ) -> bool {

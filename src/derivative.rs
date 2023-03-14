@@ -1,5 +1,20 @@
-//! TODO(rnarkk) Accomodate the content here in crate::derivative
 //! Provides routines for extracting literal prefixes and suffixes from an `Repr<I>`.
+
+/*
+(rnarkk)
+
+- Repr is Add
+- Literals are partial
+
+========================================================================
+If our set of prefixes is complete, then we can use it to find a match in lieu of a regex engine. This doesn't quite work well in the presence of multiple regexes, so only do it when there's one.
+
+TODO(burntsushi): Also, don't try to match literals if the regex is partially anchored. We could technically do it, but we'd need to create two sets of literals: all of them and then the subset that aren't anchored. We would then only search for all of them when at the beginning of the input and use the subset in all other cases.
+========================================================================
+Note that when compiling 2 or more regular expressions, capture groups
+are completely unsupported. (This means both `find` and `captures`
+won't work.)
+*/
 
 use core::{
     cmp,
@@ -1156,4 +1171,68 @@ impl Memmem {
 
 fn char_len_lossy(bytes: &[u8]) -> usize {
     String::from_utf8_lossy(bytes).chars().count()
+}
+
+#[unconst]
+/// Parsed represents a set of parsed regular expressions and their detected
+/// literals.
+pub struct Parsed<I: ~const Integral> {
+    pub reprs: Vec<Repr<I>>,
+    pub prefixes: Literals<I>,
+    pub suffixes: Literals<I>,
+}
+
+#[unconst]
+impl<I: ~const Integral> Parsed<I> {
+    /// Parse the current set of patterns into their AST and extract literals.
+    pub fn parse(repr: &Repr<I>) -> Parsed<I> {
+        let mut prefixes = Some(Literals::empty());
+        let mut suffixes = Some(Literals::empty());
+        let is_set = true;
+        // If we're compiling a regex set and that set has any anchored
+        // expressions, then disable all literal optimizations.
+        let mut reprs = Vec::new();
+        let mut current = repr;
+        while let Repr::Add(lhs, rhs) = current {
+            if !repr.is_anchored_start() && repr.is_any_anchored_start() {
+                // Partial anchors unfortunately make it hard to use
+                // prefixes, so disable them.
+                prefixes = None;
+            } else if is_set && repr.is_anchored_start() {
+                // Regex sets with anchors do not go well with literal
+                // optimizations.
+                prefixes = None;
+            }
+            prefixes = prefixes.and_then(|mut prefixes| {
+                if !prefixes.union_prefixes(&repr) {
+                    None
+                } else {
+                    Some(prefixes)
+                }
+            });
+
+            if !repr.is_anchored_end() && repr.is_any_anchored_end() {
+                // Partial anchors unfortunately make it hard to use
+                // suffixes, so disable them.
+                suffixes = None;
+            } else if is_set && repr.is_anchored_end() {
+                // Regex sets with anchors do not go well with literal
+                // optimizations.
+                suffixes = None;
+            }
+            suffixes = suffixes.and_then(|mut suffixes| {
+                if !suffixes.union_suffixes(&repr) {
+                    None
+                } else {
+                    Some(suffixes)
+                }
+            });
+            exprs.push(repr);
+        }
+        Parsed {
+            reprs,
+            prefixes: prefixes.unwrap_or_else(Literals::empty),
+            suffixes: suffixes.unwrap_or_else(Literals::empty),
+        }
+    }
 }

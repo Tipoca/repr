@@ -3,6 +3,7 @@ use core::{
     fmt::Debug,
     iter::Step,
     marker::Destruct,
+    panic::{UnwindSafe, RefUnwindSafe}
 };
 
 use unconst::unconst;
@@ -14,6 +15,7 @@ use crate::seq::Seq;
 #[derive_const(Clone, Debug)]
 #[derive(Eq, PartialEq)]
 pub enum Repr<I: ~const Integral> {
+    True,
     Zero(Zero),
     One(Seq<I>),
     Interval(Interval<I>),
@@ -215,7 +217,7 @@ pub trait Integral: Copy + ~const Clone
                     + Step
                     + ~const Destruct
                     + Debug
-                    + Send
+                    + Sync + Send + RefUnwindSafe + UnwindSafe
 {
     const MIN: Self;
     const MAX: Self;
