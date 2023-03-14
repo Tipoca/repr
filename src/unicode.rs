@@ -4,6 +4,7 @@ use unconst::unconst;
 
 use crate::context::Context;
 use crate::interval::Interval;
+#[cfg(feature = "derivative")]
 use crate::derivative::LiteralSearcher;
 use crate::repr::{Repr, Integral, Zero};
 
@@ -51,11 +52,11 @@ impl Context<char> {
         match look {
             Zero::StartLine => {
                 let c = &self[at - 1];
-                at == 0 || c == '\n'
+                at == 0 || c == &'\n'
             }
             Zero::EndLine => {
                 let c = &self[at + 1];
-                at == self.len() || c == '\n'
+                at == self.len() || c == &'\n'
             }
             Zero::StartText => at == 0,
             Zero::EndText => at == self.len(),
@@ -79,6 +80,7 @@ impl Context<char> {
         }
     }
 
+    #[cfg(feature = "derivative")]
     /// Scan the input for a matching prefix.
     pub fn prefix_at(&self, prefixes: &LiteralSearcher<char>, at: usize)
         -> Option<char>
@@ -96,7 +98,7 @@ pub const fn is_word_char(c: &char) -> bool {
     // available. However, our compiler ensures that if a Unicode word
     // boundary is used, then the data must also be available. If it isn't,
     // then the compiler returns an error.
-    from_u32(c).map_or(false, regex_syntax::is_word_character)
+    regex_syntax::is_word_character(*c)
 }
 
 #[unconst]
@@ -104,15 +106,5 @@ pub const fn is_word_char(c: &char) -> bool {
 ///
 /// If the byte is absent, then false is returned.
 pub const fn is_word_byte(c: &char) -> bool {
-    match from_u32(c) {
-        Some(c) if c <= '\u{7F}' => regex_syntax::is_word_byte(c as u8),
-        None | Some(_) => false,
-    }
-}
-
-#[unconst]
-/// Returns true iff the character is absent.
-#[inline]
-pub const fn is_none(c: char) -> bool {
-    c == u32::MAX
+    regex_syntax::is_word_byte(*c as u8)
 }

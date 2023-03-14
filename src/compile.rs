@@ -8,7 +8,9 @@ use core::{
 
 use unconst::unconst;
 
-use crate::derivative::{LiteralSearcher, Parsed};
+#[cfg(feature = "derivative")]
+use crate::derivative::LiteralSearcher;
+use crate::derivative::Parsed;
 use crate::interval::Interval;
 use crate::options::Options;
 use crate::repr::{Repr, Integral, Zero};
@@ -45,11 +47,13 @@ pub struct Program<I: ~const Integral> {
     pub is_anchored_end: bool,
     /// Whether this program contains a Unicode word boundary instruction.
     pub has_unicode_word_boundary: bool,
+    #[cfg(feature = "derivative")]
     /// A possibly empty machine for very quickly matching prefix literals.
     pub prefixes: LiteralSearcher<I>,
+    #[cfg(feature = "derivative")]
     /// A possibly empty machine for very quickly matching suffixe literals.
     pub suffixes: LiteralSearcher<I>,
-    #[cfg(feature = "perf-literal")]
+    #[cfg(feature = "derivative")]
     /// An Aho-Corasick automaton with leftmost-first match semantics.
     ///
     /// This is only set when the entire regex is a simple unanchored
@@ -59,7 +63,6 @@ pub struct Program<I: ~const Integral> {
     /// N.B. We use u32 as a state ID representation under the assumption that
     /// if we were to exhaust the ID space, we probably would have long
     /// surpassed the compilation size limit.
-    #[cfg(feature = "perf-literal")]
     pub ac: Option<AhoCorasick<u32>>,
     /// A limit on the size of the cache that the DFA is allowed to use while
     /// matching.
@@ -86,14 +89,14 @@ pub struct Program<I: ~const Integral> {
 pub enum Mode {
     /// A single or multiple literal search. This is only used when the regex
     /// can be decomposed into a literal search.
-    #[cfg(feature = "perf-literal")]
+    #[cfg(feature = "derivative")]
     Seq(SeqMode),
     /// An NFA variant.
     Nfa,
 }
 
+#[cfg(feature = "derivative")]
 #[derive(Clone, Copy, Debug)]
-#[cfg(feature = "perf-literal")]
 pub enum SeqMode {
     /// Match literals anywhere in text.
     Unanchored,
@@ -113,12 +116,17 @@ impl<I: ~const Integral> Program<I> {
         let parsed = Parsed::parse(&options.repr);
         let compiler = Compiler::new(options);
         let mut output = compiler.compile(&parsed.reprs);
-        output.prefixes = LiteralSearcher::prefixes(parsed.prefixes);
-        output.suffixes = LiteralSearcher::suffixes(parsed.suffixes);
-        #[cfg(feature = "perf-literal")]
-        output.ac = output.build_aho_corasick(&parsed);
-        output.choose_mode();
+        #[cfg(feature = "derivative")]
+        output.derivative();
         output
+    }
+
+    #[cfg(feature = "derivative")]
+    fn derivative(&mut self) {
+        self.prefixes = LiteralSearcher::prefixes(parsed.prefixes);
+        self.suffixes = LiteralSearcher::suffixes(parsed.suffixes);
+        self.ac = self.build_aho_corasick(&parsed);
+        self.choose_mode();
     }
 
     /// Creates an empty instruction sequence. Fields are given default
@@ -132,15 +140,18 @@ impl<I: ~const Integral> Program<I> {
             is_anchored_start: false,
             is_anchored_end: false,
             has_unicode_word_boundary: false,
+            #[cfg(feature = "derivative")]
             prefixes: LiteralSearcher::empty(),
+            #[cfg(feature = "derivative")]
             suffixes: LiteralSearcher::empty(),
             dfa_size_limit: 2 * (1 << 20),
-            #[cfg(feature = "perf-literal")]
+            #[cfg(feature = "derivative")]
             ac: Default::default(),
             mode: Mode::Nfa,
         }
     }
 
+    #[cfg(feature = "derivative")]
     /// If a plain literal scan can be used, then a corresponding literal
     /// search type is returned.
     fn choose_mode(&mut self) {
@@ -181,6 +192,7 @@ impl<I: ~const Integral> Program<I> {
         }
     }
 
+    #[cfg(feature = "derivative")]
     /// Return the approximate heap usage of this instruction sequence in
     /// bytes.
     pub fn approximate_size(&self) -> usize {
@@ -196,7 +208,7 @@ impl<I: ~const Integral> Program<I> {
 
 // /// Alternation literals checks if the given Repr is a simple alternation of
 // /// literals, and if so, returns them. Otherwise, this returns None.
-// #[cfg(feature = "perf-literal")]
+// #[cfg(feature = "derivative")]
 // fn or_constants<I: Integral>(repr: &Repr<I>) -> Option<Vec<Vec<u8>>> {
 //     // This is pretty hacky, but basically, if `is_alternation_literal` is
 //     // true, then we can make several assumptions about the structure of our

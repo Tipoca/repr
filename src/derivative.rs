@@ -1,21 +1,6 @@
 //! Extract literal prefixes and suffixes from an `Repr<I>`.
-
-/*
-(rnarkk)
-
-- Repr is Add
-- Literals are partial
-
-========================================================================
-If our set of prefixes is complete, then we can use it to find a match in lieu of a regex engine. This doesn't quite work well in the presence of multiple regexes, so only do it when there's one.
-
-TODO(burntsushi): Also, don't try to match literals if the regex is partially anchored. We could technically do it, but we'd need to create two sets of literals: all of them and then the subset that aren't anchored. We would then only search for all of them when at the beginning of the input and use the subset in all other cases.
-========================================================================
-Note that when compiling 2 or more regular expressions, capture groups
-are completely unsupported. (This means both `find` and `captures`
-won't work.)
-*/
-
+        
+#[cfg(feature = "derivative")]
 mod search;
 
 use core::{
@@ -31,6 +16,7 @@ use crate::interval::Interval;
 use crate::repr::{Repr, Integral, Zero};
 use crate::seq::Seq;
 
+#[cfg(feature = "derivative")]
 pub use search::LiteralSearcher;
 
 /// A set of literal byte strings extracted from a regular expression.

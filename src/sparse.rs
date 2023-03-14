@@ -35,6 +35,7 @@ pub struct SparseSet<K, T>
     /// An instruction pointer is in the set if and only if
     /// sparse[ip] < dense.len() && ip == dense[sparse[ip]].
     pub sparse: Box<[usize]>,
+    _marker: core::marker::PhantomData<K>
 }
 
 #[unconst]
