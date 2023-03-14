@@ -33,7 +33,6 @@ mod conversions;
 mod exec;
 mod interval;
 mod operators;
-mod options;
 mod partition;
 mod pattern;
 mod pikevm;
