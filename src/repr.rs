@@ -205,20 +205,6 @@ impl<I: ~const Integral> Repr<I> {
     }
 }
 
-/// This trait is my attempt at reducing code duplication and to standardize
-/// the internal API. Specific duplication that is avoided are the `find`
-/// and `capture` iterators, which are slightly tricky.
-///
-/// It's not clear whether this trait is worth it, and it also isn't
-/// clear whether it's useful as a public trait or not. Methods like
-/// `next_after_empty` reak of bad design, but the rest of the methods seem
-/// somewhat reasonable. One particular thing this trait would expose would be
-/// the ability to start the search of a regex anywhere in a haystack, which
-/// isn't possible in the current public API.
-#[unconst]
-impl<I: ~const Integral> Repr<I> {
-}
-
 /// - `Copy` + `Clone`: possibility of `!` exponentiation
 /// - `PartialEq` + `Eq`: decidability
 #[unconst]
