@@ -6,8 +6,8 @@ use unconst::unconst;
 use crate::repr::Integral;
 
 #[unconst]
-#[derive_const(Clone, Debug, PartialEq, PartialOrd, Ord)]
-#[derive(Eq)]
+#[derive_const(Clone, PartialEq, PartialOrd, Ord)]
+#[derive(Debug, Eq)]
 pub struct Seq<I: ~const Integral>(Vec<I>);
 
 #[unconst]

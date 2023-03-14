@@ -12,8 +12,8 @@ use crate::interval::Interval;
 use crate::seq::Seq;
 
 #[unconst]
-#[derive_const(Clone, Debug)]
-#[derive(Eq, PartialEq)]
+#[derive_const(Clone, PartialEq)]
+#[derive(Debug, Eq)]
 pub enum Repr<I: ~const Integral> {
     True,
     Zero(Zero),
@@ -251,8 +251,8 @@ pub trait Integral: Copy + ~const Clone
 ///
 /// A matching word boundary assertion is always zero-length.
 #[unconst]
-#[derive_const(Clone, Copy, Default, PartialEq)]
-#[derive(Debug, Eq)]
+#[derive_const(Clone, Default, PartialEq)]
+#[derive(Copy, Debug, Eq)]
 pub enum Zero {
     #[default]
     Any,

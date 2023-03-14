@@ -43,8 +43,8 @@ use crate::repr::Integral;
 // TODO(rnarkk) check if I..I always yield valid characters
 /// A character class, regardless of its character type, is represented by a
 /// sequence of non-overlapping non-adjacent ranges of characters.
-#[derive_const(Clone, Debug, Default, PartialEq, PartialOrd, Ord)]
-#[derive(Copy, Eq)]
+#[derive_const(Clone, Default, PartialEq, PartialOrd, Ord)]
+#[derive(Copy, Debug, Eq)]
 pub struct Interval<I: ~const Integral>(pub I, pub I);
 
 #[unconst]
