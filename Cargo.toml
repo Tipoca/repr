@@ -20,30 +20,18 @@ unconst = { git = "https://github.com/synthet-ic/unconst", branch = "verbatim", 
 
 aho-corasick = { version = "0.7", optional = true }
 # For skipping along search text quickly when a leading byte is known.
-memchr = { version = "2.4.0", optional = true }
+memchr = { version = "2.5.0", optional = true }
 
 [features]
-# Features are documented in the "Crate features" section of the crate docs:
-# https://docs.rs/regex/*/#crate-features
-default = ["std", "perf", "unicode", "regex-syntax/default"]
+default = ["std", "perf-inline", "unicode", "regex-syntax/default"]
 std = []
 
-# PERFORMANCE FEATURES
-
-# Enables all performance features.
-perf = ["perf-cache", "perf-inline"]
-# Enables fast caching. (If disabled, caching is still used, but is slower.)
-# Currently, this feature has no effect. It used to remove the thread_local
-# dependency and use a slower internal cache, but now the default cache has
-# been improved and thread_local is no longer a dependency at all.
-perf-cache = []
 # Enables aggressive use of inlining.
 perf-inline = []
 # Enables literal optimizations.
 derivative = ["aho-corasick", "memchr"]
 
-
-# UNICODE DATA FEATURES
+# Unicode Data Features
 
 # Enables all Unicode features. This expands if new Unicode features are added.
 unicode = [
