@@ -1,3 +1,230 @@
+(exec.rs::is_match)
+
+Returns true if and only if one of the regexes in this set matches
+the text given.
+
+This method should be preferred if you only need to test whether any
+of the regexes in the set should match, but don't care about *which*
+regexes matched. This is because the underlying matching engine will
+quit immediately after seeing the first match instead of continuing to
+find all matches.
+
+Note that as with searches using `Regex`, the expression is unanchored
+by default. That is, if the regex does not start with `^` or `\A`, or
+end with `$` or `\z`, then it is permitted to match anywhere in the
+text.
+
+# Example
+
+Tests whether a set matches some text:
+
+```rust
+# use regex::RegexSet;
+let set = RegexSet::new(&[r"\w+", r"\d+"]).unwrap();
+assert!(set.is_match("foo"));
+assert!(!set.is_match("☃"));
+```
+
+Test if some text contains at least one word with exactly 13
+Unicode word characters:
+
+```rust
+# use regex::Regex;
+# fn main() {
+let text = "I categorically deny having triskaidekaphobia.";
+assert!(Regex::new(r"\b\w{13}\b").unwrap().is_match(text));
+# }
+```
+
+---
+
+(exec.rs::is_match_at)
+
+Returns the same as is_match, but starts the search at the given
+offset.
+
+For single regular expressions, this is equivalent to calling
+`shortest_match(...).is_some()`.
+
+The significance of the starting point is that it takes the surrounding
+context into consideration. For example, the `\A` anchor can only
+match when `start == 0`.
+
+---
+
+(exec.rs::shortest_match)
+
+Returns the end location of a match in the text given.
+
+This method may have the same performance characteristics as
+`is_match`, except it provides an end location for a match. In
+particular, the location returned *may be shorter* than the proper end
+of the leftmost-first match.
+
+# Example
+
+Typically, `a+` would match the entire first sequence of `a` in some
+text, but `shortest_match` can give up as soon as it sees the first
+`a`.
+
+```rust
+# use regex::Regex;
+# fn main() {
+let text = "aaaaa";
+let pos = Regex::new(r"a+").unwrap().shortest_match(text);
+assert_eq!(pos, Some(1));
+# }
+```
+
+---
+
+(exec.rs::shortest_match_at)
+
+Returns the end of a match location, possibly occurring before the
+end location of the correct leftmost-first match.
+================================================================
+Returns the same as shortest_match, but starts the search at the given
+offset.
+
+The significance of the starting point is that it takes the surrounding
+context into consideration. For example, the `\A` anchor can only
+match when `start == 0`.
+
+---
+
+(exec.rs::find)
+
+Returns the start and end byte range of the leftmost-first match in
+`text`. If no match exists, then `None` is returned.
+
+Note that this should only be used if you want to discover the position
+of the match. Testing the existence of a match is faster if you use
+`is_match`.
+
+# Example
+
+Find the start and end location of the first word with exactly 13
+Unicode word characters:
+
+```rust
+# use regex::Regex;
+# fn main() {
+let text = "I categorically deny having triskaidekaphobia.";
+let mat = Regex::new(r"\b\w{13}\b").unwrap().find(text).unwrap();
+assert_eq!(mat.start(), 2);
+assert_eq!(mat.end(), 15);
+# }
+```
+
+---
+
+(exec.rs::find_at)
+
+Finds the start and end location of the leftmost-first match, starting
+at the given location.
+========================================================
+Returns the same as find, but starts the search at the given
+offset.
+
+The significance of the starting point is that it takes the surrounding
+context into consideration. For example, the `\A` anchor can only
+match when `start == 0`.
+
+---
+
+(exec.rs::find_iter)
+
+Returns an iterator for each successive non-overlapping match in
+`text`, returning the start and end byte indices with respect to
+`text`.
+
+# Example
+
+Find the start and end location of every word with exactly 13 Unicode
+word characters:
+
+```rust
+# use regex::Regex;
+# fn main() {
+let text = "Retroactively relinquishing remunerations is reprehensible.";
+for mat in Regex::new(r"\b\w{13}\b").unwrap().find_iter(text) {
+    println!("{:?}", mat);
+}
+# }
+```
+
+---
+
+(exec.rs::matches)
+
+Returns the set of regular expressions that match in the given text.
+
+The set returned contains the index of each regular expression that
+matches in the given text. The index is in correspondence with the
+order of regular expressions given to `RegexSet`'s constructor.
+
+The set can also be used to iterate over the matched indices.
+
+Note that as with searches using `Regex`, the expression is unanchored
+by default. That is, if the regex does not start with `^` or `\A`, or
+end with `$` or `\z`, then it is permitted to match anywhere in the
+text.
+
+# Example
+
+Tests which regular expressions match the given text:
+
+```rust
+# use regex::RegexSet;
+let set = RegexSet::new(&[
+    r"\w+",
+    r"\d+",
+    r"\pL+",
+    r"foo",
+    r"bar",
+    r"barfoo",
+    r"foobar",
+]).unwrap();
+let matches: Vec<_> = set.matches("foobar").into_iter().collect();
+assert_eq!(matches, vec![0, 2, 3, 4, 6]);
+
+// You can also test whether a particular regex matched:
+let matches = set.matches("foobar");
+assert!(!matches.matched(5));
+assert!(matches.matched(6));
+```
+
+---
+
+(exec.rs::read_matches_at)
+
+Returns the same as matches, but starts the search at the given
+offset and stores the matches into the slice given.
+
+The significance of the starting point is that it takes the surrounding
+context into consideration. For example, the `\A` anchor can only
+match when `start == 0`.
+
+`matches` must have a length that is at least the number of regexes
+in this set.
+
+This method returns true if and only if at least one member of
+`matches` is true after executing the set against `text`.
+
+---
+
+(exec.rs::many_matches_at.rs)
+
+Finds which regular expressions match the given text.
+
+`matches` should have length equal to the number of regexes being
+searched.
+
+This is only useful when one wants to know which regexes in a set
+match some text.
+
+---
+
 - Repr is Add
 - Literals are partial
 
