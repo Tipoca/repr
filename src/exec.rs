@@ -233,9 +233,9 @@ struct ExecReadOnly<I: Integral> {
     /// surpassed the compilation size limit.
     #[cfg(feature = "perf-literal")]
     ac: Option<AhoCorasick<u32>>,
-    /// match_type encodes as much upfront knowledge about how we're going to
+    /// mode encodes as much upfront knowledge about how we're going to
     /// execute a search as possible.
-    match_type: MatchType,
+    mode: Mode,
 }
 
 #[unconst]
@@ -325,11 +325,11 @@ impl<I: ~const Integral> Exec<I> {
         // We need to do this dance because shortest_match relies on the NFA
         // filling in captures[1], but a RegexSet has no captures. In other
         // words, a RegexSet can't (currently) use shortest_match. ---AG
-        match self.ro.match_type {
+        match self.ro.mode {
             #[cfg(feature = "perf-literal")]
-            MatchType::Seq(ty)
+            Mode::Seq(ty)
                 => self.find_literals(ty, context, start).is_some(),
-            MatchType::Nfa => self.match_nfa(context, start),
+            Mode::Nfa => self.match_nfa(context, start),
         }
     }
 
@@ -511,11 +511,11 @@ impl<I: ~const Integral> Exec<I> {
         if !self.is_anchor_end_match(context) {
             return None;
         }
-        match self.ro.match_type {
-            MatchType::Seq(ty) => {
+        match self.ro.mode {
+            Mode::Seq(ty) => {
                 self.find_literals(ty, context, start).map(|(_, e)| e)
             }
-            MatchType::Nfa => self.shortest_nfa(context, start),
+            Mode::Nfa => self.shortest_nfa(context, start),
         }
     }
 
@@ -567,10 +567,10 @@ impl<I: ~const Integral> Exec<I> {
         if !self.is_anchor_end_match(context) {
             return None;
         }
-        let output = match self.ro.match_type {
+        let output = match self.ro.mode {
             #[cfg(feature = "perf-literal")]
-            MatchType::Seq(ty) => self.find_literals(ty, context, start),
-            MatchType::Nfa => self.find_nfa(context, start),
+            Mode::Seq(ty) => self.find_literals(ty, context, start),
+            Mode::Nfa => self.find_nfa(context, start),
         };
         output.map(|(s, e)| Match::new(context, s, e))
     }
@@ -684,18 +684,17 @@ impl<I: ~const Integral> Exec<I> {
         context: &Context<I>,
         start: usize,
     ) -> bool {
-        use self::MatchType::*;
         if !self.is_anchor_end_match(context) {
             return false;
         }
-        match self.ro.match_type {
+        match self.ro.mode {
             #[cfg(feature = "perf-literal")]
-            Seq(ty) => {
+            Mode::Seq(ty) => {
                 debug_assert_eq!(matches.len(), 1);
                 matches[0] = self.find_literals(ty, context, start).is_some();
                 matches[0]
             }
-            Nfa => self.exec_nfa(
+            Mode::Nfa => self.exec_nfa(
                 matches,
                 false,
                 false,
@@ -715,7 +714,7 @@ impl<I: ~const Integral> Exec<I> {
 #[allow(missing_debug_implementations)]
 pub struct ExecBuilder<I: Integral> {
     options: Options<I>,
-    match_type: Option<MatchType>,
+    mode: Option<Mode>,
 }
 
 #[unconst]
@@ -743,7 +742,7 @@ impl<I: ~const Integral> ExecBuilder<I> {
     pub const fn new(options: Options<I>) -> Self {
         ExecBuilder {
             options,
-            match_type: None,
+            mode: None,
         }
     }
 
@@ -815,9 +814,9 @@ impl<I: ~const Integral> ExecBuilder<I> {
             suffixes: LiteralSearcher::suffixes(parsed.suffixes),
             #[cfg(feature = "perf-literal")]
             ac,
-            match_type: MatchType::Nothing,
+            mode: Mode::Nothing,
         };
-        ro.match_type = ro.choose_match_type(self.match_type);
+        ro.mode = ro.choose_match_type(self.mode);
 
         let ro = Arc::new(ro);
         let pool = ExecReadOnly::new_pool(&ro);
@@ -871,61 +870,57 @@ impl<I: Integral> Clone for Exec<I> {
 }
 
 impl<I: Integral> ExecReadOnly<I> {
-    fn choose_match_type(&self, hint: Option<MatchType>) -> MatchType {
-        if let Some(MatchType::Nfa) = hint {
+    fn choose_match_type(&self, hint: Option<Mode>) -> Mode {
+        if let Some(Mode::Nfa) = hint {
             return hint.unwrap();
         }
-        if let Some(literalty) = self.choose_literal_match_type() {
-            return literalty;
+        if let Some(literality) = self.choose_literal_match_type() {
+            return literality;
         }
         // We're so totally hosed.
-        MatchType::Nfa
+        Mode::Nfa
     }
 
     /// If a plain literal scan can be used, then a corresponding literal
     /// search type is returned.
-    fn choose_literal_match_type(&self) -> Option<MatchType> {
-        fn imp<I: Integral>(ro: &ExecReadOnly<I>) -> Option<MatchType> {
-            // If our set of prefixes is complete, then we can use it to find
-            // a match in lieu of a regex engine. This doesn't quite work well
-            // in the presence of multiple regexes, so only do it when there's
-            // one.
-            //
-            // TODO(burntsushi): Also, don't try to match literals if the regex
-            // is partially anchored. We could technically do it, but we'd need
-            // to create two sets of literals: all of them and then the subset
-            // that aren't anchored. We would then only search for all of them
-            // when at the beginning of the input and use the subset in all
-            // other cases.
-            if ro.res.len() != 1 {
-                return None;
-            }
-            if ro.ac.is_some() {
-                return Some(MatchType::Seq(
-                    MatchSeqType::AhoCorasick,
-                ));
-            }
-            if ro.nfa.prefixes.complete() {
-                return if ro.nfa.is_anchored_start {
-                    Some(MatchType::Seq(MatchSeqType::AnchoredStart))
-                } else {
-                    Some(MatchType::Seq(MatchSeqType::Unanchored))
-                };
-            }
-            if ro.suffixes.complete() {
-                return if ro.nfa.is_anchored_end {
-                    Some(MatchType::Seq(MatchSeqType::AnchoredEnd))
-                } else {
-                    // This case shouldn't happen. When the regex isn't
-                    // anchored, then complete prefixes should imply complete
-                    // suffixes.
-                    Some(MatchType::Seq(MatchSeqType::Unanchored))
-                };
-            }
-            None
+    fn choose_literal_match_type(&self) -> Option<Mode> {
+        // If our set of prefixes is complete, then we can use it to find
+        // a match in lieu of a regex engine. This doesn't quite work well
+        // in the presence of multiple regexes, so only do it when there's
+        // one.
+        //
+        // TODO(burntsushi): Also, don't try to match literals if the regex
+        // is partially anchored. We could technically do it, but we'd need
+        // to create two sets of literals: all of them and then the subset
+        // that aren't anchored. We would then only search for all of them
+        // when at the beginning of the input and use the subset in all
+        // other cases.
+        if self.res.len() != 1 {
+            return None;
         }
-
-        imp(self)
+        if self.ac.is_some() {
+            return Some(Mode::Seq(
+                MatchSeqType::AhoCorasick,
+            ));
+        }
+        if self.nfa.prefixes.complete() {
+            return if self.nfa.is_anchored_start {
+                Some(Mode::Seq(MatchSeqType::AnchoredStart))
+            } else {
+                Some(Mode::Seq(MatchSeqType::Unanchored))
+            };
+        }
+        if self.suffixes.complete() {
+            return if self.nfa.is_anchored_end {
+                Some(Mode::Seq(MatchSeqType::AnchoredEnd))
+            } else {
+                // This case shouldn't happen. When the regex isn't
+                // anchored, then complete prefixes should imply complete
+                // suffixes.
+                Some(Mode::Seq(MatchSeqType::Unanchored))
+            };
+        }
+        None
     }
 
     fn new_pool(ro: &Arc<ExecReadOnly<I>>) -> Box<Pool<ProgramCache<I>>> {
@@ -937,7 +932,7 @@ impl<I: Integral> ExecReadOnly<I> {
 }
 
 #[derive(Clone, Copy, Debug)]
-enum MatchType {
+enum Mode {
     /// A single or multiple literal search. This is only used when the regex
     /// can be decomposed into a literal search.
     #[cfg(feature = "perf-literal")]
