@@ -147,8 +147,7 @@ impl<I: ~const Integral> Repr<I> {
         }
     }
 
-    /// Returns true if and only if this repetition operator makes it possible
-    /// to match the empty string.
+    /// Returns true if and only if this can match the empty string.
     ///
     /// Note that this is not defined inductively. For example, while `a*`
     /// will report `true`, `()+` will not, even though `()` matches the empty
