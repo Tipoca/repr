@@ -82,7 +82,7 @@ assert_eq!(pos, Some(1));
 
 Returns the end of a match location, possibly occurring before the
 end location of the correct leftmost-first match.
-================================================================
+
 Returns the same as shortest_match, but starts the search at the given
 offset.
 
@@ -122,7 +122,7 @@ assert_eq!(mat.end(), 15);
 
 Finds the start and end location of the leftmost-first match, starting
 at the given location.
-========================================================
+
 Returns the same as find, but starts the search at the given
 offset.
 
@@ -297,7 +297,7 @@ assert_eq!(haystack.match_indices(&re).collect::<Vec<_>>(),
            vec![(1, "111"), (5, "222")]);
 assert_eq!(haystack.split(&re).collect::<Vec<_>>(), vec!["a", "b", "c"]);
 ```
-=====================================================
+
 Match multiple (possibly overlapping) regular expressions in a single scan.
 
 A regex set corresponds to the union of two or more regular expressions.
