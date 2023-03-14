@@ -29,7 +29,7 @@ on large bitsets.
 use crate::context::Context;
 use crate::exec::ProgramCache;
 use crate::repr::Integral;
-use crate::program::{Index, Program, Inst};
+use crate::compile::{Index, Program, Inst};
 
 type Bits = u32;
 

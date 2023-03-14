@@ -60,7 +60,6 @@ mod partition;
 mod pattern;
 mod pikevm;
 mod pool;
-mod program;
 mod seq;
 mod sparse;
 mod unicode;

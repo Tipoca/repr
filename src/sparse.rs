@@ -16,7 +16,7 @@ use core::{
 /// reuse allocations, so the initial allocation cost is bareable. However,
 /// its other properties listed above are extremely useful.
 #[derive(Clone)]
-pub struct SparseSet<T: Default> {
+pub struct SparseSet<T: Clone> {
     /// Dense contains the instruction pointers in the order in which they
     /// were inserted.
     pub dense: Vec<T>,
@@ -27,7 +27,7 @@ pub struct SparseSet<T: Default> {
     pub sparse: Box<[usize]>,
 }
 
-impl<T: Default> SparseSet<T> {
+impl<T: Clone> SparseSet<T> {
     pub fn new(size: usize) -> Self {
         SparseSet {
             dense: Vec::with_capacity(size),
@@ -47,14 +47,14 @@ impl<T: Default> SparseSet<T> {
         self.dense.capacity()
     }
 
-    pub fn insert(&mut self, value: usize) {
+    pub fn insert(&mut self, value: T) {
         let i = self.len();
         assert!(i < self.capacity());
         self.dense.push(value);
         self.sparse[value] = i;
     }
 
-    pub fn contains(&self, value: usize) -> bool {
+    pub fn contains(&self, value: T) -> bool {
         let i = self.sparse[value];
         self.dense.get(i) == Some(&value)
     }
@@ -71,13 +71,13 @@ impl<T: Default> SparseSet<T> {
     }
 }
 
-impl<T: Default> Debug for SparseSet<T> {
+impl<T: Clone + Debug> Debug for SparseSet<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "SparseSet({:?})", self.dense)
     }
 }
 
-impl<T: Default> Deref for SparseSet<T> {
+impl<T: Clone> Deref for SparseSet<T> {
     type Target = [usize];
 
     fn deref(&self) -> &Self::Target {
@@ -85,7 +85,7 @@ impl<T: Default> Deref for SparseSet<T> {
     }
 }
 
-impl<'a, T: Default> IntoIterator for &'a SparseSet<T> {
+impl<'a, T: Clone> IntoIterator for &'a SparseSet<T> {
     type Item = &'a usize;
     type IntoIter = Iter<'a, usize>;
     

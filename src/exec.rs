@@ -7,12 +7,11 @@ use unconst::unconst;
 
 use crate::{Repr, Integral, Seq, Partition, Context, pikevm};
 use crate::backtrack;
-use crate::compile::Compiler;
+use crate::compile::{Compiler, Program};
 use crate::derivative::{Literals, LiteralSearcher};
 use crate::options::Options;
 use crate::partition::Match;
 use crate::pool::Pool;
-use crate::program::Program;
 
 // use super::pikevm;
 
@@ -331,7 +330,6 @@ impl<I: ~const Integral> Exec<I> {
             MatchType::Seq(ty)
                 => self.find_literals(ty, context, start).is_some(),
             MatchType::Nfa => self.match_nfa(context, start),
-            MatchType::Nothing => false,
         }
     }
 
@@ -518,7 +516,6 @@ impl<I: ~const Integral> Exec<I> {
                 self.find_literals(ty, context, start).map(|(_, e)| e)
             }
             MatchType::Nfa => self.shortest_nfa(context, start),
-            MatchType::Nothing => None,
         }
     }
 
@@ -574,7 +571,6 @@ impl<I: ~const Integral> Exec<I> {
             #[cfg(feature = "perf-literal")]
             MatchType::Seq(ty) => self.find_literals(ty, context, start),
             MatchType::Nfa => self.find_nfa(context, start),
-            MatchType::Nothing => None,
         };
         output.map(|(s, e)| Match::new(context, s, e))
     }
@@ -707,7 +703,6 @@ impl<I: ~const Integral> Exec<I> {
                 start,
                 context.len(),
             ),
-            Nothing => false,
         }
     }
 }

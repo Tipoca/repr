@@ -22,9 +22,9 @@ use core::mem;
 use unconst::unconst;
 
 use crate::repr::Integral;
+use crate::compile::{Index, Program, Inst};
 use crate::context::Context;
 use crate::exec::ProgramCache;
-use crate::program::{Index, Program, Inst};
 use crate::sparse::SparseSet;
 
 /// An NFA simulation matching engine.
