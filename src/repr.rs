@@ -128,7 +128,7 @@ impl<I: ~const Integral> Repr<I> {
         reprs.reduce(|acc, e| Repr::And(box acc, box e)).unwrap()
     }
 
-    pub const fn repeat(self, count: usize) -> Self {
+    pub const fn rep(self, count: usize) -> Self {
         Self::prod(vec![self; count].into_iter())
     }
 }

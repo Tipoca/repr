@@ -123,7 +123,7 @@ impl<I: ~const Integral> const Mul<RangeFrom<usize>> for Repr<I> {
     type Output = Self;
 
     fn mul(self, rhs: RangeFrom<usize>) -> Self {
-        Self::Mul(box self.repeat(rhs.start), box Self::Exp(box self))
+        Self::Mul(box self.rep(rhs.start), box Self::Exp(box self))
     }
 }
 
