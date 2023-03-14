@@ -24,7 +24,7 @@ impl<I: ~const Integral> Seq<I> {
         Seq(vec![i])
     }
 
-    pub const fn mul(self, other: Self) -> Self {
+    pub const fn mul(mut self, other: Self) -> Self {
         self.0.extend(other);
         self
     }

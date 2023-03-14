@@ -36,6 +36,8 @@ pub enum Repr<I: ~const Integral> {
     // Map(Box<Repr<I>>, Fn(Box<Repr<I>>), Fn(Box<Repr<I>>))
 }
 
+use Repr::{One, Mul, Or, Div, Exp, Add, And};
+
 #[unconst]
 impl<I: ~const Integral> Repr<I> {
     pub const fn zero() -> Self {
@@ -43,44 +45,44 @@ impl<I: ~const Integral> Repr<I> {
     }
 
     pub const fn one(i: I) -> Self {
-        Self::One(Seq::one(i))
+        One(Seq::one(i))
     }
 
     
     pub const fn mul(self, other: Self) -> Self {
         match (self, other) {
-            (Self::One(lhs), Self::One(rhs)) => Self::One(lhs.mul(rhs)),
-            (lhs, rhs) => Self::Or(box lhs, box rhs)
+            (One(lhs), One(rhs)) => One(lhs.mul(rhs)),
+            (lhs, rhs) => Or(box lhs, box rhs)
         }
     }
     
     pub const fn or(self, other: Self) -> Self {
-        Self::Or(box self, box other)
+        Or(box self, box other)
     }
     
 //     pub const fn xor(self, other: Self) -> Self {
-//         Self::Xor(box self, box other)
+//         Xor(box self, box other)
 //     }
     
     pub const fn add(self, other: Self) -> Self {
-        Self::Add(box self, box other)
+        Add(box self, box other)
     }
     
     pub const fn div(self, other: Self) -> Self {
-        Self::Div(box self, box other)
+        Div(box self, box other)
     }
     
     pub const fn exp(self) -> Self {
-        Self::Exp(box self)
+        Exp(box self)
     }
 
     pub const fn and(self, other: Self) -> Self {
-        Self::And(box self, box other)
+        And(box self, box other)
     }
     
-    pub const fn le(&self, other: &Self) -> bool {
+    pub const fn le(&self, _other: &Self) -> bool {
         match self {
-            // Self::Or(lhs, rhs) => other == lhs || other == rhs,
+            // Or(lhs, rhs) => other == lhs || other == rhs,
             _ => unimplemented!()
         }
     }
@@ -88,12 +90,11 @@ impl<I: ~const Integral> Repr<I> {
     pub const fn dual(self) -> Self {
         match self {
             // Self::Interval(i) => {
-
             // },
-            Self::Mul(lhs, rhs) => Self::Add(box lhs.dual(), box rhs.dual()),
-            Self::Or(lhs, rhs) => Self::And(box lhs.dual(), box rhs.dual()),
-            Self::Add(lhs, rhs) => Self::Mul(box lhs.dual(), box rhs.dual()),
-            Self::And(lhs, rhs) => Self::Or(box lhs.dual(), box rhs.dual()),
+            Mul(lhs, rhs) => Add(box lhs.dual(), box rhs.dual()),
+            Or(lhs, rhs) => And(box lhs.dual(), box rhs.dual()),
+            Add(lhs, rhs) => Mul(box lhs.dual(), box rhs.dual()),
+            And(lhs, rhs) => Or(box lhs.dual(), box rhs.dual()),
             _ => unimplemented!()
         }
     }
@@ -101,33 +102,33 @@ impl<I: ~const Integral> Repr<I> {
     pub const fn rev(self) -> Self {
         match self {
             Self::Zero(zero) => Self::Zero(zero),
-            Self::One(i) => Self::One(i.rev()),
+            One(i) => One(i.rev()),
             Self::Interval(i) => Self::Interval(i),
-            Self::Mul(lhs, rhs) => Self::Mul(box rhs.rev(), box lhs.rev()),
-            Self::Or(lhs, rhs) => Self::Or(box lhs.rev(), box rhs.rev()),
-            // Self::Div(lhs, rhs) => ,
-            Self::Exp(repr) => Self::Exp(box repr.rev()),
-            // Self::Not => ,
-            Self::Add(lhs, rhs) => Self::Add(box lhs.rev(), box rhs.rev()),
-            Self::And(lhs, rhs) => Self::And(box lhs.rev(), box rhs.rev()),
+            Mul(lhs, rhs) => Mul(box rhs.rev(), box lhs.rev()),
+            Or(lhs, rhs) => Or(box lhs.rev(), box rhs.rev()),
+            // Div(lhs, rhs) => ,
+            Exp(repr) => Exp(box repr.rev()),
+            // Not => ,
+            Add(lhs, rhs) => Add(box lhs.rev(), box rhs.rev()),
+            And(lhs, rhs) => And(box lhs.rev(), box rhs.rev()),
             _ => unimplemented!()
         }
     }
 
     pub const fn prod<M: ~const Iterator<Item = Self>>(reprs: M) -> Self {
-        reprs.reduce(|acc, e| Repr::Mul(box acc, box e)).unwrap()
+        reprs.reduce(|acc, e| Mul(box acc, box e)).unwrap()
     }
 
     pub const fn any<M: ~const Iterator<Item = Self>>(reprs: M) -> Self {
-        reprs.reduce(|acc, e| Repr::Or(box acc, box e)).unwrap()
+        reprs.reduce(|acc, e| Or(box acc, box e)).unwrap()
     }
 
     pub const fn sum<M: ~const Iterator<Item = Self>>(reprs: M) -> Self {
-        reprs.reduce(|acc, e| Repr::Add(box acc, box e)).unwrap()
+        reprs.reduce(|acc, e| Add(box acc, box e)).unwrap()
     }
 
     pub const fn all<M: ~const Iterator<Item = Self>>(reprs: M) -> Self {
-        reprs.reduce(|acc, e| Repr::And(box acc, box e)).unwrap()
+        reprs.reduce(|acc, e| And(box acc, box e)).unwrap()
     }
 
     pub const fn rep(self, count: usize) -> Self {
@@ -136,13 +137,12 @@ impl<I: ~const Integral> Repr<I> {
 
     pub const fn der(self, seq: Seq<I>) -> Self {
         match self {
-            Self::One(seq) => unimplemented!(),
-            Self::Mul(lhs, rhs)
-                => Self::Or(box Self::Mul(box lhs.der(seq), rhs),
-                            box Self::Mul(lhs, box rhs.der(seq))),
-            Self::Or(lhs, rhs) => Self::Or(box lhs.der(seq), box rhs.der(seq)),
-            Self::And(lhs, rhs) => Self::And(box lhs.der(seq),
-                                             box rhs.der(seq)),
+            One(_seq) => unimplemented!(),
+            Mul(lhs, rhs)
+                => Or(box Mul(box lhs.clone().der(seq.clone()), rhs.clone()),
+                      box Mul(lhs, box rhs.der(seq))),
+            Or(lhs, rhs) => Or(box lhs.der(seq.clone()), box rhs.der(seq)),
+            And(lhs, rhs) => And(box lhs.der(seq.clone()), box rhs.der(seq)),
             _ => unimplemented!()
         }
     }
@@ -158,11 +158,11 @@ impl<I: ~const Integral> Repr<I> {
     pub const fn nullable(&self) -> bool {
         match self {
             Self::Zero(_) => true,
-            Self::One(seq) => seq == &Seq::empty(),
-            // Self::Mul(lhs, rhs) => lhs.nullable() && rhs.nullable(),
-            Self::Or(lhs, rhs) => lhs.nullable() || rhs.nullable(),
-            Self::And(lhs, rhs) => lhs.nullable() || rhs.nullable(),
-            Self::Exp(_) => true,
+            One(seq) => seq == &Seq::empty(),
+            // Mul(lhs, rhs) => lhs.nullable() && rhs.nullable(),
+            Or(lhs, rhs) => lhs.nullable() || rhs.nullable(),
+            And(lhs, rhs) => lhs.nullable() || rhs.nullable(),
+            Exp(_) => true,
             _ => false
         }
     }
@@ -214,8 +214,8 @@ impl<I: ~const Integral> Repr<I> {
 
     pub const fn is_alternation_literal(&self) -> bool {
         match self {
-            Repr::One(_) => true,
-            Repr::Or(lhs, rhs)
+            One(_) => true,
+            Or(lhs, rhs)
                 => lhs.is_alternation_literal() && rhs.is_alternation_literal(),
             _ => false
         }
@@ -251,8 +251,8 @@ pub trait Integral: Copy + ~const Clone
 ///
 /// A matching word boundary assertion is always zero-length.
 #[unconst]
-#[derive_const(Default)]
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive_const(Clone, Copy, Default, PartialEq)]
+#[derive(Debug, Eq)]
 pub enum Zero {
     #[default]
     Any,

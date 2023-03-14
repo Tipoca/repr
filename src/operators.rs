@@ -105,7 +105,7 @@ impl<I: ~const Integral, T: Into<Self>> const BitOr<[T; 1]> for Repr<I> {
     type Output = Self;
 
     fn bitor(self, rhs: [T; 1]) -> Self {
-        self.or(Repr::from(rhs) * ..)
+        self.or(Repr::from(rhs).exp())
     }
 }
 
@@ -113,8 +113,8 @@ impl<I: ~const Integral, T: Into<Self>> const BitOr<[T; 1]> for Repr<I> {
 impl<I: ~const Integral> const Mul<RangeFull> for Repr<I> {
     type Output = Self;
 
-    fn mul(self, rhs: RangeFull) -> Self {
-        Self::Exp(box self)
+    fn mul(self, _: RangeFull) -> Self {
+        self.exp()
     }
 }
 
@@ -123,7 +123,7 @@ impl<I: ~const Integral> const Mul<RangeFrom<usize>> for Repr<I> {
     type Output = Self;
 
     fn mul(self, rhs: RangeFrom<usize>) -> Self {
-        Self::Mul(box self.rep(rhs.start), box Self::Exp(box self))
+        self.clone().rep(rhs.start).mul(self.exp())
     }
 }
 
