@@ -206,14 +206,6 @@ pub struct Exec<I: Integral> {
 
 #[unconst]
 impl<I: ~const Integral> Exec<I> {
-    /// Create a new regex set with the given regular expressions.
-    ///
-    /// This takes an iterator of `S`, where `S` is something that can produce
-    /// a `&str`. If any of the strings in the iterator are not valid regular
-    /// expressions, then an error is returned.
-    ///
-    /// # Example
-    ///
     /// Create a new regex set from an iterator of strings:
     ///
     /// ```rust
@@ -225,26 +217,6 @@ impl<I: ~const Integral> Exec<I> {
         Options::new(repr).build()
     }
 
-    /// Returns true if and only if there is a match for the regex in the
-    /// string given.
-    ///
-    /// It is recommended to use this method if all you need to do is test
-    /// a match, since the underlying matching engine may be able to do less
-    /// work.
-    ///
-    /// # Example
-    ///
-    /// Test if some text contains at least one word with exactly 13
-    /// Unicode word characters:
-    ///
-    /// ```rust
-    /// # use regex::Regex;
-    /// # fn main() {
-    /// let text = "I categorically deny having triskaidekaphobia.";
-    /// assert!(Regex::new(r"\b\w{13}\b").unwrap().is_match(text));
-    /// # }
-    /// ```
-    /// ===================================================
     /// Returns true if and only if one of the regexes in this set matches
     /// the text given.
     ///
@@ -269,17 +241,25 @@ impl<I: ~const Integral> Exec<I> {
     /// assert!(set.is_match("foo"));
     /// assert!(!set.is_match("☃"));
     /// ```
+    /// 
+    /// Test if some text contains at least one word with exactly 13
+    /// Unicode word characters:
+    ///
+    /// ```rust
+    /// # use regex::Regex;
+    /// # fn main() {
+    /// let text = "I categorically deny having triskaidekaphobia.";
+    /// assert!(Regex::new(r"\b\w{13}\b").unwrap().is_match(text));
+    /// # }
     pub const fn is_match(&self, context: &Context<I>) -> bool {
         self.is_match_at(context, 0)
     }
 
-    /// Returns true if and only if the regex matches text.
-    ///
-    /// For single regular expressions, this is equivalent to calling
-    /// shortest_match(...).is_some().
-    /// ==============================================================
     /// Returns the same as is_match, but starts the search at the given
     /// offset.
+    /// 
+    /// For single regular expressions, this is equivalent to calling
+    /// shortest_match(...).is_some().
     ///
     /// The significance of the starting point is that it takes the surrounding
     /// context into consideration. For example, the `\A` anchor can only

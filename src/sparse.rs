@@ -1,10 +1,17 @@
 use alloc::vec::Vec;
 use core::{
     fmt::{self, Debug},
+    hash::Hash,
+    num::NonZeroUsize,
     ops::Deref,
     slice::Iter
 };
 
+use unconst::unconst;
+
+type Index = NonZeroUsize;
+
+#[unconst]
 /// A sparse set used for representing ordered NFA states.
 ///
 /// This supports constant time addition and membership testing. Clearing an
@@ -15,8 +22,10 @@ use core::{
 /// Note though that we don't actually use uninitialized memory. We generally
 /// reuse allocations, so the initial allocation cost is bareable. However,
 /// its other properties listed above are extremely useful.
-#[derive(Clone)]
-pub struct SparseSet<T: Clone> {
+#[derive_const(Clone)]
+pub struct SparseSet<T>
+    where T: ~const Clone + ~const Hash + ~const PartialEq
+{
     /// Dense contains the instruction pointers in the order in which they
     /// were inserted.
     pub dense: Vec<T>,
@@ -27,11 +36,14 @@ pub struct SparseSet<T: Clone> {
     pub sparse: Box<[usize]>,
 }
 
-impl<T: Clone> SparseSet<T> {
+#[unconst]
+impl<T> SparseSet<T>
+    where T: ~const Clone + ~const Hash + ~const PartialEq + ~const Default
+{
     pub fn new(size: usize) -> Self {
         SparseSet {
             dense: Vec::with_capacity(size),
-            sparse: vec![T::default(); size].into_boxed_slice(),
+            sparse: vec![0usize; size].into_boxed_slice(),
         }
     }
 
@@ -71,25 +83,99 @@ impl<T: Clone> SparseSet<T> {
     }
 }
 
-impl<T: Clone + Debug> Debug for SparseSet<T> {
+#[unconst]
+impl<T> const Debug for SparseSet<T>
+    where T: ~const Clone + ~const Debug + ~const Hash + ~const PartialEq
+{
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "SparseSet({:?})", self.dense)
     }
 }
 
-impl<T: Clone> Deref for SparseSet<T> {
-    type Target = [usize];
+#[unconst]
+impl<T> const Deref for SparseSet<T>
+    where T: ~const Clone + ~const Hash + ~const PartialEq
+{
+    type Target = [T];
 
     fn deref(&self) -> &Self::Target {
         &self.dense
     }
 }
 
-impl<'a, T: Clone> IntoIterator for &'a SparseSet<T> {
-    type Item = &'a usize;
-    type IntoIter = Iter<'a, usize>;
+#[unconst]
+impl<'a, T> const IntoIterator for &'a SparseSet<T>
+        where T: ~const Clone + ~const Hash + ~const PartialEq
+{
+    type Item = &'a T;
+    type IntoIter = Iter<'a, T>;
     
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
     }
 }
+
+/* 
+/// `SuffixCache` is a simple bounded hash map for caching suffix entries in
+/// UTF-8 automata. For example, consider the Unicode range \u{0}-\u{FFFF}.
+/// The set of byte ranges looks like this:
+///
+/// [0-7F]
+/// [C2-DF][80-BF]
+/// [E0][A0-BF][80-BF]
+/// [E1-EC][80-BF][80-BF]
+/// [ED][80-9F][80-BF]
+/// [EE-EF][80-BF][80-BF]
+///
+/// Each line above translates to one alternate in the compiled regex program.
+/// However, all but one of the alternates end in the same suffix, which is
+/// a waste of an instruction. The suffix cache facilitates reusing them across
+/// alternates.
+///
+/// Note that a HashMap could be trivially used for this, but we don't need its
+/// overhead. Some small bounded space (LRU style) is more than enough.
+///
+/// This uses similar idea to [`SparseSet`](../sparse/struct.SparseSet.html),
+/// except it uses hashes as original indices and then compares full keys for
+/// validation against `dense` array.
+type SuffixCache = SparseSet<SuffixCacheEntry>;
+
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
+struct SuffixCacheEntry {
+    key: SuffixCacheKey,
+    value: Index,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
+struct SuffixCacheKey {
+    from_inst: Index,
+    start: u8,
+    end: u8,
+}
+
+impl SuffixCache {
+    fn get(&mut self, key: SuffixCacheKey, value: Index) -> Option<Index> {
+        let hash = self.hash(&key);
+        let pos = &mut self.sparse[hash];
+        if let Some(entry) = self.dense.get(*pos) {
+            if entry.key == key {
+                return Some(entry.value);
+            }
+        }
+        *pos = self.dense.len();
+        self.dense.push(SuffixCacheEntry { key, value });
+        None
+    }
+
+    fn hash(&self, suffix: &SuffixCacheKey) -> usize {
+        // Basic FNV-1a hash as described:
+        // https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
+        const FNV_PRIME: u64 = 1_099_511_628_211;
+        let mut h = 14_695_981_039_346_656_037;
+        h = (h ^ (suffix.from_inst as u64)).wrapping_mul(FNV_PRIME);
+        h = (h ^ (suffix.start as u64)).wrapping_mul(FNV_PRIME);
+        h = (h ^ (suffix.end as u64)).wrapping_mul(FNV_PRIME);
+        (h as usize) % self.sparse.len()
+    }
+}
+*/

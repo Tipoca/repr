@@ -1,4 +1,4 @@
-//! Provides routines for extracting literal prefixes and suffixes from an `Repr<I>`.
+//! Extract literal prefixes and suffixes from an `Repr<I>`.
 
 /*
 (rnarkk)
@@ -27,9 +27,11 @@ use aho_corasick::{self, packed, AhoCorasick, AhoCorasickBuilder};
 use memchr::{memchr, memchr2, memchr3, memmem};
 use unconst::unconst;
 
-use crate::{interval::Interval, Context};
+use crate::context::Context;
+use crate::interval::Interval;
 use crate::repr::{Repr, Integral, Zero};
 use crate::seq::Seq;
+use crate::sparse::SparseSet;
 
 /// A set of literal byte strings extracted from a regular expression.
 ///
@@ -695,11 +697,6 @@ impl<I: ~const Integral> Literal<I> {
         Literal { v: Seq::empty(), cut: false }
     }
 
-    /// Returns true if this literal was "cut."
-    pub fn is_cut(&self) -> bool {
-        self.cut
-    }
-
     /// Cuts this literal.
     pub fn cut(&mut self) {
         self.cut = true;
@@ -843,7 +840,7 @@ impl<I: ~const Integral> LiteralSearcher<I> {
 
     /// Find the position of a literal in `context` if it exists.
     #[cfg_attr(feature = "perf-inline", inline(always))]
-    pub fn find(&self, context: &Context<I>) -> Option<(usize, usize)> {
+    pub fn find(&self, context: &[I]) -> Option<(usize, usize)> {
         use self::Matcher::*;
         match self.matcher {
             Empty => Some((0, 0)),
@@ -1099,7 +1096,7 @@ impl<I: ~const Integral> SeqSet<I> {
 
     /// Faster find that special cases certain sizes to use memchr.
     #[cfg_attr(feature = "perf-inline", inline(always))]
-    fn find(&self, context: &Context<I>) -> Option<usize> {
+    fn find(&self, context: &[I]) -> Option<usize> {
         match self.dense.len() {
             0 => None,
             1 => memchr(self.dense[0], context),
@@ -1110,7 +1107,7 @@ impl<I: ~const Integral> SeqSet<I> {
     }
 
     /// Generic find that works on any sized set.
-    fn _find(&self, context: &Context<I>) -> Option<usize> {
+    fn _find(&self, context: &[I]) -> Option<usize> {
         for (i, &b) in context.iter().enumerate() {
             if self.sparse[b as usize] {
                 return Some(i);
