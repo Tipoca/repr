@@ -9,7 +9,6 @@ use memchr::{memchr, memchr2, memchr3, memmem};
 
 use crate::sparse::SparseSet;
 
-#[cfg(feature = "derivative")]
 fn build_aho_corasick(parsed: &Parsed<I>) -> Option<AhoCorasick<u32>> {
     if parsed.reprs.len() != 1 {
         return None;

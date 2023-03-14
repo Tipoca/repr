@@ -195,15 +195,11 @@ impl<'a, 'm, 'r, I: Integral> Bounded<'a, 'm, 'r, I> {
                 return false;
             }
             match self.prog[ip] {
-                Inst::Match(slot) => {
+                Inst::True(slot) => {
                     if slot < self.matches.len() {
                         self.matches[slot] = true;
                     }
                     return true;
-                }
-                Inst::Split { goto1, goto2 } => {
-                    self.m.jobs.push(Job { ip: goto2, at });
-                    ip = goto1;
                 }
                 Inst::Zero { goto, zero } => {
                     if self.context.is_empty_match(at, zero) {
@@ -227,6 +223,10 @@ impl<'a, 'm, 'r, I: Integral> Bounded<'a, 'm, 'r, I> {
                     } else {
                         return false;
                     }
+                }
+                Inst::Or { goto1, goto2 } => {
+                    self.m.jobs.push(Job { ip: goto2, at });
+                    ip = goto1;
                 }
             }
         }

@@ -95,6 +95,7 @@ impl<I: ~const Integral> Exec<I> {
     /// context into consideration. For example, the `\A` anchor can only
     /// match when `start == 0`.
     pub const fn is_match_at(&self, context: &Context<I>, start: usize) -> bool {
+        #[cfg(feature = "derivative")]
         if !self.is_anchor_end_match(context) {
             return false;
         }
@@ -109,6 +110,7 @@ impl<I: ~const Integral> Exec<I> {
         }
     }
 
+    #[cfg(feature = "derivative")]
     #[cfg_attr(feature = "perf-inline", inline(always))]
     pub const fn is_anchor_end_match(&self, context: &Context<I>) -> bool {
         // Only do this check if the haystack is big (>1MB).
@@ -287,6 +289,7 @@ impl<I: ~const Integral> Exec<I> {
             return None;
         }
         match self.ro.mode {
+            #[cfg(feature = "derivative")]
             Mode::Seq(ty) => {
                 self.find_literals(ty, context, start).map(|(_, e)| e)
             }

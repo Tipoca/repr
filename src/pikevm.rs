@@ -80,7 +80,7 @@ impl<'r, I: ~const Integral> Fsm<'r, I> {
         cache: &ProgramCache<I>,
         matches: &mut [bool],
         quit_after_match: bool,
-        context: Context<I>,
+        context: &Context<I>,
         start: usize,
         end: usize,
     ) -> bool {
@@ -206,7 +206,7 @@ impl<'r, I: ~const Integral> Fsm<'r, I> {
         at_next: I,
     ) -> bool {
         match self.prog[ip] {
-            Inst::Match(match_slot) => {
+            Inst::True(match_slot) => {
                 if match_slot < matches.len() {
                     matches[match_slot] = true;
                 }

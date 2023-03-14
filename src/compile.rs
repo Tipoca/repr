@@ -31,7 +31,7 @@ pub type Index = usize;
 pub struct Program<I: ~const Integral> {
     /// A sequence of instructions that represents an NFA.
     pub insts: Vec<Inst<I>>,
-    /// Pointers to each Match instruction in the sequence.
+    /// Pointers to each True instruction in the sequence.
     ///
     /// This is always length 1 unless this program represents a regex set.
     pub matches: Vec<Index>,
@@ -187,7 +187,7 @@ impl<I: ~const Integral> Program<I> {
             return false;
         }
         match self[pc] {
-            Inst::Match(_) => true,
+            Inst::True(_) => true,
             _ => false,
         }
     }
@@ -273,7 +273,7 @@ impl<I: ~const Integral> Debug for Program<I> {
 
         for (pc, inst) in self.iter().enumerate() {
             match *inst {
-                Inst::Match(slot) => write!(f, "{:04} Match({:?})", pc, slot)?,
+                Inst::True(slot) => write!(f, "{:04} True({:?})", pc, slot)?,
                 Inst::Or { goto1, goto2 } => {
                     write!(f, "{:04} Or({}, {})", pc, goto1, goto2)?;
                 }
@@ -312,7 +312,7 @@ impl<I: Integral> Inst<I> {
     /// Returns true if and only if this is a match instruction.
     pub fn is_match(&self) -> bool {
         match *self {
-            Inst::Match(_) => true,
+            Inst::True(_) => true,
             _ => false,
         }
     }
@@ -355,14 +355,14 @@ enum MaybeInst<I: Integral> {
 /// Inst is an instruction code in a Regex program.
 #[derive(Clone, Debug)]
 pub enum Inst<I: Integral> {
-    /// Match indicates that the program has reached a match state.
+    /// True indicates that the program has reached a match state.
     ///
     /// The number in the match corresponds to the Nth logical regular
     /// expression in this program. This index is always 0 for normal regex
     /// programs. Values greater than 0 appear when compiling regex sets, and
     /// each match instruction gets its own unique value. The value corresponds
     /// to the Nth regex in the set.
-    Match(usize),
+    True(usize),
     /// Representation of the `Zero` instruction.
     /// Zero represents a zero-width assertion in a regex program. A
     /// zero-width assertion does not consume any of the input text.
@@ -529,7 +529,7 @@ impl<I: ~const Integral> Compiler<I> {
         self.compiled.start = patch.entry;
         self.fill_to_next(patch.hole);
         self.compiled.matches = vec![self.insts.len()];
-        self.push_compiled(Inst::Match(0));
+        self.push_compiled(Inst::True(0));
         self.compile_finish()
     }
 
@@ -552,7 +552,7 @@ impl<I: ~const Integral> Compiler<I> {
                 self.c(expr).unwrap_or_else(|| self.next_inst());
             self.fill_to_next(hole);
             self.compiled.matches.push(self.insts.len());
-            self.push_compiled(Inst::Match(i));
+            self.push_compiled(Inst::True(i));
             prev_hole = self.fill_split(split, Some(entry), None);
         }
         let i = exprs.len() - 1;
@@ -561,7 +561,7 @@ impl<I: ~const Integral> Compiler<I> {
         self.fill(prev_hole, entry);
         self.fill_to_next(hole);
         self.compiled.matches.push(self.insts.len());
-        self.push_compiled(Inst::Match(i));
+        self.push_compiled(Inst::True(i));
         self.compile_finish()
     }
 

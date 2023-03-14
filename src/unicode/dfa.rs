@@ -69,7 +69,7 @@ pub fn can_exec<I: Integral>(insts: &Program<I>) -> bool {
     for inst in insts {
         match *inst {
             Inst::One(_) | Inst::Interval(_) => return false,
-            Inst::Zero(_) | Inst::Match(_) | Inst::Split(_) => {}
+            Inst::Zero(_) | Inst::True(_) | Inst::Split(_) => {}
         }
     }
     true
@@ -540,7 +540,7 @@ impl<'a, I: Integral> Fsm<'a, I> {
                 debug_assert!(dfa.last_match_si != STATE_UNKNOWN);
                 debug_assert!(dfa.last_match_si != STATE_DEAD);
                 for ip in dfa.state(dfa.last_match_si).inst_ptrs() {
-                    if let Inst::Match(slot) = dfa.prog[ip] {
+                    if let Inst::True(slot) = dfa.prog[ip] {
                         matches[slot] = true;
                     }
                 }
@@ -959,8 +959,8 @@ impl<'a, I: Integral> Fsm<'a, I> {
                 // These states never happen in a byte-based program.
                 Inst::One(_) | Inst::Interval(_) => unreachable!(),
                 // These states are handled when following epsilon transitions.
-                Inst::Split(_) | Inst::Zero(_) => {}
-                Inst::Match(_) => {
+                Inst::Or(_) | Inst::Zero(_) => {}
+                Inst::True(_) => {
                     state_flags.set_match();
                     if !self.continue_past_first_match() {
                         break;
