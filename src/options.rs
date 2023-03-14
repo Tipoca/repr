@@ -1,6 +1,9 @@
+use alloc::sync::Arc;
+
 use unconst::unconst;
 
-use crate::exec::{Exec, ExecBuilder};
+use crate::compile::Program;
+use crate::exec::{Exec, new_pool};
 use crate::repr::{Repr, Integral};
 
 #[unconst]
@@ -115,6 +118,9 @@ impl<I: ~const Integral> Options<I> {
     /// pattern given to `new` verbatim. Notably, it will not incorporate any
     /// of the flags set on this builder.
     pub fn build(self) -> Exec<I> {
-        ExecBuilder::new(self).build()
+        let mut nfa = Program::new(&self);
+        let ro = Arc::new(nfa);
+        let pool = new_pool(&ro);
+        Exec { ro, pool }
     }
 }

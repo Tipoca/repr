@@ -223,6 +223,44 @@ impl<I: ~const Integral> Program<I> {
     }
 }
 
+// /// Alternation literals checks if the given Repr is a simple alternation of
+// /// literals, and if so, returns them. Otherwise, this returns None.
+// #[cfg(feature = "perf-literal")]
+// fn or_constants<I: Integral>(repr: &Repr<I>) -> Option<Vec<Vec<u8>>> {
+//     // This is pretty hacky, but basically, if `is_alternation_literal` is
+//     // true, then we can make several assumptions about the structure of our
+//     // Repr. This is what justifies the `unreachable!` statements below.
+//     //
+//     // This code should be refactored once we overhaul this crate's
+//     // optimization pipeline, because this is a terribly inflexible way to go
+//     // about things.
+
+//     if !repr.is_alternation_literal() {
+//         return None;
+//     }
+//     let mut constants = Vec::new();
+//     let mut current = repr;
+//     // One literal isn't worth it.
+//     while let Repr::Or(lhs, rhs) = current {
+//         let mut constant = Seq::empty();
+//         match lhs {
+//             Repr::One(ref seq) => constant = constant.mul(seq),
+//             Repr::And(ref exprs) => {
+//                 for e in exprs {
+//                     match *e {
+//                         Repr::One(ref x) => constant = constant.mul(x),
+//                         _ => unreachable!("expected literal, got {:?}", e),
+//                     }
+//                 }
+//             }
+//             _ => unreachable!("expected literal or concat, got {:?}", lhs),
+//         }
+//         constants.push(constant);
+//     }
+
+//     Some(constants)
+// }
+
 #[unconst]
 impl<I: ~const Integral> Deref for Program<I> {
     type Target = [Inst<I>];
