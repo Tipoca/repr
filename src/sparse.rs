@@ -23,8 +23,9 @@ type Index = NonZeroUsize;
 /// reuse allocations, so the initial allocation cost is bareable. However,
 /// its other properties listed above are extremely useful.
 #[derive_const(Clone)]
-pub struct SparseSet<T>
-    where T: ~const Clone + ~const Hash + ~const PartialEq
+pub struct SparseSet<K, T>
+    where K: ~const Hash,
+          T: ~const Clone + ~const Hash + ~const PartialEq
 {
     /// Dense contains the instruction pointers in the order in which they
     /// were inserted.
@@ -37,8 +38,9 @@ pub struct SparseSet<T>
 }
 
 #[unconst]
-impl<T> SparseSet<T>
-    where T: ~const Clone + ~const Hash + ~const PartialEq + ~const Default
+impl<K, T> SparseSet<K, T>
+    where K: ~const Hash,
+          T: ~const Clone + ~const Hash + ~const PartialEq + ~const Default
 {
     pub fn new(size: usize) -> Self {
         SparseSet {
@@ -59,11 +61,25 @@ impl<T> SparseSet<T>
         self.dense.capacity()
     }
 
-    pub fn insert(&mut self, value: T) {
+    pub fn insert(&mut self, value: T) -> Option<Index> {
         let i = self.len();
         assert!(i < self.capacity());
         self.dense.push(value);
-        self.sparse[value] = i;
+        let index = ;
+        self.sparse[index] = i;
+        Some(Index::new(index))
+    }
+
+    pub fn get(&self, key: Index) -> Option<&T> {
+        let index = &mut self.sparse[key.get()];
+        if let Some(entry) = self.dense.get(*index) {
+            if entry.key == key {
+                return Some(entry.value);
+            }
+        }
+        // *index = self.dense.len();
+        // self.dense.push(SuffixCacheEntry { key, value });
+        None
     }
 
     pub fn contains(&self, value: T) -> bool {
@@ -81,11 +97,23 @@ impl<T> SparseSet<T>
         }
         *self = SparseSet::new(size);
     }
+
+    fn hash(&self, key: &K) -> usize {
+        // Basic FNV-1a hash as described:
+        // https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
+        const FNV_PRIME: u64 = 1_099_511_628_211;
+        let mut h = 14_695_981_039_346_656_037;
+        h = (h ^ (suffix.from_inst as u64)).wrapping_mul(FNV_PRIME);
+        h = (h ^ (suffix.start as u64)).wrapping_mul(FNV_PRIME);
+        h = (h ^ (suffix.end as u64)).wrapping_mul(FNV_PRIME);
+        (h as usize) % self.sparse.len()
+    }
 }
 
 #[unconst]
-impl<T> const Debug for SparseSet<T>
-    where T: ~const Clone + ~const Debug + ~const Hash + ~const PartialEq
+impl<K, T> const Debug for SparseSet<K, T>
+    where K: ~const Hash,
+          T: ~const Clone + ~const Debug + ~const Hash + ~const PartialEq
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "SparseSet({:?})", self.dense)
@@ -93,8 +121,9 @@ impl<T> const Debug for SparseSet<T>
 }
 
 #[unconst]
-impl<T> const Deref for SparseSet<T>
-    where T: ~const Clone + ~const Hash + ~const PartialEq
+impl<K, T> const Deref for SparseSet<K, T>
+    where K: ~const Hash,
+          T: ~const Clone + ~const Hash + ~const PartialEq
 {
     type Target = [T];
 
@@ -104,8 +133,9 @@ impl<T> const Deref for SparseSet<T>
 }
 
 #[unconst]
-impl<'a, T> const IntoIterator for &'a SparseSet<T>
-        where T: ~const Clone + ~const Hash + ~const PartialEq
+impl<'a, K, T> const IntoIterator for &'a SparseSet<K, T>
+    where K: ~const Hash,
+          T: ~const Clone + ~const Hash + ~const PartialEq
 {
     type Item = &'a T;
     type IntoIter = Iter<'a, T>;
