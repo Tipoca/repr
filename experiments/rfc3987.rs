@@ -1,8 +1,8 @@
 //! <https://www.rfc-editor.org/rfc/rfc3987>
 
 pub use repr::{
-    consts::{EMPTY, DIGIT, SPACE, WORD as ALPHA},
-    pat::Pat
+    Repr,
+    constants::{EMPTY, DIGIT, SPACE, WORD as ALPHA},
 };
 
 pub const SUB_DELIMS: Pat
