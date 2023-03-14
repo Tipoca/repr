@@ -690,8 +690,9 @@ impl<I: ~const Integral> Clone for Exec<I> {
     }
 }
 
+#[unconst]
 pub fn new_pool<I>(prog: &Arc<Program<I>>) -> Box<Pool<ProgramCache<I>>>
-    where I: Integral
+    where I: ~const Integral
 {
     let prog = prog.clone();
     Box::new(Pool::new(Box::new(move || {
@@ -699,13 +700,14 @@ pub fn new_pool<I>(prog: &Arc<Program<I>>) -> Box<Pool<ProgramCache<I>>>
     })))
 }
 
+#[unconst]
 /// `ProgramCache` maintains reusable allocations for each matching engine
 /// available to a particular program.
 ///
 /// We declare this as unwind safe since it's a cache that's only used for
 /// performance purposes. If a panic occurs, it is (or should be) always safe
 /// to continue using the same regex object.
-pub type ProgramCache<I: Integral>
+pub type ProgramCache<I: ~const Integral>
     = AssertUnwindSafe<RefCell<ProgramCacheInner<I>>>;
 
 #[derive(Debug)]
@@ -714,7 +716,8 @@ pub struct ProgramCacheInner<I: Integral> {
     pub backtrack: backtrack::Cache<I>,
 }
 
-impl<I: Integral> ProgramCacheInner<I> {
+#[unconst]
+impl<I: ~const Integral> ProgramCacheInner<I> {
     fn new(ro: &Program<I>) -> Self {
         ProgramCacheInner {
             pikevm: pikevm::Cache::new(&ro),
