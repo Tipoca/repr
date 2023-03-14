@@ -6,10 +6,9 @@ use unconst::unconst;
 
 use crate::{Repr, Integral, Seq, Partition, Context};
 use crate::backtrack;
-use crate::compile::{Program, Mode};
+use crate::compile::{Options, Program, Mode};
 #[cfg(feature = "derivative")]
 use crate::compile::SeqMode;
-use crate::options::Options;
 use crate::partition::{Match, SetMatches};
 use crate::pikevm;
 use crate::pool::Pool;
@@ -36,64 +35,14 @@ pub struct Exec<I: Integral> {
 
 #[unconst]
 impl<I: ~const Integral> Exec<I> {
-    /// Create a new regex set from an iterator of strings:
-    ///
-    /// ```rust
-    /// # use regex::RegexSet;
-    /// let set = RegexSet::new(&[r"\w+", r"\d+"]).unwrap();
-    /// assert!(set.is_match("foo"));
-    /// ```
     pub const fn new(repr: Repr<I>) -> Exec<I> {
         Options::new(repr).build()
     }
 
-    /// Returns true if and only if one of the regexes in this set matches
-    /// the text given.
-    ///
-    /// This method should be preferred if you only need to test whether any
-    /// of the regexes in the set should match, but don't care about *which*
-    /// regexes matched. This is because the underlying matching engine will
-    /// quit immediately after seeing the first match instead of continuing to
-    /// find all matches.
-    ///
-    /// Note that as with searches using `Regex`, the expression is unanchored
-    /// by default. That is, if the regex does not start with `^` or `\A`, or
-    /// end with `$` or `\z`, then it is permitted to match anywhere in the
-    /// text.
-    ///
-    /// # Example
-    ///
-    /// Tests whether a set matches some text:
-    ///
-    /// ```rust
-    /// # use regex::RegexSet;
-    /// let set = RegexSet::new(&[r"\w+", r"\d+"]).unwrap();
-    /// assert!(set.is_match("foo"));
-    /// assert!(!set.is_match("☃"));
-    /// ```
-    /// 
-    /// Test if some text contains at least one word with exactly 13
-    /// Unicode word characters:
-    ///
-    /// ```rust
-    /// # use regex::Regex;
-    /// # fn main() {
-    /// let text = "I categorically deny having triskaidekaphobia.";
-    /// assert!(Regex::new(r"\b\w{13}\b").unwrap().is_match(text));
-    /// # }
     pub const fn is_match(&self, context: &Context<I>) -> bool {
         self.is_match_at(context, 0)
     }
 
-    /// Returns the same as is_match, but starts the search at the given
-    /// offset.
-    /// 
-    /// For single regular expressions, this is equivalent to calling
-    /// shortest_match(...).is_some().
-    ///
-    /// The significance of the starting point is that it takes the surrounding
-    /// context into consideration. For example, the `\A` anchor can only
-    /// match when `start == 0`.
     pub const fn is_match_at(&self, context: &Context<I>, start: usize) -> bool {
         #[cfg(feature = "derivative")]
         if !self.is_anchor_end_match(context) {
@@ -247,40 +196,10 @@ impl<I: ~const Integral> Exec<I> {
         )
     }
 
-    /// Returns the end location of a match in the text given.
-    ///
-    /// This method may have the same performance characteristics as
-    /// `is_match`, except it provides an end location for a match. In
-    /// particular, the location returned *may be shorter* than the proper end
-    /// of the leftmost-first match.
-    ///
-    /// # Example
-    ///
-    /// Typically, `a+` would match the entire first sequence of `a` in some
-    /// text, but `shortest_match` can give up as soon as it sees the first
-    /// `a`.
-    ///
-    /// ```rust
-    /// # use regex::Regex;
-    /// # fn main() {
-    /// let text = "aaaaa";
-    /// let pos = Regex::new(r"a+").unwrap().shortest_match(text);
-    /// assert_eq!(pos, Some(1));
-    /// # }
-    /// ```
     pub const fn shortest_match(&self, context: &Context<I>) -> Option<usize> {
         self.shortest_match_at(context, 0)
     }
 
-    /// Returns the end of a match location, possibly occurring before the
-    /// end location of the correct leftmost-first match.
-    /// ================================================================
-    /// Returns the same as shortest_match, but starts the search at the given
-    /// offset.
-    ///
-    /// The significance of the starting point is that it takes the surrounding
-    /// context into consideration. For example, the `\A` anchor can only
-    /// match when `start == 0`.
     #[cfg_attr(feature = "perf-inline", inline(always))]
     pub const fn shortest_match_at(&self, context: &Context<I>, start: usize)
         -> Option<usize>
@@ -302,42 +221,12 @@ impl<I: ~const Integral> Exec<I> {
         None
     }
 
-    /// Returns the start and end byte range of the leftmost-first match in
-    /// `text`. If no match exists, then `None` is returned.
-    ///
-    /// Note that this should only be used if you want to discover the position
-    /// of the match. Testing the existence of a match is faster if you use
-    /// `is_match`.
-    ///
-    /// # Example
-    ///
-    /// Find the start and end location of the first word with exactly 13
-    /// Unicode word characters:
-    ///
-    /// ```rust
-    /// # use regex::Regex;
-    /// # fn main() {
-    /// let text = "I categorically deny having triskaidekaphobia.";
-    /// let mat = Regex::new(r"\b\w{13}\b").unwrap().find(text).unwrap();
-    /// assert_eq!(mat.start(), 2);
-    /// assert_eq!(mat.end(), 15);
-    /// # }
-    /// ```
     pub const fn find<'c>(&self, context: &'c Context<I>)
         -> Option<Match<'c, I>>
     {
         self.find_at(context, 0)
     }
 
-    /// Finds the start and end location of the leftmost-first match, starting
-    /// at the given location.
-    /// ========================================================
-    /// Returns the same as find, but starts the search at the given
-    /// offset.
-    ///
-    /// The significance of the starting point is that it takes the surrounding
-    /// context into consideration. For example, the `\A` anchor can only
-    /// match when `start == 0`.
     #[cfg_attr(feature = "perf-inline", inline(always))]
     pub const fn find_at<'c>(&self, context: &'c Context<I>, start: usize)
         -> Option<Match<'c, I>>
@@ -360,64 +249,10 @@ impl<I: ~const Integral> Exec<I> {
         None
     }
 
-    // /// Returns an iterator for each successive non-overlapping match in
-    // /// `text`, returning the start and end byte indices with respect to
-    // /// `text`.
-    // ///
-    // /// # Example
-    // ///
-    // /// Find the start and end location of every word with exactly 13 Unicode
-    // /// word characters:
-    // ///
-    // /// ```rust
-    // /// # use regex::Regex;
-    // /// # fn main() {
-    // /// let text = "Retroactively relinquishing remunerations is reprehensible.";
-    // /// for mat in Regex::new(r"\b\w{13}\b").unwrap().find_iter(text) {
-    // ///     println!("{:?}", mat);
-    // /// }
-    // /// # }
-    // /// ```
     // pub const fn find_iter<'c>(&'r self, context: &'c Context<I>) -> Partition<'c, I> {
     //     Partition(self.searcher().find_iter(context))
     // }
 
-        /// Returns the set of regular expressions that match in the given text.
-    ///
-    /// The set returned contains the index of each regular expression that
-    /// matches in the given text. The index is in correspondence with the
-    /// order of regular expressions given to `RegexSet`'s constructor.
-    ///
-    /// The set can also be used to iterate over the matched indices.
-    ///
-    /// Note that as with searches using `Regex`, the expression is unanchored
-    /// by default. That is, if the regex does not start with `^` or `\A`, or
-    /// end with `$` or `\z`, then it is permitted to match anywhere in the
-    /// text.
-    ///
-    /// # Example
-    ///
-    /// Tests which regular expressions match the given text:
-    ///
-    /// ```rust
-    /// # use regex::RegexSet;
-    /// let set = RegexSet::new(&[
-    ///     r"\w+",
-    ///     r"\d+",
-    ///     r"\pL+",
-    ///     r"foo",
-    ///     r"bar",
-    ///     r"barfoo",
-    ///     r"foobar",
-    /// ]).unwrap();
-    /// let matches: Vec<_> = set.matches("foobar").into_iter().collect();
-    /// assert_eq!(matches, vec![0, 2, 3, 4, 6]);
-    ///
-    /// // You can also test whether a particular regex matched:
-    /// let matches = set.matches("foobar");
-    /// assert!(!matches.matched(5));
-    /// assert!(matches.matched(6));
-    /// ```
     pub const fn matches(&self, context: &Context<I>) -> SetMatches {
         let mut matches = vec![false; self.ro.reprs.len()];
         let any = self.read_matches_at(&mut matches, context, 0);
@@ -427,18 +262,6 @@ impl<I: ~const Integral> Exec<I> {
         }
     }
 
-    /// Returns the same as matches, but starts the search at the given
-    /// offset and stores the matches into the slice given.
-    ///
-    /// The significance of the starting point is that it takes the surrounding
-    /// context into consideration. For example, the `\A` anchor can only
-    /// match when `start == 0`.
-    ///
-    /// `matches` must have a length that is at least the number of regexes
-    /// in this set.
-    ///
-    /// This method returns true if and only if at least one member of
-    /// `matches` is true after executing the set against `text`.
     #[doc(hidden)]
     pub const fn read_matches_at(
         &self,
@@ -449,13 +272,6 @@ impl<I: ~const Integral> Exec<I> {
         self.many_matches_at(matches, context, start)
     }
 
-    /// Finds which regular expressions match the given text.
-    ///
-    /// `matches` should have length equal to the number of regexes being
-    /// searched.
-    ///
-    /// This is only useful when one wants to know which regexes in a set
-    /// match some text.
     pub fn many_matches_at(
         &self,
         matches: &mut [bool],
