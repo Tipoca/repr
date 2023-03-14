@@ -133,6 +133,40 @@ impl<I: ~const Integral> Repr<I> {
     pub const fn rep(self, count: usize) -> Self {
         Self::prod(vec![self; count].into_iter())
     }
+
+    pub const fn der(self, seq: Seq<I>) -> Self {
+        match self {
+            Self::One(seq) => unimplemented!(),
+            Self::Mul(lhs, rhs)
+                => Self::Or(box Self::Mul(box lhs.der(seq), rhs),
+                            box Self::Mul(lhs, box rhs.der(seq))),
+            Self::Or(lhs, rhs) => Self::Or(box lhs.der(seq), box rhs.der(seq)),
+            Self::And(lhs, rhs) => Self::And(box lhs.der(seq),
+                                             box rhs.der(seq)),
+            _ => unimplemented!()
+        }
+    }
+
+    /// Returns true if and only if this repetition operator makes it possible
+    /// to match the empty string.
+    ///
+    /// Note that this is not defined inductively. For example, while `a*`
+    /// will report `true`, `()+` will not, even though `()` matches the empty
+    /// string and one or more occurrences of something that matches the empty
+    /// string will always match the empty string. In order to get the
+    /// inductive definition, see the corresponding method on
+    /// [`Hir`](struct.Hir.html).
+    pub const fn nullable(&self) -> bool {
+        match self {
+            Self::Zero(_) => true,
+            Self::One(seq) => seq == &Seq::empty(),
+            // Self::Mul(lhs, rhs) => lhs.nullable() && rhs.nullable(),
+            Self::Or(lhs, rhs) => lhs.nullable() || rhs.nullable(),
+            Self::And(lhs, rhs) => lhs.nullable() || rhs.nullable(),
+            Self::Exp(_) => true,
+            _ => false
+        }
+    }
 }
 
 #[unconst]
@@ -173,24 +207,6 @@ impl<I: ~const Integral> Repr<I> {
 
     pub const fn is_any_anchored_end(&self) -> bool {
         unimplemented!()
-    }
-
-    /// Returns true if and only if this repetition operator makes it possible
-    /// to match the empty string.
-    ///
-    /// Note that this is not defined inductively. For example, while `a*`
-    /// will report `true`, `()+` will not, even though `()` matches the empty
-    /// string and one or more occurrences of something that matches the empty
-    /// string will always match the empty string. In order to get the
-    /// inductive definition, see the corresponding method on
-    /// [`Hir`](struct.Hir.html).
-    pub const fn is_match_empty(&self) -> bool {
-        match self {
-            Self::Zero(_) => true,
-            Self::Or(lhs, rhs) => lhs.is_match_empty() || rhs.is_match_empty(),
-            Self::Exp(_) => true,
-            _ => false
-        }
     }
 
     pub const fn is_literal(&self) -> bool {
