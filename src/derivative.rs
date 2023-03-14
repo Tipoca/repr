@@ -1,4 +1,5 @@
 //! Extract literal prefixes and suffixes from an `Repr<I>`.
+//! <https://en.wikipedia.org/wiki/Brzozowski_derivative>
         
 #[cfg(feature = "derivative")]
 mod search;
