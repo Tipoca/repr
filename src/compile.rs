@@ -6,7 +6,6 @@ use core::{
     slice
 };
 
-use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
 use unconst::unconst;
 
 use crate::derivative::{LiteralSearcher, Parsed};
@@ -140,33 +139,6 @@ impl<I: ~const Integral> Program<I> {
             ac: Default::default(),
             mode: Mode::Nfa,
         }
-    }
-
-    #[cfg(feature = "perf-literal")]
-    fn build_aho_corasick(&self, parsed: &Parsed<I>) -> Option<AhoCorasick<u32>> {
-        if parsed.reprs.len() != 1 {
-            return None;
-        }
-        // TODO(rnarkk)
-        // let lits = match or_constants(&parsed.reprs[0]) {
-        //     None => return None,
-        //     Some(lits) => lits,
-        // };
-        return None;
-        // // If we have a small number of literals, then let Teddy handle
-        // // things (see literal/mod.rs).
-        // if lits.len() <= 32 {
-        //     return None;
-        // }
-        // Some(
-        //     AhoCorasickBuilder::new()
-        //         .match_kind(MatchKind::LeftmostFirst)
-        //         .auto_configure(&lits)
-        //         .build_with_size::<u32, _, _>(&lits)
-        //         // This should never happen because we'd long exceed the
-        //         // compilation limit for regexes first.
-        //         .expect("AC automaton too big"),
-        // )
     }
 
     /// If a plain literal scan can be used, then a corresponding literal

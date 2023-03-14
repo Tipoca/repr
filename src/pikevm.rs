@@ -41,7 +41,7 @@ pub struct Fsm<'r, I: Integral> {
     context: Context<I>,
 }
 
-type Thread = SparseSet<usize>;
+type Thread = SparseSet<usize, usize>;
 
 /// A cached allocation that can be reused on each execution.
 #[derive(Clone, Debug)]
@@ -245,7 +245,7 @@ impl<'r, I: ~const Integral> Fsm<'r, I> {
         // branch).
         loop {
             // Don't visit states we've already added.
-            if nlist.contains(ip) {
+            if nlist.contains(&ip) {
                 return;
             }
             nlist.insert(ip);
