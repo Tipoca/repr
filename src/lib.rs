@@ -44,8 +44,8 @@ mod wrappers;
 
 pub mod char;
 pub mod constants;
-pub mod derivative;
 pub mod macros;
+pub mod quotient;
 pub mod repr;
 
 pub use constants::perl::{DIGIT, WORD};
