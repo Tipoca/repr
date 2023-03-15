@@ -1,15 +1,11 @@
 use alloc::{boxed::Box, vec};
-use core::{
-    fmt::Debug,
-    iter::Step,
-    marker::Destruct,
-    panic::{UnwindSafe, RefUnwindSafe}
-};
+use core::fmt::Debug;
 
 use unconst::unconst;
 
 use crate::interval::Interval;
 use crate::seq::Seq;
+use crate::traits::Integral;
 
 #[unconst]
 #[derive_const(Clone, PartialEq)]
@@ -220,24 +216,6 @@ impl<I: ~const Integral> Repr<I> {
             _ => false
         }
     }
-}
-
-/// - `Copy` + `Clone`: possibility of `!` exponentiation
-/// - `PartialEq` + `Eq`: decidability
-#[unconst]
-#[const_trait]
-pub trait Integral: Copy + ~const Clone
-                    + ~const PartialEq + Eq
-                    + ~const PartialOrd + ~const Ord
-                    + Step
-                    + ~const Destruct
-                    + Debug
-                    + Sync + Send + RefUnwindSafe + UnwindSafe
-{
-    const MIN: Self;
-    const MAX: Self;
-    fn succ(self) -> Self;
-    fn pred(self) -> Self;
 }
 
 /// An anchor assertion. An anchor assertion match always has zero length.
