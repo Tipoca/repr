@@ -46,6 +46,7 @@ pub mod char;
 pub mod constants;
 pub mod macros;
 pub mod quotient;
+pub mod traits;
 pub mod repr;
 
 pub use constants::perl::{DIGIT, WORD};
