@@ -1,3 +1,10 @@
+use core::{
+    fmt::Debug,
+    iter::Step,
+    marker::Destruct,
+    panic::{UnwindSafe, RefUnwindSafe}
+};
+
 /// - `Copy` + `Clone`: possibility of `!` exponentiation
 /// - `PartialEq` + `Eq`: decidability
 #[unconst]
