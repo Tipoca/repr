@@ -1,3 +1,5 @@
+//! <https://en.m.wikipedia.org/wiki/Covering_problems>
+
 use alloc::vec::IntoIter;
 use core::{
     iter::{Enumerate, FusedIterator},
