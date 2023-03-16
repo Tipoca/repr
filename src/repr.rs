@@ -89,8 +89,8 @@ impl<I: ~const Integral> Repr<I> {
             // },
             Mul(lhs, rhs) => Add(box lhs.dual(), box rhs.dual()),
             Or(lhs, rhs) => And(box lhs.dual(), box rhs.dual()),
-            Add(lhs, rhs) => Mul(box lhs.dual(), box rhs.dual()),
-            And(lhs, rhs) => Or(box lhs.dual(), box rhs.dual()),
+            Add(lhs, rhs) => lhs.dual() * rhs.dual(),
+            And(lhs, rhs) => lhs.dual() | rhs.dual(),
             _ => unimplemented!()
         }
     }
@@ -112,11 +112,11 @@ impl<I: ~const Integral> Repr<I> {
     }
 
     pub const fn prod<M: ~const Iterator<Item = Self>>(reprs: M) -> Self {
-        reprs.reduce(|acc, e| Mul(box acc, box e)).unwrap()
+        reprs.reduce(|acc, e| acc * e).unwrap()
     }
 
     pub const fn any<M: ~const Iterator<Item = Self>>(reprs: M) -> Self {
-        reprs.reduce(|acc, e| Or(box acc, box e)).unwrap()
+        reprs.reduce(|acc, e| acc | e).unwrap()
     }
 
     pub const fn sum<M: ~const Iterator<Item = Self>>(reprs: M) -> Self {
