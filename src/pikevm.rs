@@ -21,11 +21,11 @@ use core::mem;
 
 use unconst::unconst;
 
-use crate::repr::Integral;
 use crate::compile::{Index, Program, Inst};
 use crate::context::Context;
 use crate::exec::ProgramCache;
 use crate::sparse::SparseSet;
+use crate::traits::Integral;
 
 /// An NFA simulation matching engine.
 #[derive(Debug)]
@@ -255,7 +255,7 @@ impl<'r, I: ~const Integral> Fsm<'r, I> {
                         ip = goto;
                     }
                 }
-                Inst::Split { goto1, goto2 } => {
+                Inst::Or { goto1, goto2 } => {
                     self.stack.push(goto2);
                     ip = goto1;
                 }

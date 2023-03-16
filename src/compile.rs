@@ -12,13 +12,13 @@ use core::{
 use unconst::unconst;
 
 #[cfg(feature = "derivative")]
-use crate::derivative::LiteralSearcher;
-use crate::derivative::Parsed;
+use crate::quotient::LiteralSearcher;
+use crate::quotient::Parsed;
 use crate::exec::{Exec, new_pool};
 use crate::interval::Interval;
-use crate::options::Options;
-use crate::repr::{Repr, Integral, Zero};
+use crate::repr::{Repr, Zero};
 use crate::seq::Seq;
+use crate::traits::Integral;
 
 #[unconst]
 /// A configurable builder for a regular expression.
@@ -164,12 +164,6 @@ pub struct Program<I: ~const Integral> {
     /// expressions. The actual starting point of the program is after the
     /// `.*?`.
     pub start: Index,
-    /// Whether the regex must match from the start of the input.
-    pub is_anchored_start: bool,
-    /// Whether the regex must match at the end of the input.
-    pub is_anchored_end: bool,
-    /// Whether this program contains a Unicode word boundary instruction.
-    pub has_unicode_word_boundary: bool,
     #[cfg(feature = "derivative")]
     /// A possibly empty machine for very quickly matching prefix literals.
     pub prefixes: LiteralSearcher<I>,
@@ -260,9 +254,6 @@ impl<I: ~const Integral> Program<I> {
             matches: vec![],
             start: 0,
             // byte_classes: vec![0; 256],
-            is_anchored_start: false,
-            is_anchored_end: false,
-            has_unicode_word_boundary: false,
             #[cfg(feature = "derivative")]
             prefixes: LiteralSearcher::empty(),
             #[cfg(feature = "derivative")]
@@ -351,8 +342,8 @@ impl<I: ~const Integral> Program<I> {
 //         let mut constant = Seq::empty();
 //         match lhs {
 //             Repr::One(ref seq) => constant = constant.mul(seq),
-//             Repr::And(ref exprs) => {
-//                 for e in exprs {
+//             Repr::And(ref reprs) => {
+//                 for e in reprs {
 //                     match *e {
 //                         Repr::One(ref x) => constant = constant.mul(x),
 //                         _ => unreachable!("expected literal, got {:?}", e),
@@ -632,23 +623,21 @@ impl<I: ~const Integral> Compiler<I> {
     /// The compiler is guaranteed to succeed unless the program exceeds the
     /// specified size limit. If the size limit is exceeded, then compilation
     /// stops and returns an error.
-    pub fn compile(mut self, exprs: &[Repr<I>]) -> Program<I> {
-        if exprs.len() == 1 {
-            self.compile_one(&exprs[0])
+    pub fn compile(mut self, reprs: &[Repr<I>]) -> Program<I> {
+        if reprs.len() == 1 {
+            self.compile_one(&reprs[0])
         } else {
-            self.compile_many(exprs)
+            self.compile_many(reprs)
         }
     }
 
-    fn compile_one(mut self, expr: &Repr<I>) -> Program<I> {
+    fn compile_one(mut self, repr: &Repr<I>) -> Program<I> {
         // If we're compiling a forward DFA and we aren't anchored, then
         // add a `.*?` before the first capture group.
         // Other matching engines handle this by baking the logic into the
         // matching engine itself.
         let mut dotstar_patch = Patch { hole: Hole::None, entry: 0 };
-        self.compiled.is_anchored_start = expr.is_anchored_start();
-        self.compiled.is_anchored_end = expr.is_anchored_end();
-        let patch = self.c(expr).unwrap_or_else(|| self.next_inst());
+        let patch = self.c(repr).unwrap_or_else(|| self.next_inst());
         self.compiled.start = patch.entry;
         self.fill_to_next(patch.hole);
         self.compiled.matches = vec![self.insts.len()];
@@ -656,31 +645,26 @@ impl<I: ~const Integral> Compiler<I> {
         self.compile_finish()
     }
 
-    fn compile_many(mut self, exprs: &[Repr<I>]) -> Program<I> {
-        debug_assert!(exprs.len() > 1);
-
-        self.compiled.is_anchored_start =
-            exprs.iter().all(|e| e.is_anchored_start());
-        self.compiled.is_anchored_end =
-            exprs.iter().all(|e| e.is_anchored_end());
+    fn compile_many(mut self, reprs: &[Repr<I>]) -> Program<I> {
+        debug_assert!(reprs.len() > 1);
         let mut dotstar_patch = Patch { hole: Hole::None, entry: 0 };
         self.compiled.start = 0; // first instruction is always split
         self.fill_to_next(dotstar_patch.hole);
 
         let mut prev_hole = Hole::None;
-        for (i, expr) in exprs[0..exprs.len() - 1].iter().enumerate() {
+        for (i, repr) in reprs[0..reprs.len() - 1].iter().enumerate() {
             self.fill_to_next(prev_hole);
             let split = self.push_split_hole();
             let Patch { hole, entry } =
-                self.c(expr).unwrap_or_else(|| self.next_inst());
+                self.c(repr).unwrap_or_else(|| self.next_inst());
             self.fill_to_next(hole);
             self.compiled.matches.push(self.insts.len());
             self.push_compiled(Inst::True(i));
             prev_hole = self.fill_split(split, Some(entry), None);
         }
-        let i = exprs.len() - 1;
+        let i = reprs.len() - 1;
         let Patch { hole, entry } =
-            self.c(&exprs[i]).unwrap_or_else(|| self.next_inst());
+            self.c(&reprs[i]).unwrap_or_else(|| self.next_inst());
         self.fill(prev_hole, entry);
         self.fill_to_next(hole);
         self.compiled.matches.push(self.insts.len());
@@ -695,7 +679,7 @@ impl<I: ~const Integral> Compiler<I> {
     }
 
     /**
-    Compile expr into self.insts, returning a patch on success,
+    Compile repr into self.insts, returning a patch on success,
     or an error if we run out of memory.
 
     All of the c_* methods of the compiler share the contract outlined
@@ -751,9 +735,9 @@ impl<I: ~const Integral> Compiler<I> {
     Ok(None) is returned when an expression is compiled to no
     instruction, and so no patch.entry value makes sense.
     */
-    fn c(&mut self, expr: &Repr<I>) -> Patch {
+    fn c(&mut self, repr: &Repr<I>) -> Patch {
         self.check_size();
-        match *expr {
+        match *repr {
             Repr::Zero(Zero::Any) => self.c_empty(),
             Repr::One(seq) => self.c_one(seq),
             Repr::Interval(interval) => self.c_interval(interval),
@@ -941,10 +925,10 @@ impl<I: ~const Integral> Compiler<I> {
         Some(Patch { hole: split_hole, entry: split_entry })
     }
 
-    fn c_repeat_zero_or_one(&mut self, expr: &Repr<I>) -> Option<Patch> {
+    fn c_repeat_zero_or_one(&mut self, repr: &Repr<I>) -> Option<Patch> {
         let split_entry = self.insts.len();
         let split = self.push_split_hole();
-        let Patch { hole: hole_rep, entry: entry_rep } = match self.c(expr) {
+        let Patch { hole: hole_rep, entry: entry_rep } = match self.c(repr) {
             Some(p) => p,
             None => return self.pop_split_hole(),
         };
@@ -955,13 +939,13 @@ impl<I: ~const Integral> Compiler<I> {
 
     // fn c_repeat_range(
     //     &mut self,
-    //     expr: &Repr<I>,
+    //     repr: &Repr<I>,
     //     min: u32,
     //     max: u32,
     // ) -> Option<Patch> {
     //     let (min, max) = (u32_to_usize(min), u32_to_usize(max));
     //     debug_assert!(min <= max);
-    //     let patch_concat = self.c_mul(iter::repeat(expr).take(min));
+    //     let patch_concat = self.c_mul(iter::repeat(repr).take(min));
     //     if min == max {
     //         return Ok(patch_concat);
     //     }
@@ -993,7 +977,7 @@ impl<I: ~const Integral> Compiler<I> {
     //     for _ in min..max {
     //         self.fill_to_next(prev_hole);
     //         let split = self.push_split_hole();
-    //         let Patch { hole, entry } = match self.c(expr)? {
+    //         let Patch { hole, entry } = match self.c(repr)? {
     //             Some(p) => p,
     //             None => return self.pop_split_hole(),
     //         };

@@ -53,5 +53,6 @@ pub use constants::perl::{DIGIT, WORD};
 pub use context::Context;
 pub use interval::Interval;
 pub use partition::Partition;
-pub use crate::repr::{Repr, Integral, Zero};
+pub use crate::repr::{Repr, Zero};
 pub use seq::Seq;
+pub use traits::Integral;

@@ -3,7 +3,8 @@ use core::ops::{BitOr, BitAnd, BitXor, Range, Mul, RangeFull, RangeFrom};
 use unconst::unconst;
 
 use crate::interval::Interval;
-use crate::repr::{Repr, Integral};
+use crate::repr::Repr;
+use crate::traits::Integral;
 
 #[unconst]
 impl<I: ~const Integral> const BitAnd<Self> for Repr<I> {

@@ -7,8 +7,8 @@ use core::{
 use unconst::unconst;
 
 use crate::context::Context;
-use crate::repr::{Repr, Integral};
-
+use crate::repr::Repr;
+use crate::traits::Integral;
 
 #[unconst]
 /// An iterator over all non-overlapping successive leftmost-first ranges.

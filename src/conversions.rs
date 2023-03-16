@@ -3,8 +3,9 @@ use core::ops::Range;
 use unconst::unconst;
 
 use crate::interval::Interval;
-use crate::repr::{Repr, Integral};
+use crate::repr::Repr;
 use crate::seq::Seq;
+use crate::traits::Integral;
 
 #[unconst]
 impl<I: ~const Integral> const From<I> for Seq<I> {

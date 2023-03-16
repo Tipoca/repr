@@ -5,8 +5,9 @@ use unconst::unconst;
 use crate::context::Context;
 use crate::interval::Interval;
 #[cfg(feature = "derivative")]
-use crate::derivative::LiteralSearcher;
-use crate::repr::{Repr, Integral, Zero};
+use crate::quotient::LiteralSearcher;
+use crate::repr::{Repr, Zero};
+use crate::traits::Integral;
 
 #[unconst]
 impl const Integral for char {

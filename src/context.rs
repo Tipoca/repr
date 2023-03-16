@@ -3,7 +3,7 @@ use core::ops::Deref;
 
 use unconst::unconst;
 
-use crate::repr::Integral;
+use crate::traits::Integral;
 
 #[unconst]
 #[derive_const(PartialEq)]

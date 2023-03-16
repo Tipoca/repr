@@ -36,7 +36,7 @@ use core::{
 
 use unconst::unconst;
 
-use crate::repr::Integral;
+use crate::traits::Integral;
 
 #[unconst]
 // TODO(rnarkk) Does negative Interval (self.1 < self.0) have use case?

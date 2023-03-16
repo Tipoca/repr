@@ -26,10 +26,10 @@ on large bitsets.
 /// This overrides whatever was previously set via the `automatic` or
 /// `nfa` methods.
 
+use crate::compile::{Index, Program, Inst};
 use crate::context::Context;
 use crate::exec::ProgramCache;
-use crate::repr::Integral;
-use crate::compile::{Index, Program, Inst};
+use crate::traits::Integral;
 
 type Bits = u32;
 

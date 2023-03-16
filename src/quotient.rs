@@ -14,8 +14,9 @@ use core::{
 use unconst::unconst;
 
 use crate::interval::Interval;
-use crate::repr::{Repr, Integral, Zero};
+use crate::repr::{Repr, Zero};
 use crate::seq::Seq;
+use crate::traits::Integral;
 
 #[cfg(feature = "derivative")]
 pub use search::LiteralSearcher;
