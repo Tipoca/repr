@@ -43,8 +43,8 @@
 | `.` | | `Interval(MIN, MAX)` | | 1 |
 | `ab`/`a` · `b` (concatenation) | `a` ⊗ `b` (multiplicative conjunction/times) | `Mul(a, b)`/`a * b` | ⊗ (tensor product) | len(a) + len(b) |
 | `a\|b` (alternation) | `a` ⊕ `b` (additive disjuction/plus) | `Or(a, b)`/`a \| b` | + (coproduct) | max(len(a), len(b))
-| `a*` (kleen star) | `!a` (exponential conjunction/of course),<br/>νX.1 & [F] & (X ⊗ X) | `Exp(a)` | ν, fixed point/trace, comonad, final coalgebra |
-| `a*?` (non greedy) | `?a` (exponential disjunction/why not),<br/>µX.⊥ ⊕ [F] ⊕ (X ⅋ X) | `Exp(a)` | μ, monad, initial algebra |
+| `a*` (kleen star) | `!a` (exponential conjunction/of course),<br/>νX.1 & a & (X ⊗ X) | `Exp(a)` | ν, fixed point/trace, comonad, final coalgebra |
+| `a*?` (non greedy) | `?a` (exponential disjunction/why not),<br/>µX.⊥ ⊕ a ⊕ (X ⅋ X) | `Exp(a)` | μ, monad, initial algebra |
 | `a?` () | `a` | `Or(Zero, a)` | |
 | `a{n,m}` (repetition) | `a` | `Or(Mul(a, Mul(a, ..)), Or(..))` | |
 | `[a-z]` (class) | | `Interval(a, z)`/`a..z` | | |
