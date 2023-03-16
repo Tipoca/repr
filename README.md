@@ -1,3 +1,8 @@
+**Kind**
+
+- Decidable
+- Non-commuative, orderd
+
 **TODO**
 
 - Interpretation of `match`, is it a judgement `a : A` or a test that one is divisible by another (quotient is equal to zero) `a / b`?
