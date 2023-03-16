@@ -37,6 +37,7 @@ mod partition;
 mod pattern;
 mod pikevm;
 mod pool;
+mod process;
 mod seq;
 mod sparse;
 mod unicode;

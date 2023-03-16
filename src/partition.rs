@@ -16,13 +16,7 @@ use crate::traits::Integral;
 
 #[unconst]
 /// An iterator over all non-overlapping successive leftmost-first ranges.
-///
-/// The iterator yields a `Match` value. The iterator stops when no more
-/// matches can be found.
-///
-/// `'r` is the lifetime of the compiled regular expression and `'c` is the
-/// lifetime of the matched string.
-#[derive_const(PartialEq)]
+#[derive_const(Clone, PartialEq)]
 #[derive(Debug, Eq)]
 pub struct Partition<'c, I: ~const Integral> {
     context: &'c Context<I>,
