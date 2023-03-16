@@ -1,4 +1,4 @@
-(exec.rs::is_match)
+# exec.rs::is_match
 
 Returns true if and only if one of the regexes in this set matches
 the text given.
@@ -14,7 +14,7 @@ by default. That is, if the regex does not start with `^` or `\A`, or
 end with `$` or `\z`, then it is permitted to match anywhere in the
 text.
 
-# Example
+## Example
 
 Tests whether a set matches some text:
 
@@ -38,7 +38,7 @@ assert!(Regex::new(r"\b\w{13}\b").unwrap().is_match(text));
 
 ---
 
-(exec.rs::is_match_at)
+# exec.rs::is_match_at
 
 Returns the same as is_match, but starts the search at the given
 offset.
@@ -52,7 +52,7 @@ match when `start == 0`.
 
 ---
 
-(exec.rs::shortest_match)
+# exec.rs::shortest_match
 
 Returns the end location of a match in the text given.
 
@@ -61,7 +61,7 @@ This method may have the same performance characteristics as
 particular, the location returned *may be shorter* than the proper end
 of the leftmost-first match.
 
-# Example
+## Example
 
 Typically, `a+` would match the entire first sequence of `a` in some
 text, but `shortest_match` can give up as soon as it sees the first
@@ -78,11 +78,11 @@ assert_eq!(pos, Some(1));
 
 ---
 
-(exec.rs::shortest_match_at)
+# exec.rs::shortest_match_at
 
 Returns the end of a match location, possibly occurring before the
 end location of the correct leftmost-first match.
-================================================================
+
 Returns the same as shortest_match, but starts the search at the given
 offset.
 
@@ -92,7 +92,7 @@ match when `start == 0`.
 
 ---
 
-(exec.rs::find)
+# exec.rs::find
 
 Returns the start and end byte range of the leftmost-first match in
 `text`. If no match exists, then `None` is returned.
@@ -101,7 +101,7 @@ Note that this should only be used if you want to discover the position
 of the match. Testing the existence of a match is faster if you use
 `is_match`.
 
-# Example
+## Example
 
 Find the start and end location of the first word with exactly 13
 Unicode word characters:
@@ -118,11 +118,11 @@ assert_eq!(mat.end(), 15);
 
 ---
 
-(exec.rs::find_at)
+# exec.rs::find_at
 
 Finds the start and end location of the leftmost-first match, starting
 at the given location.
-========================================================
+
 Returns the same as find, but starts the search at the given
 offset.
 
@@ -132,13 +132,13 @@ match when `start == 0`.
 
 ---
 
-(exec.rs::find_iter)
+# exec.rs::find_iter
 
 Returns an iterator for each successive non-overlapping match in
 `text`, returning the start and end byte indices with respect to
 `text`.
 
-# Example
+## Example
 
 Find the start and end location of every word with exactly 13 Unicode
 word characters:
@@ -155,7 +155,7 @@ for mat in Regex::new(r"\b\w{13}\b").unwrap().find_iter(text) {
 
 ---
 
-(exec.rs::matches)
+# exec.rs::matches
 
 Returns the set of regular expressions that match in the given text.
 
@@ -170,7 +170,7 @@ by default. That is, if the regex does not start with `^` or `\A`, or
 end with `$` or `\z`, then it is permitted to match anywhere in the
 text.
 
-# Example
+## Example
 
 Tests which regular expressions match the given text:
 
@@ -196,7 +196,7 @@ assert!(matches.matched(6));
 
 ---
 
-(exec.rs::read_matches_at)
+## exec.rs::read_matches_at
 
 Returns the same as matches, but starts the search at the given
 offset and stores the matches into the slice given.
@@ -213,7 +213,7 @@ This method returns true if and only if at least one member of
 
 ---
 
-(exec.rs::many_matches_at.rs)
+# exec.rs::many_matches_at
 
 Finds which regular expressions match the given text.
 
@@ -297,7 +297,7 @@ assert_eq!(haystack.match_indices(&re).collect::<Vec<_>>(),
            vec![(1, "111"), (5, "222")]);
 assert_eq!(haystack.split(&re).collect::<Vec<_>>(), vec!["a", "b", "c"]);
 ```
-=====================================================
+
 Match multiple (possibly overlapping) regular expressions in a single scan.
 
 A regex set corresponds to the union of two or more regular expressions.

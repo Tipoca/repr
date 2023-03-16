@@ -1,8 +1,12 @@
+**Kind**
+
+- Decidable
+- Non-commuative, orderd
+
 **TODO**
 
 - Interpretation of `match`, is it a judgement `a : A` or a test that one is divisible by another (quotient is equal to zero) `a / b`?
 - Representation of the four units
-- TODO Partition of a context, equality between contexts
 - Equational reasoning, bisimulation
 - Induction
 - `True(I, Box<Repr<I>>)` (assertions, dependent types)
@@ -38,8 +42,8 @@
 | `.` | | `Interval(MIN, MAX)` | | 1 |
 | `ab`/`a` · `b` (concatenation) | `a` ⊗ `b` (multiplicative conjunction/times) | `Mul(a, b)`/`a * b` | ⊗ (tensor product) | len(a) + len(b) |
 | `a\|b` (alternation) | `a` ⊕ `b` (additive disjuction/plus) | `Or(a, b)`/`a \| b` | + (coproduct) | max(len(a), len(b))
-| `a*` (kleen star) | `!a` (exponential conjunction/of course),<br/>□ (necessity) | `Exp(a)` | μ, fixed point/trace, comonad |
-| `a*?` (non greedy) | `?a` (exponential disjunction/why not),<br/>◊ (possibility) | `Exp(a)` | ν, monad |
+| `a*` (kleen star) | `!a` (exponential conjunction/of course),<br/>□ (necessity) | `Exp(a)` | μ, fixed point/trace, comonad, final coalgebra |
+| `a*?` (non greedy) | `?a` (exponential disjunction/why not),<br/>◊ (possibility) | `Exp(a)` | ν, monad, initial algebra |
 | `a?` () | `a` | `Or(Zero, a)` | |
 | `a{n,m}` (repetition) | `a` | `Or(Mul(a, Mul(a, ..)), Or(..))` | |
 | `[a-z]` (class) | | `Interval(a, z)`/`a..z` | | |
