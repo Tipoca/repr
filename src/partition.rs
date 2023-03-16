@@ -1,6 +1,9 @@
 //! <https://en.m.wikipedia.org/wiki/Partition_of_a_set>
 //! <https://en.m.wikipedia.org/wiki/Covering_problems>
 //! <https://en.m.wikipedia.org/wiki/Exact_cover>
+//! 
+//! TODO(rnarkk)
+//! - Uniqueness
 
 use alloc::vec::IntoIter;
 use core::{
