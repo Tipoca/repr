@@ -139,6 +139,7 @@ Linearity (which)
 
 - Bit-pararell
 - aho-corasick
+- Boyer–Moore
 - memchr
 
 **Semantics (TODO)**
