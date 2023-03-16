@@ -48,7 +48,7 @@ impl<I: ~const Integral> Repr<I> {
     pub const fn mul(self, other: Self) -> Self {
         match (self, other) {
             (One(lhs), One(rhs)) => One(lhs.mul(rhs)),
-            (lhs, rhs) => Or(box lhs, box rhs)
+            (lhs, rhs) => Mul(box lhs, box rhs)
         }
     }
     
@@ -87,10 +87,10 @@ impl<I: ~const Integral> Repr<I> {
         match self {
             // Self::Interval(i) => {
             // },
-            Mul(lhs, rhs) => Add(box lhs.dual(), box rhs.dual()),
-            Or(lhs, rhs) => And(box lhs.dual(), box rhs.dual()),
-            Add(lhs, rhs) => lhs.dual() * rhs.dual(),
-            And(lhs, rhs) => lhs.dual() | rhs.dual(),
+            Mul(lhs, rhs) => lhs.dual().add(rhs.dual()),
+            Or(lhs, rhs) => lhs.dual().and(rhs.dual()),
+            Add(lhs, rhs) => lhs.dual().mul(rhs.dual()),
+            And(lhs, rhs) => lhs.dual().or(rhs.dual()),
             _ => unimplemented!()
         }
     }
