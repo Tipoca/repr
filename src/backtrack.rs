@@ -17,6 +17,9 @@ scale, even if you're willing to live with the memory requirements. Namely,
 the bitset has to be zeroed on each execution, which becomes quite expensive
 on large bitsets.
 */
+
+use unconst::unconst;
+
 /// Sets the matching engine to use a bounded backtracking engine no
 /// matter what optimizations are possible.
 ///
@@ -49,13 +52,14 @@ pub fn should_exec(num_insts: usize, text_len: usize) -> bool {
     size <= MAX_SIZE_BYTES
 }
 
+#[unconst]
 /// A backtracking matching engine.
 #[derive(Debug)]
-pub struct Bounded<'a, 'm, 'r, I: Integral> {
-    prog: &'r Program<I>,
-    context: Context<I>,
+pub struct Bounded<'c, 'a, 'm, I: ~const Integral> {
+    prog: Program<I>,
+    context: &'c Context<I>,
     matches: &'m mut [bool],
-    m: &'a mut Cache<I>,
+    cache: &'a mut Cache<I>,
 }
 
 /// Shared cached state between multiple invocations of a backtracking engine
@@ -66,13 +70,15 @@ pub struct Cache<I: Integral> {
     visited: Vec<Bits>,
 }
 
-impl<I: Integral> Cache<I> {
+#[unconst]
+impl<I: ~const Integral> Cache<I> {
     /// Create new empty cache for the backtracking engine.
-    pub fn new(_prog: &Program<I>) -> Self {
+    pub fn new() -> Self {
         Cache { jobs: vec![], visited: vec![] }
     }
 }
 
+#[unconst]
 /// A job is an explicit unit of stack space in the backtracking engine.
 ///
 /// The "normal" representation is a single state transition, which corresponds
@@ -80,15 +86,16 @@ impl<I: Integral> Cache<I> {
 /// engine must keep track of old capture group values. We use the explicit
 /// stack to do it.
 #[derive(Clone, Copy, Debug)]
-struct Job<I: Integral> { ip: Index, at: I }
+struct Job<I: ~const Integral> { ip: Index, at: I }
 
-impl<'a, 'm, 'r, I: Integral> Bounded<'a, 'm, 'r, I> {
+#[unconst]
+impl<'a, 'm, 'r, I: ~const Integral> Bounded<'a, 'm, 'r, I> {
     /// Execute the backtracking matching engine.
     ///
     /// If there's a match, `exec` returns `true` and populates the given
     /// captures accordingly.
     pub fn exec(
-        prog: &'r Program<I>,
+        prog: Program<I>,
         cache: &ProgramCache<I>,
         matches: &'m mut [bool],
         context: &Context<I>,
@@ -98,7 +105,7 @@ impl<'a, 'm, 'r, I: Integral> Bounded<'a, 'm, 'r, I> {
         let mut cache = cache.borrow_mut();
         let cache = &mut cache.backtrack;
         let start = context[start];
-        let mut b = Bounded { prog, context, matches, m: cache };
+        let mut b = Bounded { prog, context, matches, cache };
         b.exec_(start, end)
     }
 
@@ -106,7 +113,7 @@ impl<'a, 'm, 'r, I: Integral> Bounded<'a, 'm, 'r, I> {
     /// on some input of fixed length.
     fn clear(&mut self) {
         // Reset the job memory so that we start fresh.
-        self.m.jobs.clear();
+        self.cache.jobs.clear();
 
         // Now we need to clear the bit state set.
         // We do this by figuring out how much space we need to keep track
@@ -121,15 +128,15 @@ impl<'a, 'm, 'r, I: Integral> Bounded<'a, 'm, 'r, I> {
         let visited_len =
             (self.prog.len() * (self.context.len() + 1) + BIT_SIZE - 1)
                 / BIT_SIZE;
-        self.m.visited.truncate(visited_len);
-        for v in &mut self.m.visited {
+        self.cache.visited.truncate(visited_len);
+        for v in &mut self.cache.visited {
             *v = 0;
         }
-        if visited_len > self.m.visited.len() {
-            let len = self.m.visited.len();
-            self.m.visited.reserve_exact(visited_len - len);
+        if visited_len > self.cache.visited.len() {
+            let len = self.cache.visited.len();
+            self.cache.visited.reserve_exact(visited_len - len);
             for _ in 0..(visited_len - len) {
-                self.m.visited.push(0);
+                self.cache.visited.push(0);
             }
         }
     }
@@ -170,8 +177,8 @@ impl<'a, 'm, 'r, I: Integral> Bounded<'a, 'm, 'r, I> {
         // in the `step` helper function, which only pushes to the stack when
         // there's a capture or a branch.
         let mut matched = false;
-        self.m.jobs.push(Job { ip: 0, at });
-        while let Some(job) = self.m.jobs.pop() {
+        self.cache.jobs.push(Job { ip: 0, at });
+        while let Some(job) = self.cache.jobs.pop() {
             if self.step(job.ip, job.at) {
                 // Only quit if we're matching one regex.
                 // If we're matching a regex set, then mush on and
@@ -225,7 +232,7 @@ impl<'a, 'm, 'r, I: Integral> Bounded<'a, 'm, 'r, I> {
                     }
                 }
                 Inst::Or { goto1, goto2 } => {
-                    self.m.jobs.push(Job { ip: goto2, at });
+                    self.cache.jobs.push(Job { ip: goto2, at });
                     ip = goto1;
                 }
             }
@@ -236,8 +243,8 @@ impl<'a, 'm, 'r, I: Integral> Bounded<'a, 'm, 'r, I> {
         let k = ip * (self.context.len() + 1) + at;
         let k1 = k / BIT_SIZE;
         let k2 = usize_to_u32(1 << (k & (BIT_SIZE - 1)));
-        if self.m.visited[k1] & k2 == 0 {
-            self.m.visited[k1] |= k2;
+        if self.cache.visited[k1] & k2 == 0 {
+            self.cache.visited[k1] |= k2;
             false
         } else {
             true

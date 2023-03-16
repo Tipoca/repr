@@ -6,7 +6,7 @@ use unconst::unconst;
 
 use crate::{Repr, Integral, Seq, Partition, Context};
 use crate::backtrack;
-use crate::compile::{Options, Program, Mode};
+use crate::compile::{Options, Program};
 #[cfg(feature = "derivative")]
 use crate::compile::SeqMode;
 use crate::partition::{Match, SetMatches};

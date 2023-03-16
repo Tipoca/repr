@@ -143,7 +143,7 @@ impl<I: ~const Integral> Repr<I> {
         }
     }
 
-    /// Returns true if and only if this can match the empty string.
+    /// If this can match the empty string.
     ///
     /// Note that this is not defined inductively. For example, while `a*`
     /// will report `true`, `()+` will not, even though `()` matches the empty
@@ -160,6 +160,15 @@ impl<I: ~const Integral> Repr<I> {
             And(lhs, rhs) => lhs.nullable() || rhs.nullable(),
             Exp(_) => true,
             _ => false
+        }
+    }
+
+    pub const fn len(&self) -> usize {
+        match self {
+            One(_) => 1,
+            Mul(lhs, rhs) => lhs.len() + rhs.len(),
+            Or(lhs, rhs) => lhs.len() + rhs.len(),
+            _ => unimplemented!()
         }
     }
 }

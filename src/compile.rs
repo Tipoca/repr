@@ -21,8 +21,6 @@ use crate::seq::Seq;
 use crate::traits::Integral;
 
 #[unconst]
-/// A configurable builder for a regular expression.
-///
 /// A builder can be used to configure how the regex is built, for example, by
 /// setting the default flags (which can be overridden in the expression
 /// itself) or setting various limits.
@@ -143,13 +141,6 @@ impl<I: ~const Integral> Options<I> {
 pub type Index = usize;
 
 #[unconst]
-/// Program is a sequence of instructions and various facts about those
-/// instructions.
-/// 
-/// `Program` comprises all read only state for a regex. Namely, all such
-/// state is determined at compile time and never changes during search.
-/// 
-/// A compiled program that is used in the NFA simulation and backtracking.
 #[derive(Clone)]
 pub struct Program<I: ~const Integral> {
     /// A sequence of instructions that represents an NFA.
@@ -197,33 +188,6 @@ pub struct Program<I: ~const Integral> {
     /// simultaneously, then the DFA cache is not shared. Instead, copies are
     /// made.
     pub dfa_size_limit: usize,
-    /// mode encodes as much upfront knowledge about how we're going to
-    /// execute a search as possible.
-    pub mode: Mode,
-}
-
-#[derive(Clone, Copy, Debug)]
-pub enum Mode {
-    /// A single or multiple literal search. This is only used when the regex
-    /// can be decomposed into a literal search.
-    #[cfg(feature = "derivative")]
-    Seq(SeqMode),
-    /// An NFA variant.
-    Nfa,
-}
-
-#[cfg(feature = "derivative")]
-#[derive(Clone, Copy, Debug)]
-pub enum SeqMode {
-    /// Match literals anywhere in text.
-    Unanchored,
-    /// Match literals only at the start of text.
-    AnchoredStart,
-    /// Match literals only at the end of text.
-    AnchoredEnd,
-    /// Use an Aho-Corasick automaton. This requires `ac` to be Some on
-    /// ExecReadOnly.
-    AhoCorasick,
 }
 
 #[unconst]
@@ -261,33 +225,6 @@ impl<I: ~const Integral> Program<I> {
             dfa_size_limit: 2 * (1 << 20),
             #[cfg(feature = "derivative")]
             ac: Default::default(),
-            mode: Mode::Nfa,
-        }
-    }
-
-    #[cfg(feature = "derivative")]
-    /// If a plain literal scan can be used, then a corresponding literal
-    /// search type is returned.
-    fn choose_mode(&mut self) {
-        if self.ac.is_some() {
-            self.mode = Mode::Seq(SeqMode::AhoCorasick);
-        }
-        if self.prefixes.complete() {
-            if self.is_anchored_start {
-                self.mode = Mode::Seq(SeqMode::AnchoredStart);
-            } else {
-                self.mode = Mode::Seq(SeqMode::Unanchored);
-            };
-        }
-        if self.suffixes.complete() {
-            return if self.is_anchored_end {
-                self.mode = Mode::Seq(SeqMode::AnchoredEnd);
-            } else {
-                // This case shouldn't happen. When the regex isn't
-                // anchored, then complete prefixes should imply complete
-                // suffixes.
-                self.mode = Mode::Seq(SeqMode::Unanchored);
-            };
         }
     }
 
@@ -304,19 +241,6 @@ impl<I: ~const Integral> Program<I> {
             Inst::True(_) => true,
             _ => false,
         }
-    }
-
-    #[cfg(feature = "derivative")]
-    /// Return the approximate heap usage of this instruction sequence in
-    /// bytes.
-    pub fn approximate_size(&self) -> usize {
-        // The only instruction that uses heap space is Ranges (for
-        // Unicode codepoint programs) to store non-overlapping codepoint
-        // ranges. To keep this operation constant time, we ignore them.
-        (self.len() * size_of::<Inst<I>>())
-            + (self.matches.len() * size_of::<Index>())
-            + (256 * size_of::<u8>())
-            + self.prefixes.approximate_size()
     }
 }
 
@@ -487,8 +411,8 @@ pub enum Inst<I: Integral> {
         /// The type of zero-width assertion to check.
         zero: Zero,
     },
-    /// Representation of the Char instruction.
-    /// Char requires the regex program to match the character in InstOne at
+    /// Representation of the One instruction.
+    /// One requires the regex program to match the character in InstOne at
     /// the current position in the input.
     One {
         /// The next location to execute in the program if this instruction
@@ -497,8 +421,8 @@ pub enum Inst<I: Integral> {
         /// The character to test.
         seq: Seq<I>,
     },
-    /// Representation of the Ranges instruction.
-    /// Ranges requires the regex program to match the character at the current
+    /// Representation of the Interval instruction.
+    /// Interval requires the regex program to match the character at the current
     /// position in the input with one of the ranges specified in InstInterval.
     Interval  {
         /// The next location to execute in the program if this instruction
@@ -590,31 +514,14 @@ impl<I: Integral> MaybeInst<I> {
 pub struct Compiler<I: Integral> {
     insts: Vec<MaybeInst<I>>,
     compiled: Program<I>,
-    size_limit: usize,
-    /*
-    This keeps track of extra bytes allocated while compiling the regex
-    program. Currently, this corresponds to two things.
-    1. First is the heap memory allocated by Unicode character classes ('InstInterval').
-    2. Second is a "fake" amount of memory used by empty sub-expressions, so that enough empty sub-expressions will ultimately trigger the compiler to bail because of a size limit restriction. (That empty sub-expressions don't
-    add to heap memory usage is more-or-less an implementation detail.) In
-    the second case, if we don't bail, then an excessively large repetition
-    on an empty sub-expression can result in the compiler using a very large
-    amount of CPU time.
-    */
-    extra_inst_bytes: usize,
 }
 
 #[unconst]
 impl<I: ~const Integral> Compiler<I> {
-    /// Create a new regular expression compiler.
-    ///
-    /// Various options can be set before calling `compile` on an expression.
     pub const fn new(options: &Options<I>) -> Self {
         Compiler {
             insts: Vec::new(),
             compiled: Program::default(),
-            size_limit: options.size_limit,
-            extra_inst_bytes: 0,
         }
     }
 
@@ -632,11 +539,6 @@ impl<I: ~const Integral> Compiler<I> {
     }
 
     fn compile_one(mut self, repr: &Repr<I>) -> Program<I> {
-        // If we're compiling a forward DFA and we aren't anchored, then
-        // add a `.*?` before the first capture group.
-        // Other matching engines handle this by baking the logic into the
-        // matching engine itself.
-        let mut dotstar_patch = Patch { hole: Hole::None, entry: 0 };
         let patch = self.c(repr).unwrap_or_else(|| self.next_inst());
         self.compiled.start = patch.entry;
         self.fill_to_next(patch.hole);
