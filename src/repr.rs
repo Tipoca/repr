@@ -98,10 +98,10 @@ impl<I: ~const Integral> Repr<I> {
     pub const fn rev(self) -> Self {
         match self {
             Self::Zero(zero) => Self::Zero(zero),
-            One(i) => One(i.rev()),
+            One(seq) => One(seq.rev()),
             Self::Interval(i) => Self::Interval(i),
             Mul(lhs, rhs) => rhs.rev().mul(lhs.rev()),
-            Or(lhs, rhs) => Or(box lhs.rev(), box rhs.rev()),
+            Or(lhs, rhs) => lhs.rev().or(rhs.rev()),
             // Div(lhs, rhs) => ,
             Exp(repr) => repr.rev().exp(),
             // Not => ,
@@ -137,8 +137,8 @@ impl<I: ~const Integral> Repr<I> {
             Mul(lhs, rhs)
                 => Or(box Mul(box lhs.clone().der(seq.clone()), rhs.clone()),
                       box Mul(lhs, box rhs.der(seq))),
-            Or(lhs, rhs) => Or(box lhs.der(seq.clone()), box rhs.der(seq)),
-            And(lhs, rhs) => And(box lhs.der(seq.clone()), box rhs.der(seq)),
+            Or(lhs, rhs) => lhs.der(seq.clone()).or(rhs.der(seq)),
+            And(lhs, rhs) => lhs.der(seq.clone()).and(rhs.der(seq)),
             _ => unimplemented!()
         }
     }
