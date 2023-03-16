@@ -136,7 +136,7 @@ impl<I: ~const Integral> Repr<I> {
             One(_seq) => unimplemented!(),
             Mul(lhs, rhs)
                 => Or(box Mul(box lhs.clone().der(seq.clone()), rhs.clone()),
-                      box Mul(lhs, box rhs.der(seq))),
+                      lhs.mul(rhs.der(seq))),
             Or(lhs, rhs) => lhs.der(seq.clone()).or(rhs.der(seq)),
             And(lhs, rhs) => lhs.der(seq.clone()).and(rhs.der(seq)),
             _ => unimplemented!()
@@ -155,7 +155,7 @@ impl<I: ~const Integral> Repr<I> {
         match self {
             Self::Zero(_) => true,
             One(seq) => seq == &Seq::empty(),
-            // Mul(lhs, rhs) => lhs.nullable() && rhs.nullable(),
+            Mul(lhs, rhs) => lhs.nullable() && rhs.nullable(),
             Or(lhs, rhs) => lhs.nullable() || rhs.nullable(),
             And(lhs, rhs) => lhs.nullable() || rhs.nullable(),
             Exp(_) => true,
