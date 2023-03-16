@@ -100,23 +100,23 @@ impl<I: ~const Integral> Repr<I> {
             Self::Zero(zero) => Self::Zero(zero),
             One(i) => One(i.rev()),
             Self::Interval(i) => Self::Interval(i),
-            Mul(lhs, rhs) => Mul(box rhs.rev(), box lhs.rev()),
+            Mul(lhs, rhs) => rhs.rev().mul(lhs.rev()),
             Or(lhs, rhs) => Or(box lhs.rev(), box rhs.rev()),
             // Div(lhs, rhs) => ,
-            Exp(repr) => Exp(box repr.rev()),
+            Exp(repr) => repr.rev().exp(),
             // Not => ,
-            Add(lhs, rhs) => Add(box lhs.rev(), box rhs.rev()),
-            And(lhs, rhs) => And(box lhs.rev(), box rhs.rev()),
+            Add(lhs, rhs) => lhs.rev().add(rhs.rev()),
+            And(lhs, rhs) => lhs.rev().and(rhs.rev()),
             _ => unimplemented!()
         }
     }
 
     pub const fn prod<M: ~const Iterator<Item = Self>>(reprs: M) -> Self {
-        reprs.reduce(|acc, e| acc * e).unwrap()
+        reprs.reduce(|acc, e| acc.mul(e)).unwrap()
     }
 
     pub const fn any<M: ~const Iterator<Item = Self>>(reprs: M) -> Self {
-        reprs.reduce(|acc, e| acc | e).unwrap()
+        reprs.reduce(|acc, e| acc.or(e)).unwrap()
     }
 
     pub const fn sum<M: ~const Iterator<Item = Self>>(reprs: M) -> Self {
