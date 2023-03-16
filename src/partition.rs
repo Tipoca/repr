@@ -1,4 +1,5 @@
 //! <https://en.m.wikipedia.org/wiki/Covering_problems>
+//! <https://en.m.wikipedia.org/wiki/Exact_cover>
 
 use alloc::vec::IntoIter;
 use core::{
