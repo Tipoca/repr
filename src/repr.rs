@@ -56,7 +56,7 @@ impl<I: ~const Integral> Repr<I> {
     }
     
 //     pub const fn xor(self, other: Self) -> Self {
-//         Xor(box self, box other)
+//         Xor(Box::new(self), Box::new(other))
 //     }
     
     pub const fn add(self, other: Self) -> Self {
@@ -173,8 +173,8 @@ impl<I: ~const Integral> Repr<I> {
     // pub const fn map<F: FnMut(Self) -> Self>(self, mut f: F) -> Self {
     //     match self {
     //         // One(seq) => One(f(seq)),
-    //         Mul(lhs, rhs) => Mul(box f(*lhs), box f(*rhs)),
-    //         Or(lhs, rhs) => Or(box f(*lhs), box f(*rhs)),
+    //         Mul(lhs, rhs) => f(*lhs).nul(f(*rhs)),
+    //         Or(lhs, rhs) => f(*lhs).or(f(*rhs)),
     //         _ => unimplemented!()
     //     }
     // }

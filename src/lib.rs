@@ -1,6 +1,5 @@
 // #![no_std]
 #![feature(pattern)]
-#![feature(box_syntax)]
 #![feature(once_cell)]
 #![feature(step_trait)]
 #![feature(stmt_expr_attributes)]

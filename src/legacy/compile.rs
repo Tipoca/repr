@@ -516,7 +516,7 @@ impl<I: ~const Integral> Compiler<I> {
     }
 
     fn c_full(&mut self) -> Patch {
-        self.c(&Repr::Exp(box Repr::Interval(Interval::full())))
+        self.c(&Repr::Exp(Box::new(Repr::Interval(Interval::full()))))
     }
 
     fn c_one(&mut self, seq: Seq<I>) -> Patch {
