@@ -100,18 +100,6 @@ pub const fn is_word_byte(c: &char) -> bool {
     regex_syntax::is_word_byte(*c as u8)
 }
 
-pub trait CharExt: Into<Repr<char>> {
-    fn and(self, rhs: Self) -> Repr<char> {
-        self.into() & rhs.into()
-    }
-
-    fn or(self, rhs: Self) -> Repr<char> {
-        self.into() | rhs.into()
-    }
-}
-
-impl CharExt for char {}
-
 pub const fn escape(c: char) -> char {
     match c {
         'b' => '\u{0008}',  // Backspace

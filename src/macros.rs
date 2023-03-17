@@ -42,13 +42,13 @@ macro_rules! xor {
     }
 }
 
-// /// Interval
-// #[macro_export]
-// macro_rules! interval {
-//     ($lhs:tt .. $rhs:tt) => {
-//         Repr::Interval((stringify!($lhs).chars().nth(0).unwrap()..stringify!($rhs).chars().nth(0).unwrap()).into())
-//     };
-// }
+/// Interval
+#[macro_export]
+macro_rules! i {
+    ($lhs:literal .. $rhs:literal) => {
+        Repr::Interval((lhs..rhs).into())
+    };
+}
 
 /// Pattern
 #[macro_export]
@@ -82,13 +82,13 @@ macro_rules! e {
     }
 }
 
-/// Ignore pattern
-#[macro_export]
-macro_rules! i {
-    ($tt:tt) => {
+// /// Ignore pattern
+// #[macro_export]
+// macro_rules! i {
+//     ($tt:tt) => {
         
-    }
-}
+//     }
+// }
 
 /// Delimit pattern by 
 #[macro_export]
