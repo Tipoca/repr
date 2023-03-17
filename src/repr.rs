@@ -134,17 +134,15 @@ impl<I: ~const Integral> Repr<I> {
     pub const fn der(self, seq: Seq<I>) -> Self {
         match self {
             One(_seq) => unimplemented!(),
-            Mul(lhs, rhs)
-                => Or(box Mul(box lhs.clone().der(seq.clone()), rhs.clone()),
-                      lhs.mul(rhs.der(seq))),
+            Mul(lhs, rhs) => lhs.clone().der(seq.clone()).mul(*rhs.clone())
+                                .or(lhs.mul(rhs.der(seq))),
             Or(lhs, rhs) => lhs.der(seq.clone()).or(rhs.der(seq)),
             And(lhs, rhs) => lhs.der(seq.clone()).and(rhs.der(seq)),
             _ => unimplemented!()
         }
     }
 
-    /// If this can match the empty string.
-    ///
+    // TODO(anarkk) Make this inductive
     /// Note that this is not defined inductively. For example, while `a*`
     /// will report `true`, `()+` will not, even though `()` matches the empty
     /// string and one or more occurrences of something that matches the empty

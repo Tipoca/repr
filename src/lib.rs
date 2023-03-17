@@ -26,11 +26,8 @@
 
 extern crate alloc; 
 
-mod backtrack;
-mod compile;
 mod context;
 mod conversion;
-mod exec;
 mod interval;
 mod operators;
 mod partition;
