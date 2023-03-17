@@ -71,6 +71,7 @@ impl<I: ~const Integral> Interval<I> {
         }
     }
     
+    // TODO return two reprs if 
     /// Union the given overlapping Interval into this Interval.
     ///
     /// If the two Seqs aren't contiguous, then this returns `None`.
