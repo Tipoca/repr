@@ -44,6 +44,6 @@ pub const SPACE: Repr<char> = HT | LF | VT | FF | CR | SP;
 pub const UPPER: Repr<char> = Repr::from('A'..'Z');
 #[unconst]
 /// `[0-9A-Za-z_]`, `[:word:]`
-pub const WORD: Repr<char> = ALNUM | '_';
+pub const WORD: Repr<char> = ALNUM | SP;
 /// `[0-9A-Fa-f]`, `[:xdigit:]`
 pub const XDIGIT: Repr<char> = DIGIT | ('A'..'F') | ('a'..'f');
