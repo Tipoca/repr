@@ -5,6 +5,8 @@ use core::{
     panic::{UnwindSafe, RefUnwindSafe}
 };
 
+use unconst::unconst;
+
 /// - `Copy` + `Clone`: possibility of `!` exponentiation
 /// - `PartialEq` + `Eq`: decidability
 #[unconst]
@@ -21,4 +23,5 @@ pub trait Integral: Copy + ~const Clone
     const MAX: Self;
     fn succ(self) -> Self;
     fn pred(self) -> Self;
+    // fn nul(&self, zero: &Zero) -> bool;
 }

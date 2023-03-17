@@ -4,8 +4,6 @@ use unconst::unconst;
 
 use crate::context::Context;
 use crate::interval::Interval;
-#[cfg(feature = "derivative")]
-use crate::quotient::LiteralSearcher;
 use crate::repr::{Repr, Zero};
 use crate::traits::Integral;
 
@@ -49,44 +47,36 @@ impl Repr<char> {
 impl Context<char> {
     /// Return true if the given empty width instruction matches at the
     /// input position given.
-    pub fn is_empty_match(&self, at: usize, look: &Zero) -> bool {
+    pub fn yes(&self, index: usize, look: &Zero) -> bool {
         match look {
             Zero::StartLine => {
-                let c = &self[at - 1];
-                at == 0 || c == &'\n'
+                let c = &self[index - 1];
+                index == 0 || c == &'\n'
             }
             Zero::EndLine => {
-                let c = &self[at + 1];
-                at == self.len() || c == &'\n'
+                let c = &self[index + 1];
+                index == self.len() || c == &'\n'
             }
-            Zero::StartText => at == 0,
-            Zero::EndText => at == self.len(),
+            Zero::StartText => index == 0,
+            Zero::EndText => index == self.len(),
             Zero::WordBoundary => {
-                let (c1, c2) = (&self[at - 1], &self[at + 1]);
+                let (c1, c2) = (&self[index - 1], &self[index + 1]);
                 is_word_char(c1) != is_word_char(c2)
             }
             Zero::NotWordBoundary => {
-                let (c1, c2) = (&self[at - 1], &self[at + 1]);
+                let (c1, c2) = (&self[index - 1], &self[index + 1]);
                 is_word_char(c1) == is_word_char(c2)
             }
             Zero::WordBoundaryAscii => {
-                let (c1, c2) = (&self[at - 1], &self[at + 1]);
+                let (c1, c2) = (&self[index - 1], &self[index + 1]);
                 is_word_byte(c1) != is_word_byte(c2)
             }
             Zero::NotWordBoundaryAscii => {
-                let (c1, c2) = (&self[at - 1], &self[at + 1]);
+                let (c1, c2) = (&self[index - 1], &self[index + 1]);
                 is_word_byte(c1) == is_word_byte(c2)
             }
             Zero::Any => unimplemented!()
         }
-    }
-
-    #[cfg(feature = "derivative")]
-    /// Scan the input for a matching prefix.
-    pub fn prefix_at(&self, prefixes: &LiteralSearcher<char>, at: usize)
-        -> Option<char>
-    {
-        prefixes.find(&self[at..]).map(|(s, _)| self[at + s])
     }
 }
 

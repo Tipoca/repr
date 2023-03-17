@@ -2,6 +2,16 @@
 //! <https://en.m.wikipedia.org/wiki/Covering_problems>
 //! <https://en.m.wikipedia.org/wiki/Exact_cover>
 //! 
+//! <https://en.wikipedia.org/wiki/Interval_tree>
+//! <https://en.wikipedia.org/wiki/Segment_tree>
+//! <https://en.wikipedia.org/wiki/Range_tree>
+//! <https://en.wikipedia.org/wiki/Range_query_(data_structures)>
+//! <https://en.wikipedia.org/wiki/Cartesian_tree>
+//! <https://en.wikipedia.org/wiki/Prefix_tree>
+//! <https://en.wikipedia.org/wiki/Suffix_tree>
+//! <https://en.wikipedia.org/wiki/Suffix_automaton>
+//! <https://en.wikipedia.org/wiki/LCP_array>
+//! 
 //! TODO(rnarkk)
 //! - Uniqueness
 
