@@ -29,9 +29,6 @@ use unconst::unconst;
 /// This overrides whatever was previously set via the `automatic` or
 /// `nfa` methods.
 
-use crate::compile::{Index, Program, Inst};
-use crate::context::Context;
-use crate::exec::ProgramCache;
 use crate::traits::Integral;
 
 type Bits = u32;
@@ -60,26 +57,4 @@ pub struct Bounded<'c, 'a, 'm, I: ~const Integral> {
     context: &'c Context<I>,
     matches: &'m mut [bool],
     cache: &'a mut Cache<I>,
-}
-
-#[unconst]
-impl<'a, 'm, 'r, I: ~const Integral> Bounded<'a, 'm, 'r, I> {
-    /// Execute the backtracking matching engine.
-    ///
-    /// If there's a match, `exec` returns `true` and populates the given
-    /// captures accordingly.
-    pub fn exec(
-        prog: Program<I>,
-        cache: &ProgramCache<I>,
-        matches: &'m mut [bool],
-        context: &Context<I>,
-        start: usize,
-        end: usize,
-    ) -> bool {
-        let mut cache = cache.borrow_mut();
-        let cache = &mut cache.backtrack;
-        let start = context[start];
-        let mut b = Bounded { prog, context, matches, cache };
-        b.exec_(start, end)
-    }
 }
