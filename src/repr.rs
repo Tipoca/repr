@@ -44,16 +44,15 @@ impl<I: ~const Integral> Repr<I> {
         One(Seq::one(i))
     }
 
-    
     pub const fn mul(self, other: Self) -> Self {
         match (self, other) {
             (One(lhs), One(rhs)) => One(lhs.mul(rhs)),
-            (lhs, rhs) => Mul(box lhs, box rhs)
+            (lhs, rhs) => Mul(Box::new(lhs), Box::new(rhs))
         }
     }
     
     pub const fn or(self, other: Self) -> Self {
-        Or(box self, box other)
+        Or(Box::new(self), Box::new(other))
     }
     
 //     pub const fn xor(self, other: Self) -> Self {
@@ -61,19 +60,19 @@ impl<I: ~const Integral> Repr<I> {
 //     }
     
     pub const fn add(self, other: Self) -> Self {
-        Add(box self, box other)
+        Add(Box::new(self), Box::new(other))
     }
     
     pub const fn div(self, other: Self) -> Self {
-        Div(box self, box other)
+        Div(Box::new(self), Box::new(other))
     }
     
     pub const fn exp(self) -> Self {
-        Exp(box self)
+        Exp(Box::new(self))
     }
 
     pub const fn and(self, other: Self) -> Self {
-        And(box self, box other)
+        And(Box::new(self), Box::new(other))
     }
     
     pub const fn le(&self, _other: &Self) -> bool {
@@ -120,11 +119,11 @@ impl<I: ~const Integral> Repr<I> {
     }
 
     pub const fn sum<M: ~const Iterator<Item = Self>>(reprs: M) -> Self {
-        reprs.reduce(|acc, e| Add(box acc, box e)).unwrap()
+        reprs.reduce(|acc, e| acc.add(e)).unwrap()
     }
 
     pub const fn all<M: ~const Iterator<Item = Self>>(reprs: M) -> Self {
-        reprs.reduce(|acc, e| And(box acc, box e)).unwrap()
+        reprs.reduce(|acc, e| acc.and(e)).unwrap()
     }
 
     pub const fn rep(self, count: usize) -> Self {
