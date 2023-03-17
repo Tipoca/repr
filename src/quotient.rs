@@ -4,6 +4,7 @@
 #[cfg(feature = "quotient")]
 mod search;
 
+use alloc::vec::Vec;
 use core::{
     cmp,
     fmt::{self, Debug},
@@ -21,14 +22,10 @@ use crate::traits::Integral;
 #[cfg(feature = "quotient")]
 pub use search::LiteralSearcher;
 
-/// A set of literal byte strings extracted from a regular expression.
+/// A set of Seqs extracted from a Repr.
 ///
 /// Every member of the set is a `Literal`, which is represented by a
-/// `Vec<u8>`. (Notably, it may contain invalid UTF-8.) Every member is
-/// said to be either *complete* or *cut*. A complete literal means that
-/// it extends until the beginning (or end) of the regular expression. In
-/// some circumstances, this can be used to indicate a match in the regular
-/// expression.
+/// `Seq<I>`. Every member is said to be either *complete* or *cut*. A complete literal means that it extends until the beginning (or end) of the regular expression. In some circumstances, this can be used to indicate a match in the regular expression.
 ///
 /// A key aspect of literal extraction is knowing when to stop. It is not
 /// feasible to blindly extract all literals from a regular expression, even if
@@ -36,37 +33,14 @@ pub use search::LiteralSearcher;
 /// has `10^10` distinct literals. For this reason, literal extraction is
 /// bounded to some low number by default using heuristics, but the limits can
 /// be tweaked.
-///
-/// **WARNING**: Literal extraction uses stack space proportional to the size
-/// of the `Repr<I>` expression. At some point, this drawback will be eliminated.
-/// To protect yourself, set a reasonable
-/// [`nest_limit` on your `Parser`](../../struct.ParserBuilder.html#method.nest_limit).
-/// This is done for you by default.
 #[unconst]
-#[derive(Clone, Eq, PartialEq)]
-pub struct Literals<I: ~const Integral> {
-    lits: Vec<Literal<I>>,
-    /// Approximate size limit (in bytes) of this set.
-    ///
-    /// If extracting a literal would put the set over this limit, then
-    /// extraction stops.
-    ///
-    /// The new limits will only apply to additions to this set. Existing
-    /// members remain unchanged, even if the set exceeds the new limit.
-    pub limit_size: usize,
-    /// Get the character class size limit for this set.
-    /// Limits the size of character(or byte) classes considered.
-    ///
-    /// A value of `0` prevents all character classes from being considered.
-    ///
-    /// This limit also applies to case insensitive literals, since each
-    /// character in the case insensitive literal is converted to a class, and
-    /// then case folded.
-    ///
-    /// The new limits will only apply to additions to this set. Existing
-    /// members remain unchanged, even if the set exceeds the new limit.
-    pub limit_class: usize,
-}
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Literals<I: ~const Integral>(Vec<Literal<I>>);
+/*
+This limit also applies to case insensitive literals, since each
+character in the case insensitive literal is converted to a class, and
+then case folded.
+*/
 
 #[unconst]
 /// A single member of a set of literals extracted from a regular expression.
@@ -83,7 +57,7 @@ pub struct Literal<I: ~const Integral> {
 impl<I: ~const Integral> Literals<I> {
     /// Returns a new empty set of literals using default limits.
     pub fn empty() -> Literals<I> {
-        Literals { lits: vec![], limit_size: 250, limit_class: 10 }
+        Literals(Vec::new())
     }
 
     /// Returns a set of literal prefixes extracted from the given `Repr<I>`.
@@ -102,7 +76,7 @@ impl<I: ~const Integral> Literals<I> {
 
     /// Returns the set of literals as a slice. Its order is unspecified.
     pub fn literals(&self) -> &[Literal<I>] {
-        &self.lits
+        &self.0
     }
 
     /// Returns the length of the smallest literal.
@@ -110,7 +84,7 @@ impl<I: ~const Integral> Literals<I> {
     /// Returns None is there are no literals in the set.
     pub fn min_len(&self) -> Option<usize> {
         let mut min = None;
-        for lit in &self.lits {
+        for lit in &self.0 {
             match min {
                 None => min = Some(lit.len()),
                 Some(m) if lit.len() < m => min = Some(lit.len()),
@@ -122,31 +96,22 @@ impl<I: ~const Integral> Literals<I> {
 
     /// Returns true if all members in this set are complete.
     pub fn all_complete(&self) -> bool {
-        !self.lits.is_empty() && self.lits.iter().all(|l| !l.cut)
+        !self.0.is_empty() && self.0.iter().all(|l| !l.cut)
     }
 
     /// Returns true if any member in this set is complete.
     pub fn any_complete(&self) -> bool {
-        self.lits.iter().any(|lit| !lit.cut)
+        self.0.iter().any(|lit| !lit.cut)
     }
 
     /// Returns true if this set contains an empty literal.
     pub fn contains_empty(&self) -> bool {
-        self.lits.iter().any(|lit| lit.is_empty())
+        self.0.iter().any(|lit| lit.is_empty())
     }
 
     /// Returns true if this set is empty or if all of its members is empty.
     pub fn is_empty(&self) -> bool {
-        self.lits.is_empty() || self.lits.iter().all(|lit| lit.is_empty())
-    }
-
-    /// Returns a new empty set of literals using this set's limits.
-    pub fn new_empty(&self) -> Literals<I> {
-        Literals {
-            lits: vec![],
-            limit_size: self.limit_size,
-            limit_class: self.limit_class
-        }
+        self.0.is_empty() || self.0.iter().all(|lit| lit.is_empty())
     }
 
     /// Returns the longest common prefix of all members in this set.
@@ -154,15 +119,15 @@ impl<I: ~const Integral> Literals<I> {
         if self.is_empty() {
             return &[];
         }
-        let lit0 = &*self.lits[0];
+        let lit0 = &*self.0[0];
         let mut len = lit0.len();
-        for lit in &self.lits[1..] {
+        for lit in &self.0[1..] {
             len = cmp::min(
                 len,
                 (lit.v.deref()).iter().zip(*lit0).take_while(|(a, b)| a == &b).count(),
             );
         }
-        &self.lits[0][..len]
+        &self.0[0][..len]
     }
 
     /// Returns the longest common suffix of all members in this set.
@@ -170,9 +135,9 @@ impl<I: ~const Integral> Literals<I> {
         if self.is_empty() {
             return &[];
         }
-        let lit0 = &*self.lits[0];
+        let lit0 = &*self.0[0];
         let mut len = lit0.len();
-        for lit in &self.lits[1..] {
+        for lit in &self.0[1..] {
             len = cmp::min(
                 len,
                 lit.iter()
@@ -182,7 +147,7 @@ impl<I: ~const Integral> Literals<I> {
                     .count(),
             );
         }
-        &self.lits[0][self.lits[0].len() - len..]
+        &self.0[0][self.0[0].len() - len..]
     }
 
     /// Returns a new set of literals with the given len trimmed
@@ -197,15 +162,15 @@ impl<I: ~const Integral> Literals<I> {
         if self.min_len().map(|len_| len_ <= len).unwrap_or(true) {
             return None;
         }
-        let mut new = self.new_empty();
-        for mut lit in self.lits.iter().cloned() {
+        let mut new = Self::empty();
+        for mut lit in self.0.iter().cloned() {
             let new_len = lit.len() - len;
             lit.truncate(new_len);
             lit.cut = true;
-            new.lits.push(lit);
+            new.0.push(lit);
         }
-        new.lits.sort();
-        new.lits.dedup();
+        new.0.sort();
+        new.0.dedup();
         Some(new)
     }
 
@@ -219,20 +184,20 @@ impl<I: ~const Integral> Literals<I> {
     /// Given any two members of the returned set, neither is a substring of
     /// the other.
     pub fn unambiguous_prefixes(&self) -> Literals<I> {
-        if self.lits.is_empty() {
-            return self.new_empty();
+        if self.0.is_empty() {
+            return Self::empty();
         }
-        let mut old = self.lits.to_vec();
-        let mut new = self.new_empty();
+        let mut old = self.0.to_vec();
+        let mut new = Self::empty();
         'OUTER: while let Some(mut candidate) = old.pop() {
             if candidate.is_empty() {
                 continue;
             }
-            if new.lits.is_empty() {
-                new.lits.push(candidate);
+            if new.0.is_empty() {
+                new.0.push(candidate);
                 continue;
             }
-            for lit2 in &mut new.lits {
+            for lit2 in &mut new.0 {
                 if lit2.is_empty() {
                     continue;
                 }
@@ -266,11 +231,11 @@ impl<I: ~const Integral> Literals<I> {
                     continue 'OUTER;
                 }
             }
-            new.lits.push(candidate);
+            new.0.push(candidate);
         }
-        new.lits.retain(|lit| !lit.is_empty());
-        new.lits.sort();
-        new.lits.dedup();
+        new.0.retain(|lit| !lit.is_empty());
+        new.0.sort();
+        new.0.dedup();
         new
     }
 
@@ -302,7 +267,7 @@ impl<I: ~const Integral> Literals<I> {
     /// if and only if the literal extends from the beginning of `expr` to the
     /// end of `expr`.
     pub fn union_prefixes(&mut self, expr: &Repr<I>) -> bool {
-        let mut lits = self.new_empty();
+        let mut lits = Self::empty();
         prefixes(expr, &mut lits);
         !lits.is_empty() && !lits.contains_empty() && self.union(lits)
     }
@@ -312,14 +277,11 @@ impl<I: ~const Integral> Literals<I> {
     /// If the union would cause the set to exceed its limits, then the union
     /// is skipped and it returns false. Otherwise, if the union succeeds, it
     /// returns true.
-    pub fn union(&mut self, lits: Self) -> bool {
-        if self.sum_len() + lits.sum_len() > self.limit_size {
-            return false;
-        }
-        if lits.is_empty() {
-            self.lits.push(Literal::empty());
+    pub fn union(&mut self, other: Self) -> bool {
+        if other.is_empty() {
+            self.0.push(Literal::empty());
         } else {
-            self.lits.extend(lits.lits);
+            self.0.extend(other.0);
         }
         true
     }
@@ -331,22 +293,22 @@ impl<I: ~const Integral> Literals<I> {
     /// If a cross product would cause this set to exceed its limits, then the
     /// cross product is skipped and it returns false. Otherwise, if the cross
     /// product succeeds, it returns true.
-    pub fn cross_product(&mut self, lits: &Literals<I>) -> bool {
-        if lits.is_empty() {
+    pub fn cross_product(&mut self, other: &Self) -> bool {
+        if other.is_empty() {
             return true;
         }
         // Check that we make sure we stay in our limits.
         let mut size_after;
         if self.is_empty() || !self.any_complete() {
             size_after = self.sum_len();
-            for lit in lits.literals() {
+            for lit in other.literals() {
                 size_after += lit.len();
             }
         } else {
-            size_after = self.lits.iter().fold(0, |accum, lit| {
+            size_after = self.0.iter().fold(0, |accum, lit| {
                 accum + if lit.cut { lit.len() } else { 0 }
             });
-            for lit in lits.literals() {
+            for lit in other.literals() {
                 for self_lit in self.literals() {
                     if !self_lit.cut {
                         size_after += self_lit.len() + lit.len();
@@ -354,19 +316,15 @@ impl<I: ~const Integral> Literals<I> {
                 }
             }
         }
-        if size_after > self.limit_size {
-            return false;
-        }
-
         let mut base = self.remove_complete();
         if base.is_empty() {
             base = vec![Literal::empty()];
         }
-        for lit in lits.literals() {
+        for lit in other.literals() {
             for mut self_lit in base.clone() {
                 self_lit.v.mul(lit.v);
                 self_lit.cut = lit.cut;
-                self.lits.push(self_lit);
+                self.0.push(self_lit);
             }
         }
         true
@@ -387,23 +345,18 @@ impl<I: ~const Integral> Literals<I> {
         // if bytes.is_empty() {
         //     return true;
         // }
-        if self.lits.is_empty() {
-            let i = cmp::min(self.limit_size, 1);
-            self.lits.push(Literal::new(seq.to_owned()));
-            self.lits[0].cut = i < 1;
-            return !self.lits[0].cut;
+        if self.0.is_empty() {
+            let i = 1;
+            self.0.push(Literal::new(seq.to_owned()));
+            self.0[0].cut = i < 1;
+            return !self.0[0].cut;
         }
         let size = self.sum_len();
-        if size + self.lits.len() >= self.limit_size {
-            return false;
-        }
         let mut i = 1;
-        while size + (i * self.lits.len()) <= self.limit_size
-            && i < 1
-        {
+        while i < 1 {
             i += 1;
         }
-        for lit in &mut self.lits {
+        for lit in &mut self.0 {
             if !lit.cut {
                 lit.extend(*seq);
                 if i < 1 {
@@ -419,10 +372,7 @@ impl<I: ~const Integral> Literals<I> {
     /// Returns false if adding this literal would cause the class to be too
     /// big.
     pub fn add(&mut self, lit: Literal<I>) -> bool {
-        if self.sum_len() + lit.len() > self.limit_size {
-            return false;
-        }
-        self.lits.push(lit);
+        self.0.push(lit);
         true
     }
 
@@ -430,9 +380,6 @@ impl<I: ~const Integral> Literals<I> {
     ///
     /// Returns false if the Interval was too big to add.
     pub fn add_seq(&mut self, interval: &Interval<I>, reverse: bool) -> bool {
-        if self.class_exceeds_limits(interval.len()) {
-            return false;
-        }
         let mut base = self.remove_complete();
         if base.is_empty() {
             base = vec![Literal::empty()];
@@ -440,7 +387,7 @@ impl<I: ~const Integral> Literals<I> {
         for c in *interval {
             for mut lit in base.clone() {
                 lit.push(c);
-                self.lits.push(lit);
+                self.0.push(lit);
             }
         }
         true
@@ -449,14 +396,14 @@ impl<I: ~const Integral> Literals<I> {
     /// Cuts every member of this set. When a member is cut, it can never
     /// be extended.
     pub fn cut(&mut self) {
-        for lit in &mut self.lits {
+        for lit in &mut self.0 {
             lit.cut = true;
         }
     }
 
     /// Reverses all members in place.
     pub fn reverse(&mut self) {
-        for lit in &mut self.lits {
+        for lit in &mut self.0 {
             lit.reverse();
         }
     }
@@ -464,9 +411,9 @@ impl<I: ~const Integral> Literals<I> {
     /// Pops all complete literals out of this set.
     fn remove_complete(&mut self) -> Vec<Literal<I>> {
         let mut base = vec![];
-        for lit in mem::take(&mut self.lits) {
+        for lit in mem::take(&mut self.0) {
             if lit.cut {
-                self.lits.push(lit);
+                self.0.push(lit);
             } else {
                 base.push(lit);
             }
@@ -476,34 +423,7 @@ impl<I: ~const Integral> Literals<I> {
 
     /// Returns the total number of characters in this set.
     fn sum_len(&self) -> usize {
-        self.lits.iter().fold(0, |acc, lit| acc + lit.len())
-    }
-
-    /// Returns true if a character class with the given size would cause this
-    /// set to exceed its limits.
-    ///
-    /// The size given should correspond to the number of items in the class.
-    fn class_exceeds_limits(&self, size: usize) -> bool {
-        if size > self.limit_class {
-            return true;
-        }
-        // This is an approximation since codepoints in a char class can encode
-        // to 1-4 bytes.
-        let new_byte_count = if self.lits.is_empty() {
-            size
-        } else {
-            self.lits.iter().fold(0, |accum, lit| {
-                accum
-                    + if lit.cut {
-                        // If the literal is cut, then we'll never add
-                        // anything to it, so don't count it.
-                        0
-                    } else {
-                        (lit.len() + 1) * size
-                    }
-            })
-        };
-        new_byte_count > self.limit_size
+        self.0.iter().fold(0, |acc, lit| acc + lit.len())
     }
 }
 
@@ -530,7 +450,7 @@ const fn prefixes<I: ~const Integral>(expr: &Repr<I>, lits: &mut Literals<I>)
                     lits.add(Literal::empty());
                     continue;
                 }
-                let mut lits2 = lits.new_empty();
+                let mut lits2 = Literals::empty();
                 prefixes(e, &mut lits2);
                 if !lits.cross_product(&lits2) || !lits2.any_complete() {
                     // If this expression couldn't yield any literal that
@@ -572,7 +492,7 @@ const fn suffixes<I>(expr: &Repr<I>, lits: &mut Literals<I>)
                     lits.add(Literal::empty());
                     continue;
                 }
-                let mut lits2 = lits.new_empty();
+                let mut lits2 = Literals::empty();
                 suffixes(e, &mut lits2);
                 if !lits.cross_product(&lits2) || !lits2.any_complete() {
                     // If this expression couldn't yield any literal that
@@ -599,8 +519,7 @@ const fn repeat_zero_or_more_literals<I, F>(
     where I: ~const Integral,
           F: FnMut(&Repr<I>, &mut Literals<I>)
 {
-    let (mut lits2, mut lits3) = (lits.clone(), lits.new_empty());
-    lits3.limit_size = lits.limit_size / 2;
+    let (mut lits2, mut lits3) = (lits.clone(), Literals::empty());
     f(e, &mut lits3);
 
     if lits3.is_empty() || !lits2.cross_product(&lits3) {
@@ -643,10 +562,9 @@ const fn alternate_literals<I: ~const Integral, F>(
     where I: ~const Integral,
           F: FnMut(&Repr<I>, &mut Literals<I>)
 {
-    let mut lits2 = lits.new_empty();
+    let mut lits2 = Literals::empty();
     for e in [lhs, rhs] {
-        let mut lits3 = lits.new_empty();
-        lits3.limit_size = lits.limit_size / 5;
+        let mut lits3 = Literals::empty();
         f(e, &mut lits3);
         if lits3.is_empty() || !lits2.union(lits3) {
             // If we couldn't find suffixes for *any* of the
@@ -659,17 +577,6 @@ const fn alternate_literals<I: ~const Integral, F>(
     }
     if !lits.cross_product(&lits2) {
         lits.cut();
-    }
-}
-
-#[unconst]
-impl<I: ~const Integral> Debug for Literals<I> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Literals")
-            .field("lits", &self.lits)
-            .field("limit_size", &self.limit_size)
-            .field("limit_class", &self.limit_class)
-            .finish()
     }
 }
 
