@@ -15,7 +15,6 @@ readme = "README.md"
 
 [dependencies]
 regex-syntax = "0.6"
-# unconst = "0"
 unconst = { git = "https://github.com/synthet-ic/unconst", branch = "verbatim", features = [] }
 
 aho-corasick = { version = "0.7", optional = true }
@@ -25,15 +24,10 @@ memchr = { version = "2.5.0", optional = true }
 [features]
 default = ["std", "perf-inline", "unicode", "regex-syntax/default"]
 std = []
-
-# Enables aggressive use of inlining.
 perf-inline = []
-# Enables literal optimizations.
-derivative = ["aho-corasick", "memchr"]
+quotient = ["aho-corasick", "memchr"]
 
-# Unicode Data Features
 
-# Enables all Unicode features. This expands if new Unicode features are added.
 unicode = [
   "unicode-age",
   "unicode-bool",
