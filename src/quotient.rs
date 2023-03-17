@@ -49,7 +49,7 @@ then case folded.
 /// and `Vec` operations are available.
 #[derive(Clone, Eq, Ord)]
 pub struct Literal<I: ~const Integral> {
-    v: Seq<I>,
+    seq: Seq<I>,
     cut: bool,
 }
 
@@ -96,7 +96,7 @@ impl<I: ~const Integral> Literals<I> {
 
     /// Returns true if all members in this set are complete.
     pub fn all_complete(&self) -> bool {
-        !self.0.is_empty() && self.0.iter().all(|l| !l.cut)
+        !self.0.is_empty() && self.0.iter().all(|seq| !seq.cut)
     }
 
     /// Returns true if any member in this set is complete.
@@ -124,7 +124,7 @@ impl<I: ~const Integral> Literals<I> {
         for lit in &self.0[1..] {
             len = cmp::min(
                 len,
-                (lit.v.deref()).iter().zip(*lit0).take_while(|(a, b)| a == &b).count(),
+                (lit.seq.deref()).iter().zip(*lit0).take_while(|(a, b)| a == &b).count(),
             );
         }
         &self.0[0][..len]
@@ -322,7 +322,7 @@ impl<I: ~const Integral> Literals<I> {
         }
         for lit in other.literals() {
             for mut self_lit in base.clone() {
-                self_lit.v.mul(lit.v);
+                self_lit.seq.mul(lit.seq);
                 self_lit.cut = lit.cut;
                 self.0.push(self_lit);
             }
@@ -584,12 +584,12 @@ const fn alternate_literals<I: ~const Integral, F>(
 impl<I: ~const Integral> Literal<I> {
     /// Returns a new complete literal with the bytes given.
     pub fn new(seq: Seq<I>) -> Literal<I> {
-        Literal { v: seq.into(), cut: false }
+        Literal { seq: seq.into(), cut: false }
     }
 
     /// Returns a new complete empty literal.
     pub fn empty() -> Literal<I> {
-        Literal { v: Seq::empty(), cut: false }
+        Literal { seq: Seq::empty(), cut: false }
     }
 
     /// Cuts this literal.
@@ -601,14 +601,14 @@ impl<I: ~const Integral> Literal<I> {
 #[unconst]
 impl<I: ~const Integral> const PartialEq for Literal<I> {
     fn eq(&self, other: &Literal<I>) -> bool {
-        self.v == other.v
+        self.seq == other.seq
     }
 }
 
 #[unconst]
 impl<I: ~const Integral> const PartialOrd for Literal<I> {
     fn partial_cmp(&self, other: &Literal<I>) -> Option<cmp::Ordering> {
-        self.v.partial_cmp(&other.v)
+        self.seq.partial_cmp(&other.seq)
     }
 }
 
@@ -616,9 +616,9 @@ impl<I: ~const Integral> const PartialOrd for Literal<I> {
 impl<I: ~const Integral> Debug for Literal<I> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.cut {
-            write!(f, "Cut({:?})", &self.v)
+            write!(f, "Cut({:?})", &self.seq)
         } else {
-            write!(f, "Complete({:?})", &self.v)
+            write!(f, "Complete({:?})", &self.seq)
         }
     }
 }
@@ -626,7 +626,7 @@ impl<I: ~const Integral> Debug for Literal<I> {
 #[unconst]
 impl<I: ~const Integral> AsRef<[I]> for Literal<I> {
     fn as_ref(&self) -> &[I] {
-        self.v.as_ref()
+        self.seq.as_ref()
     }
 }
 
@@ -634,14 +634,14 @@ impl<I: ~const Integral> AsRef<[I]> for Literal<I> {
 impl<I: ~const Integral> Deref for Literal<I> {
     type Target = Seq<I>;
     fn deref(&self) -> &Seq<I> {
-        &self.v
+        &self.seq
     }
 }
 
 #[unconst]
 impl<I: ~const Integral> DerefMut for Literal<I> {
     fn deref_mut(&mut self) -> &mut Seq<I> {
-        &mut self.v
+        &mut self.seq
     }
 }
 
@@ -665,8 +665,7 @@ fn char_len_lossy(bytes: &[u8]) -> usize {
 }
 
 #[unconst]
-/// Parsed represents a set of parsed regular expressions and their detected
-/// literals.
+/// Parsed represents a flattened Repr and their detected seqs.
 pub struct Parsed<I: ~const Integral> {
     pub reprs: Vec<Repr<I>>,
     pub prefixes: Literals<I>,
@@ -675,7 +674,7 @@ pub struct Parsed<I: ~const Integral> {
 
 #[unconst]
 impl<I: ~const Integral> Parsed<I> {
-    /// Parse the current set of patterns into their AST and extract literals.
+    /// Parse the current set of patterns into their AST and extract seqs.
     pub fn parse(repr: &Repr<I>) -> Parsed<I> {
         let mut prefixes = Some(Literals::empty());
         let mut suffixes = Some(Literals::empty());
@@ -689,7 +688,7 @@ impl<I: ~const Integral> Parsed<I> {
                 // Partial anchors unfortunately make it hard to use
                 // prefixes, so disable them.
                 prefixes = None;
-            } else if is_set && repr.is_anchored_start() {
+            } else if repr.is_anchored_start() {
                 // Regex sets with anchors do not go well with literal
                 // optimizations.
                 prefixes = None;
@@ -706,7 +705,7 @@ impl<I: ~const Integral> Parsed<I> {
                 // Partial anchors unfortunately make it hard to use
                 // suffixes, so disable them.
                 suffixes = None;
-            } else if is_set && repr.is_anchored_end() {
+            } else if repr.is_anchored_end() {
                 // Regex sets with anchors do not go well with literal
                 // optimizations.
                 suffixes = None;
