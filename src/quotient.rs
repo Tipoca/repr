@@ -35,7 +35,7 @@ pub use search::LiteralSearcher;
 /// be tweaked.
 #[unconst]
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Literals<I: ~const Integral>(Vec<Literal<I>>);
+pub struct Set<I: ~const Integral>(Vec<Literal<I>>);
 /*
 This limit also applies to case insensitive literals, since each
 character in the case insensitive literal is converted to a class, and
@@ -43,10 +43,6 @@ then case folded.
 */
 
 #[unconst]
-/// A single member of a set of literals extracted from a regular expression.
-///
-/// This type has `Deref` and `DerefMut` impls to `Vec<u8>` so that all slice
-/// and `Vec` operations are available.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Literal<I: ~const Integral> {
     seq: Seq<I>,
@@ -54,29 +50,24 @@ pub struct Literal<I: ~const Integral> {
 }
 
 #[unconst]
-impl<I: ~const Integral> Literals<I> {
+impl<I: ~const Integral> Set<I> {
     /// Returns a new empty set of literals using default limits.
-    pub fn empty() -> Literals<I> {
-        Literals(Vec::new())
+    pub fn empty() -> Set<I> {
+        Set(Vec::new())
     }
 
     /// Returns a set of literal prefixes extracted from the given `Repr<I>`.
-    pub fn prefixes(expr: &Repr<I>) -> Literals<I> {
-        let mut lits = Literals::empty();
-        lits.union_prefixes(expr);
-        lits
+    pub fn prefixes(expr: &Repr<I>) -> Set<I> {
+        let mut set = Set::empty();
+        set.union_prefixes(expr);
+        set
     }
 
     /// Returns a set of literal suffixes extracted from the given `Repr<I>`.
-    pub fn suffixes(expr: &Repr<I>) -> Literals<I> {
+    pub fn suffixes(expr: &Repr<I>) -> Set<I> {
         let mut output = Self::prefixes(&expr.rev());
         output.reverse();
         output
-    }
-
-    /// Returns the set of literals as a slice. Its order is unspecified.
-    pub fn literals(&self) -> &[Literal<I>] {
-        &self.0
     }
 
     /// Returns the length of the smallest literal.
@@ -158,7 +149,7 @@ impl<I: ~const Integral> Literals<I> {
     ///
     /// Any duplicates that are created as a result of this transformation are
     /// removed.
-    pub fn trim_suffix(&self, len: usize) -> Option<Literals<I>> {
+    pub fn trim_suffix(&self, len: usize) -> Option<Set<I>> {
         if self.min_len().map(|len_| len_ <= len).unwrap_or(true) {
             return None;
         }
@@ -183,7 +174,7 @@ impl<I: ~const Integral> Literals<I> {
     ///
     /// Given any two members of the returned set, neither is a substring of
     /// the other.
-    pub fn unambiguous_prefixes(&self) -> Literals<I> {
+    pub fn unambiguous_prefixes(&self) -> Set<I> {
         if self.0.is_empty() {
             return Self::empty();
         }
@@ -248,11 +239,11 @@ impl<I: ~const Integral> Literals<I> {
     ///
     /// Given any two members of the returned set, neither is a substring of
     /// the other.
-    pub fn unambiguous_suffixes(&self) -> Literals<I> {
+    pub fn unambiguous_suffixes(&self) -> Set<I> {
         // This is a touch wasteful...
-        let mut lits = self.clone();
-        lits.reverse();
-        let mut unamb = lits.unambiguous_prefixes();
+        let mut set = self.clone();
+        set.reverse();
+        let mut unamb = set.unambiguous_prefixes();
         unamb.reverse();
         unamb
     }
@@ -265,55 +256,53 @@ impl<I: ~const Integral> Literals<I> {
     /// Note that prefix literals extracted from `expr` are said to be complete
     /// if and only if the literal extends from the beginning of `expr` to the
     /// end of `expr`.
-    pub fn union_prefixes(&mut self, expr: &Repr<I>) -> bool {
-        let mut lits = Self::empty();
-        prefixes(expr, &mut lits);
-        !lits.is_empty() && !lits.contains_empty() && self.union(lits)
+    pub fn union_prefixes(&mut self, expr: &Repr<I>) {
+        let mut set = Self::empty();
+        prefixes(expr, &mut set);
+        if !set.is_empty() && !set.contains_empty() {
+            self.union(set);
+        }
     }
 
     /// Unions this set with another set.
     pub fn union(&mut self, other: Self) {
-        if other.is_empty() {
-            self.0.push(Literal::empty());
-        } else {
+        if !other.is_empty() {
             self.0.extend(other.0);
+        } else {
+            // TODO(rnarkk) experiment
+            // self.0.push(Literal::empty());
+            panic!("other is empty");
         }
     }
 
     /// Extends this set with another set.
     ///
     /// The set of literals is extended via a cross product.
-    ///
-    /// If a cross product would cause this set to exceed its limits, then the
-    /// cross product is skipped and it returns false. Otherwise, if the cross
-    /// product succeeds, it returns true.
-    pub fn cross_product(&mut self, other: &Self) -> bool {
+    pub fn cross_product(&mut self, other: &Self) {
+        assert!(!other.is_empty());
         if other.is_empty() {
-            return true;
+            return;
         }
         let mut base = self.remove_complete();
         if base.is_empty() {
             base = vec![Literal::empty()];
         }
-        for lit in other.literals() {
+        for seq in other.0 {
             for mut self_lit in base.clone() {
-                self_lit.seq.mul(lit.seq);
-                self_lit.cut = lit.cut;
+                self_lit.seq.mul(seq.seq);
+                self_lit.cut = seq.cut;
                 self.0.push(self_lit);
             }
         }
-        true
     }
 
     /// Extends each literal in this set with the Seq given.
     ///
     /// If the set is empty, then the given literal is added to the set.
     ///
-    /// If adding any number of bytes to all members of this set causes a limit
-    /// to be exceeded, then no bytes are added and false is returned. If a
-    /// prefix of `bytes` can be fit into this set, then it is used and all
+    ///  If a prefix of `bytes` can be fit into this set, then it is used and all
     /// resulting literals are cut.
-    pub fn cross_add(&mut self, seq: &Seq<I>) -> bool {
+    pub fn cross_add(&mut self, seq: &Seq<I>) {
         // N.B. This could be implemented by simply calling cross_product with
         // a literal set containing just `bytes`, but we can be smarter about
         // taking shorter prefixes of `bytes` if they'll fit.
@@ -321,39 +310,24 @@ impl<I: ~const Integral> Literals<I> {
         //     return true;
         // }
         if self.0.is_empty() {
-            let i = 1;
             self.0.push(Literal::new(seq.to_owned()));
-            self.0[0].cut = i < 1;
-            return !self.0[0].cut;
+            self.0[0].cut = false;
+            // TODO(rnarkk)
+            // return !self.0[0].cut;
         }
-        let mut i = 1;
-        while i < 1 {
-            i += 1;
-        }
-        for lit in &mut self.0 {
-            if !lit.cut {
-                lit.extend(*seq);
-                if i < 1 {
-                    lit.cut = true;
-                }
+        for seq in &mut self.0 {
+            if !seq.cut {
+                seq.extend(*seq);
             }
         }
-        true
     }
 
-    /// Adds the given literal to this set.
-    ///
-    /// Returns false if adding this literal would cause the class to be too
-    /// big.
-    pub fn add(&mut self, lit: Literal<I>) -> bool {
-        self.0.push(lit);
-        true
+    pub fn add(&mut self, seq: Literal<I>) {
+        self.0.push(seq);
     }
 
     /// Extends each literal in this set with the Interval given, writing the bytes of each character in reverse when `Interval<char>`.
-    ///
-    /// Returns false if the Interval was too big to add.
-    pub fn add_seq(&mut self, interval: &Interval<I>, reverse: bool) -> bool {
+    pub fn add_interval(&mut self, interval: &Interval<I>) {
         let mut base = self.remove_complete();
         if base.is_empty() {
             base = vec![Literal::empty()];
@@ -364,7 +338,6 @@ impl<I: ~const Integral> Literals<I> {
                 self.0.push(lit);
             }
         }
-        true
     }
 
     /// Cuts every member of this set. When a member is cut, it can never
@@ -382,170 +355,79 @@ impl<I: ~const Integral> Literals<I> {
         }
     }
 
-    /// Pops all complete literals out of this set.
+    /// Pops all 'complete' literals out of this set.
     fn remove_complete(&mut self) -> Vec<Literal<I>> {
-        let mut base = vec![];
-        for lit in mem::take(&mut self.0) {
-            if lit.cut {
-                self.0.push(lit);
+        let mut output = Vec::new();
+        for seq in mem::take(&mut self.0) {
+            if seq.cut {
+                self.0.push(seq);
             } else {
-                base.push(lit);
+                output.push(seq);
             }
         }
-        base
+        output
     }
 }
 
 #[unconst]
-const fn prefixes<I: ~const Integral>(expr: &Repr<I>, lits: &mut Literals<I>)
+const fn prefixes<I: ~const Integral>(expr: &Repr<I>, set: &mut Set<I>)
     where I: ~const Integral,
 {
     match expr {
         Repr::Zero(_) => {}
-        Repr::One(c) => { lits.cross_add(&c); },
-        Repr::Interval(ref seq) => {
-            if !lits.add_seq(seq, false) {
-                lits.cut();
+        Repr::One(seq) => set.cross_add(&seq),
+        Repr::Interval(ref interval) => set.add_interval(interval),
+        Repr::Or(ref lhs, ref rhs) => {
+            let mut lits2 = Set::empty();
+            for e in [lhs, rhs] {
+                let mut lits3 = Set::empty();
+                prefixes(e, &mut lits3);
+                if lits3.is_empty() || !lits2.union(lits3) {
+                    // If we couldn't find suffixes for *any* of the
+                    // alternates, then the entire alternation has to be thrown
+                    // away and any existing members must be frozen. Similarly,
+                    // if the union couldn't complete, stop and freeze.
+                    set.cut();
+                }
+            }
+            if !set.cross_product(&lits2) {
+                set.cut();
             }
         }
-        Repr::Exp(repr) => repeat_zero_or_more_literals(&repr, lits, prefixes),
+        Repr::Exp(repr) => {
+            let (mut lits2, mut lits3) = (set.clone(), Set::empty());
+            prefixes(repr, &mut lits3);
+
+            if lits3.is_empty() || !lits2.cross_product(&lits3) {
+                set.cut();
+                return;
+            }
+            lits2.cut();
+            lits2.add(Literal::empty());
+            set.union(lits2);
+        },
         Repr::And(ref lhs, ref rhs) => {
             for e in [lhs, rhs] {
                 if let Repr::Zero(Zero::StartText) = **e {
-                    if !lits.is_empty() {
-                        lits.cut();
+                    if !set.is_empty() {
+                        set.cut();
                         break;
                     }
-                    lits.add(Literal::empty());
+                    set.add(Literal::empty());
                     continue;
                 }
-                let mut lits2 = Literals::empty();
+                let mut lits2 = Set::empty();
                 prefixes(e, &mut lits2);
-                if !lits.cross_product(&lits2) || !lits2.any_complete() {
+                if !set.cross_product(&lits2) || !lits2.any_complete() {
                     // If this expression couldn't yield any literal that
                     // could be extended, then we need to quit. Since we're
                     // short-circuiting, we also need to freeze every member.
-                    lits.cut();
+                    set.cut();
                     break;
                 }
             }
         }
-        Repr::Or(ref lhs, ref rhs) => {
-            alternate_literals(lhs, rhs, lits, prefixes);
-        }
-        _ => lits.cut(),
-    }
-}
-
-#[unconst]
-const fn suffixes<I>(expr: &Repr<I>, lits: &mut Literals<I>)
-    where I: ~const Integral,
-{
-    match *expr {
-        Repr::One(c) => {
-            lits.cross_add(&c);
-        }
-        Repr::Interval(ref seq) => {
-            if !lits.add_seq(seq, false) {
-                lits.cut();
-            }
-        }
-        Repr::Exp(repr) => repeat_zero_or_more_literals(&repr, lits, suffixes),
-        Repr::And(ref lhs, ref rhs) => {
-            for e in [rhs, lhs] {
-                if let Repr::Zero(Zero::EndText) = e.as_ref() {
-                    if !lits.is_empty() {
-                        lits.cut();
-                        break;
-                    }
-                    lits.add(Literal::empty());
-                    continue;
-                }
-                let mut lits2 = Literals::empty();
-                suffixes(e, &mut lits2);
-                if !lits.cross_product(&lits2) || !lits2.any_complete() {
-                    // If this expression couldn't yield any literal that
-                    // could be extended, then we need to quit. Since we're
-                    // short-circuiting, we also need to freeze every member.
-                    lits.cut();
-                    break;
-                }
-            }
-        }
-        Repr::Or(ref lhs, ref rhs) => {
-            alternate_literals(lhs, rhs, lits, suffixes);
-        }
-        _ => lits.cut(),
-    }
-}
-
-#[unconst]
-const fn repeat_zero_or_more_literals<I, F>(
-    e: &Repr<I>,
-    lits: &mut Literals<I>,
-    mut f: F,
-)
-    where I: ~const Integral,
-          F: FnMut(&Repr<I>, &mut Literals<I>)
-{
-    let (mut lits2, mut lits3) = (lits.clone(), Literals::empty());
-    f(e, &mut lits3);
-
-    if lits3.is_empty() || !lits2.cross_product(&lits3) {
-        lits.cut();
-        return;
-    }
-    lits2.cut();
-    lits2.add(Literal::empty());
-    if !lits.union(lits2) {
-        lits.cut();
-    }
-}
-
-// TODO
-// This is a bit conservative. If `max` is set, then we could
-// treat this as a finite set of alternations. For now, we
-// just treat it as `e*`.
-#[unconst]
-const fn repeat_range_literals<S, I, F>(
-    e: &Repr<I>,
-    min: usize,
-    lits: &mut Literals<I>,
-    mut f: F,
-)
-    where I: ~const Integral,
-          F: FnMut(&Repr<I>, &mut Literals<I>)
-{
-    if lits.contains_empty() {
-        lits.cut();
-    }
-}
-
-#[unconst]
-const fn alternate_literals<I: ~const Integral, F>(
-    lhs: &Repr<I>,
-    rhs: &Repr<I>,
-    lits: &mut Literals<I>,
-    mut f: F,
-)
-    where I: ~const Integral,
-          F: FnMut(&Repr<I>, &mut Literals<I>)
-{
-    let mut lits2 = Literals::empty();
-    for e in [lhs, rhs] {
-        let mut lits3 = Literals::empty();
-        f(e, &mut lits3);
-        if lits3.is_empty() || !lits2.union(lits3) {
-            // If we couldn't find suffixes for *any* of the
-            // alternates, then the entire alternation has to be thrown
-            // away and any existing members must be frozen. Similarly,
-            // if the union couldn't complete, stop and freeze.
-            lits.cut();
-            return;
-        }
-    }
-    if !lits.cross_product(&lits2) {
-        lits.cut();
+        _ => set.cut(),
     }
 }
 
@@ -559,11 +441,6 @@ impl<I: ~const Integral> Literal<I> {
     /// Returns a new complete empty literal.
     pub fn empty() -> Literal<I> {
         Literal { seq: Seq::empty(), cut: false }
-    }
-
-    /// Cuts this literal.
-    pub fn cut(&mut self) {
-        self.cut = true;
     }
 }
 
@@ -598,16 +475,16 @@ fn char_len_lossy(bytes: &[u8]) -> usize {
 /// Parsed represents a flattened Repr and their detected seqs.
 pub struct Parsed<I: ~const Integral> {
     pub reprs: Vec<Repr<I>>,
-    pub prefixes: Literals<I>,
-    pub suffixes: Literals<I>,
+    pub prefixes: Set<I>,
+    pub suffixes: Set<I>,
 }
 
 #[unconst]
 impl<I: ~const Integral> Parsed<I> {
     /// Parse the current set of patterns into their AST and extract seqs.
     pub fn parse(repr: &Repr<I>) -> Parsed<I> {
-        let mut prefixes = Some(Literals::empty());
-        let mut suffixes = Some(Literals::empty());
+        let mut prefixes = Some(Set::empty());
+        let mut suffixes = Some(Set::empty());
         let is_set = true;
         // If we're compiling a regex set and that set has any anchored
         // expressions, then disable all literal optimizations.
@@ -651,8 +528,8 @@ impl<I: ~const Integral> Parsed<I> {
         }
         Parsed {
             reprs,
-            prefixes: prefixes.unwrap_or_else(Literals::empty),
-            suffixes: suffixes.unwrap_or_else(Literals::empty),
+            prefixes: prefixes.unwrap_or_else(Set::empty),
+            suffixes: suffixes.unwrap_or_else(Set::empty),
         }
     }
 }
