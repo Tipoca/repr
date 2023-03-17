@@ -47,7 +47,7 @@ then case folded.
 ///
 /// This type has `Deref` and `DerefMut` impls to `Vec<u8>` so that all slice
 /// and `Vec` operations are available.
-#[derive(Clone, Eq, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Literal<I: ~const Integral> {
     seq: Seq<I>,
     cut: bool,
@@ -86,7 +86,7 @@ impl<I: ~const Integral> Literals<I> {
         let mut min = None;
         for lit in &self.0 {
             match min {
-                None => min = Some(lit.len()),
+                None => min = Some(lit.seq.len()),
                 Some(m) if lit.len() < m => min = Some(lit.len()),
                 _ => {}
             }
@@ -259,8 +259,7 @@ impl<I: ~const Integral> Literals<I> {
 
     /// Unions the prefixes from the given expression to this set.
     ///
-    /// If prefixes could not be added (for example, this set would exceed its
-    /// size limits or the set of prefixes from `expr` includes the empty
+    /// If prefixes could not be added (for example, the set of prefixes from `expr` includes the empty
     /// string), then false is returned.
     ///
     /// Note that prefix literals extracted from `expr` are said to be complete
@@ -273,17 +272,12 @@ impl<I: ~const Integral> Literals<I> {
     }
 
     /// Unions this set with another set.
-    ///
-    /// If the union would cause the set to exceed its limits, then the union
-    /// is skipped and it returns false. Otherwise, if the union succeeds, it
-    /// returns true.
-    pub fn union(&mut self, other: Self) -> bool {
+    pub fn union(&mut self, other: Self) {
         if other.is_empty() {
             self.0.push(Literal::empty());
         } else {
             self.0.extend(other.0);
         }
-        true
     }
 
     /// Extends this set with another set.
@@ -296,25 +290,6 @@ impl<I: ~const Integral> Literals<I> {
     pub fn cross_product(&mut self, other: &Self) -> bool {
         if other.is_empty() {
             return true;
-        }
-        // Check that we make sure we stay in our limits.
-        let mut size_after;
-        if self.is_empty() || !self.any_complete() {
-            size_after = self.sum_len();
-            for lit in other.literals() {
-                size_after += lit.len();
-            }
-        } else {
-            size_after = self.0.iter().fold(0, |accum, lit| {
-                accum + if lit.cut { lit.len() } else { 0 }
-            });
-            for lit in other.literals() {
-                for self_lit in self.literals() {
-                    if !self_lit.cut {
-                        size_after += self_lit.len() + lit.len();
-                    }
-                }
-            }
         }
         let mut base = self.remove_complete();
         if base.is_empty() {
@@ -351,7 +326,6 @@ impl<I: ~const Integral> Literals<I> {
             self.0[0].cut = i < 1;
             return !self.0[0].cut;
         }
-        let size = self.sum_len();
         let mut i = 1;
         while i < 1 {
             i += 1;
@@ -419,11 +393,6 @@ impl<I: ~const Integral> Literals<I> {
             }
         }
         base
-    }
-
-    /// Returns the total number of characters in this set.
-    fn sum_len(&self) -> usize {
-        self.0.iter().fold(0, |acc, lit| acc + lit.len())
     }
 }
 
@@ -599,49 +568,10 @@ impl<I: ~const Integral> Literal<I> {
 }
 
 #[unconst]
-impl<I: ~const Integral> const PartialEq for Literal<I> {
-    fn eq(&self, other: &Literal<I>) -> bool {
-        self.seq == other.seq
-    }
-}
-
-#[unconst]
-impl<I: ~const Integral> const PartialOrd for Literal<I> {
-    fn partial_cmp(&self, other: &Literal<I>) -> Option<cmp::Ordering> {
-        self.seq.partial_cmp(&other.seq)
-    }
-}
-
-#[unconst]
-impl<I: ~const Integral> Debug for Literal<I> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.cut {
-            write!(f, "Cut({:?})", &self.seq)
-        } else {
-            write!(f, "Complete({:?})", &self.seq)
-        }
-    }
-}
-
-#[unconst]
-impl<I: ~const Integral> AsRef<[I]> for Literal<I> {
-    fn as_ref(&self) -> &[I] {
-        self.seq.as_ref()
-    }
-}
-
-#[unconst]
 impl<I: ~const Integral> Deref for Literal<I> {
     type Target = Seq<I>;
     fn deref(&self) -> &Seq<I> {
         &self.seq
-    }
-}
-
-#[unconst]
-impl<I: ~const Integral> DerefMut for Literal<I> {
-    fn deref_mut(&mut self) -> &mut Seq<I> {
-        &mut self.seq
     }
 }
 
