@@ -151,13 +151,13 @@ impl<I: ~const Integral> Repr<I> {
     /// string will always match the empty string. In order to get the
     /// inductive definition, see the corresponding method on
     /// [`Hir`](struct.Hir.html).
-    pub const fn nullable(&self) -> bool {
+    pub const fn nul(&self) -> bool {
         match self {
             Self::Zero(_) => true,
             One(seq) => seq == &Seq::empty(),
-            Mul(lhs, rhs) => lhs.nullable() && rhs.nullable(),
-            Or(lhs, rhs) => lhs.nullable() || rhs.nullable(),
-            And(lhs, rhs) => lhs.nullable() || rhs.nullable(),
+            Mul(lhs, rhs) => lhs.nul() && rhs.nul(),
+            Or(lhs, rhs) => lhs.nul() || rhs.nul(),
+            And(lhs, rhs) => lhs.nul() || rhs.nul(),
             Exp(_) => true,
             _ => false
         }
