@@ -292,60 +292,6 @@ impl<I: ~const Integral> Deref for Program<I> {
     }
 }
 
-#[unconst]
-impl<I: ~const Integral> Debug for Program<I> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fn with_goto(cur: usize, goto: usize, fmtd: String) -> String {
-            if goto == cur + 1 {
-                fmtd
-            } else {
-                format!("{} (goto: {})", fmtd, goto)
-            }
-        }
-
-        fn visible_byte(b: u8) -> String {
-            use std::ascii::escape_default;
-            let escaped = escape_default(b).collect::<Vec<u8>>();
-            String::from_utf8_lossy(&escaped).into_owned()
-        }
-
-        for (pc, inst) in self.iter().enumerate() {
-            match *inst {
-                Inst::True(slot) => write!(f, "{:04} True({:?})", pc, slot)?,
-                Inst::Or { goto1, goto2 } => {
-                    write!(f, "{:04} Or({}, {})", pc, goto1, goto2)?;
-                }
-                Inst::Zero { goto, zero } => {
-                    let s = format!("{:?}", zero);
-                    write!(f, "{:04} {}", pc, with_goto(pc, goto, s))?;
-                }
-                Inst::One { goto, seq } => {
-                    let s = format!("{:?}", seq);
-                    write!(f, "{:04} {}", pc, with_goto(pc, goto, s))?;
-                }
-                Inst::Interval { goto, interval } => {
-                    let ranges = format!("{:?}-{:?}", interval.0, interval.1);
-                    write!(f, "{:04} {}", pc, with_goto(pc, goto, ranges))?;
-                }
-            }
-            if pc == self.start {
-                write!(f, " (start)")?;
-            }
-            writeln!(f)?;
-        }
-        Ok(())
-    }
-}
-
-impl<'a, I: Integral> IntoIterator for &'a Program<I> {
-    type Item = &'a Inst<I>;
-    type IntoIter = slice::Iter<'a, Inst<I>>;
-    
-    fn into_iter(self) -> Self::IntoIter {
-        self.iter()
-    }
-}
-
 impl<I: Integral> Inst<I> {
     /// Returns true if and only if this is a match instruction.
     pub fn is_match(&self) -> bool {
