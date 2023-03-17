@@ -11,7 +11,7 @@ use core::{
 
 use unconst::unconst;
 
-#[cfg(feature = "derivative")]
+#[cfg(feature = "quotient")]
 use crate::quotient::LiteralSearcher;
 use crate::quotient::Parsed;
 use crate::exec::{Exec, new_pool};
@@ -155,13 +155,13 @@ pub struct Program<I: ~const Integral> {
     /// expressions. The actual starting point of the program is after the
     /// `.*?`.
     pub start: Index,
-    #[cfg(feature = "derivative")]
+    #[cfg(feature = "quotient")]
     /// A possibly empty machine for very quickly matching prefix literals.
     pub prefixes: LiteralSearcher<I>,
-    #[cfg(feature = "derivative")]
+    #[cfg(feature = "quotient")]
     /// A possibly empty machine for very quickly matching suffixe literals.
     pub suffixes: LiteralSearcher<I>,
-    #[cfg(feature = "derivative")]
+    #[cfg(feature = "quotient")]
     /// An Aho-Corasick automaton with leftmost-first match semantics.
     ///
     /// This is only set when the entire regex is a simple unanchored
@@ -181,12 +181,12 @@ impl<I: ~const Integral> Program<I> {
         let parsed = Parsed::parse(&options.repr);
         let compiler = Compiler::new(options);
         let mut output = compiler.compile(&parsed.reprs);
-        #[cfg(feature = "derivative")]
+        #[cfg(feature = "quotient")]
         output.derivative();
         output
     }
 
-    #[cfg(feature = "derivative")]
+    #[cfg(feature = "quotient")]
     fn derivative(&mut self) {
         self.prefixes = LiteralSearcher::prefixes(parsed.prefixes);
         self.suffixes = LiteralSearcher::suffixes(parsed.suffixes);
@@ -198,11 +198,11 @@ impl<I: ~const Integral> Program<I> {
     /// values.
     pub fn default() -> Self {
         Program {
-            #[cfg(feature = "derivative")]
+            #[cfg(feature = "quotient")]
             prefixes: LiteralSearcher::empty(),
-            #[cfg(feature = "derivative")]
+            #[cfg(feature = "quotient")]
             suffixes: LiteralSearcher::empty(),
-            #[cfg(feature = "derivative")]
+            #[cfg(feature = "quotient")]
             ac: Default::default(),
         }
     }
@@ -225,7 +225,7 @@ impl<I: ~const Integral> Program<I> {
 
 // /// Alternation literals checks if the given Repr is a simple alternation of
 // /// literals, and if so, returns them. Otherwise, this returns None.
-// #[cfg(feature = "derivative")]
+// #[cfg(feature = "quotient")]
 // fn or_constants<I: Integral>(repr: &Repr<I>) -> Option<Vec<Vec<u8>>> {
 //     // This is pretty hacky, but basically, if `is_alternation_literal` is
 //     // true, then we can make several assumptions about the structure of our

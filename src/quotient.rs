@@ -1,7 +1,7 @@
 //! Extract literal prefixes and suffixes from an `Repr<I>`.
 //! <https://en.wikipedia.org/wiki/Brzozowski_derivative>
         
-#[cfg(feature = "derivative")]
+#[cfg(feature = "quotient")]
 mod search;
 
 use core::{
@@ -18,7 +18,7 @@ use crate::repr::{Repr, Zero};
 use crate::seq::Seq;
 use crate::traits::Integral;
 
-#[cfg(feature = "derivative")]
+#[cfg(feature = "quotient")]
 pub use search::LiteralSearcher;
 
 /// A set of literal byte strings extracted from a regular expression.

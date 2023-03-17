@@ -7,7 +7,7 @@ use unconst::unconst;
 use crate::{Repr, Integral, Seq, Partition, Context};
 use crate::backtrack;
 use crate::compile::{Options, Program};
-#[cfg(feature = "derivative")]
+#[cfg(feature = "quotient")]
 use crate::compile::SeqMode;
 use crate::partition::{Match, SetMatches};
 use crate::pikevm;
@@ -44,7 +44,7 @@ impl<I: ~const Integral> Exec<I> {
     }
 
     pub const fn is_match_at(&self, context: &Context<I>, start: usize) -> bool {
-        #[cfg(feature = "derivative")]
+        #[cfg(feature = "quotient")]
         if !self.is_anchor_end_match(context) {
             return false;
         }
@@ -52,14 +52,14 @@ impl<I: ~const Integral> Exec<I> {
         // filling in captures[1], but a RegexSet has no captures. In other
         // words, a RegexSet can't (currently) use shortest_match. ---AG
         match self.ro.mode {
-            #[cfg(feature = "derivative")]
+            #[cfg(feature = "quotient")]
             Mode::Seq(ty)
                 => self.find_literals(ty, context, start).is_some(),
             Mode::Nfa => self.match_nfa(context, start),
         }
     }
 
-    #[cfg(feature = "derivative")]
+    #[cfg(feature = "quotient")]
     #[cfg_attr(feature = "perf-inline", inline(always))]
     pub const fn is_anchor_end_match(&self, context: &Context<I>) -> bool {
         // Only do this check if the haystack is big (>1MB).
@@ -73,7 +73,7 @@ impl<I: ~const Integral> Exec<I> {
     }
 
     /// Finds the leftmost-first match using only literal search.
-    #[cfg(feature = "derivative")]
+    #[cfg(feature = "quotient")]
     #[cfg_attr(feature = "perf-inline", inline(always))]
     pub const fn find_literals(
         &self,
@@ -208,7 +208,7 @@ impl<I: ~const Integral> Exec<I> {
             return None;
         }
         match self.ro.mode {
-            #[cfg(feature = "derivative")]
+            #[cfg(feature = "quotient")]
             Mode::Seq(ty) => {
                 self.find_literals(ty, context, start).map(|(_, e)| e)
             }
@@ -235,7 +235,7 @@ impl<I: ~const Integral> Exec<I> {
             return None;
         }
         let output = match self.ro.mode {
-            #[cfg(feature = "derivative")]
+            #[cfg(feature = "quotient")]
             Mode::Seq(ty) => self.find_literals(ty, context, start),
             Mode::Nfa => self.find_nfa(context, start),
         };
@@ -282,7 +282,7 @@ impl<I: ~const Integral> Exec<I> {
             return false;
         }
         match self.ro.mode {
-            #[cfg(feature = "derivative")]
+            #[cfg(feature = "quotient")]
             Mode::Seq(ty) => {
                 debug_assert_eq!(matches.len(), 1);
                 matches[0] = self.find_literals(ty, context, start).is_some();

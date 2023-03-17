@@ -3,7 +3,7 @@ use core::ops::Deref;
 
 use unconst::unconst;
 
-#[cfg(feature = "derivative")]
+#[cfg(feature = "quotient")]
 use crate::quotient::LiteralSearcher;
 use crate::traits::Integral;
 
@@ -14,7 +14,7 @@ pub struct Context<I: ~const Integral>(Vec<I>);
 
 #[unconst]
 impl<I: ~const Integral> Context<I> {
-    #[cfg(feature = "derivative")]
+    #[cfg(feature = "quotient")]
     /// Scan the input for a matching prefix.
     pub fn prefix(&self, prefixes: &LiteralSearcher<I>, from: usize)
         -> Option<I>
