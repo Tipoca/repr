@@ -172,22 +172,6 @@ pub struct Program<I: ~const Integral> {
     /// if we were to exhaust the ID space, we probably would have long
     /// surpassed the compilation size limit.
     pub ac: Option<AhoCorasick<u32>>,
-    /// A limit on the size of the cache that the DFA is allowed to use while
-    /// matching.
-    ///
-    /// The cache limit specifies approximately how much space we're willing to
-    /// give to the state cache. Once the state cache exceeds the size, it is
-    /// wiped and all states must be re-computed.
-    ///
-    /// Note that this value does not impact correctness. It can be set to 0
-    /// and the DFA will run just fine. (It will only ever store exactly one
-    /// state in the cache, and will likely run very slowly, but it will work.)
-    ///
-    /// Also note that this limit is *per thread of execution*. That is,
-    /// if the same regex is used to search text across multiple threads
-    /// simultaneously, then the DFA cache is not shared. Instead, copies are
-    /// made.
-    pub dfa_size_limit: usize,
 }
 
 #[unconst]
@@ -214,15 +198,10 @@ impl<I: ~const Integral> Program<I> {
     /// values.
     pub fn default() -> Self {
         Program {
-            insts: vec![],
-            matches: vec![],
-            start: 0,
-            // byte_classes: vec![0; 256],
             #[cfg(feature = "derivative")]
             prefixes: LiteralSearcher::empty(),
             #[cfg(feature = "derivative")]
             suffixes: LiteralSearcher::empty(),
-            dfa_size_limit: 2 * (1 << 20),
             #[cfg(feature = "derivative")]
             ac: Default::default(),
         }
@@ -282,16 +261,6 @@ impl<I: ~const Integral> Program<I> {
 //     Some(constants)
 // }
 
-#[unconst]
-impl<I: ~const Integral> Deref for Program<I> {
-    type Target = [Inst<I>];
-
-    #[cfg_attr(feature = "perf-inline", inline(always))]
-    fn deref(&self) -> &Self::Target {
-        &*self.insts
-    }
-}
-
 impl<I: Integral> Inst<I> {
     /// Returns true if and only if this is a match instruction.
     pub fn is_match(&self) -> bool {
@@ -320,138 +289,6 @@ impl Hole {
         match self {
             Hole::One(i) => (Hole::One(i), Hole::One(i)),
             _ => unreachable!("must be called on single hole")
-        }
-    }
-}
-
-#[derive(Clone, Debug)]
-enum MaybeInst<I: Integral> {
-    Compiled(Inst<I>),
-    Zero(Zero),
-    One(Seq<I>),
-    Interval(Interval<I>),
-    Or,
-    Split1(Index),
-    Split2(Index),
-}
-
-// Endofunctor? Effect?
-/// Inst is an instruction code in a Regex program.
-#[derive(Clone, Debug)]
-pub enum Inst<I: Integral> {
-    /// True indicates that the program has reached a match state.
-    ///
-    /// The number in the match corresponds to the Nth logical regular
-    /// expression in this program. This index is always 0 for normal regex
-    /// programs. Values greater than 0 appear when compiling regex sets, and
-    /// each match instruction gets its own unique value. The value corresponds
-    /// to the Nth regex in the set.
-    True(usize),
-    /// Representation of the `Zero` instruction.
-    /// Zero represents a zero-width assertion in a regex program. A
-    /// zero-width assertion does not consume any of the input text.
-    Zero {
-        /// The next location to execute in the program if this instruction
-        /// succeeds.
-        goto: Index,
-        /// The type of zero-width assertion to check.
-        zero: Zero,
-    },
-    /// Representation of the One instruction.
-    /// One requires the regex program to match the character in InstOne at
-    /// the current position in the input.
-    One {
-        /// The next location to execute in the program if this instruction
-        /// succeeds.
-        goto: Index,
-        /// The character to test.
-        seq: Seq<I>,
-    },
-    /// Representation of the Interval instruction.
-    /// Interval requires the regex program to match the character at the current
-    /// position in the input with one of the ranges specified in InstInterval.
-    Interval  {
-        /// The next location to execute in the program if this instruction
-        /// succeeds.
-        goto: Index,
-        /// The set of Unicode scalar value ranges to test.
-        interval: Interval<I>
-    },
-    /// Representation of the Or instruction.
-    /// Or causes the program to diverge to one of two paths in the
-    /// program, preferring goto1.
-    Or {
-        /// The first instruction to try. A match resulting from following goto1
-        /// has precedence over a match resulting from following goto2.
-        goto1: Index,
-        /// The second instruction to try. A match resulting from following goto1
-        /// has precedence over a match resulting from following goto2.
-        goto2: Index,
-    },
-}
-
-impl<I: Integral> MaybeInst<I> {
-    fn fill(&mut self, goto: Index) {
-        let maybeinst = match *self {
-            Self::Zero(zero) => Inst::Zero { goto, zero },
-            Self::One(seq) => Inst::One { goto, seq },
-            Self::Interval(interval) => Inst::Interval { goto, interval },
-            Self::Or => Self::Split1(goto),
-            Self::Split1(goto1) => Inst::Or { goto1, goto2: goto },
-            Self::Split2(goto2) => Inst::Or { goto1: goto, goto2 },
-            _ => unreachable!(
-                "not all instructions were compiled! \
-                 found uncompiled instruction: {:?}",
-                self
-            ),
-        };
-        *self = maybeinst;
-    }
-
-    fn fill_split(&mut self, goto1: Index, goto2: Index) {
-        let filled = match *self {
-            Self::Or => Inst::Or { goto1, goto2 },
-            _ => unreachable!(
-                "must be called on Or instruction, \
-                 instead it was called on: {:?}",
-                self
-            ),
-        };
-        *self = Self::Compiled(filled);
-    }
-
-    fn half_fill_split_goto1(&mut self, goto1: Index) {
-        let half_filled = match *self {
-            Self::Or => goto1,
-            _ => unreachable!(
-                "must be called on Or instruction, \
-                 instead it was called on: {:?}",
-                self
-            ),
-        };
-        *self = Self::Split1(half_filled);
-    }
-
-    fn half_fill_split_goto2(&mut self, goto2: Index) {
-        let half_filled = match *self {
-            Self::Or => goto2,
-            _ => unreachable!(
-                "must be called on Or instruction, \
-                 instead it was called on: {:?}",
-                self
-            ),
-        };
-        *self = Self::Split2(half_filled);
-    }
-
-    fn unwrap(self) -> Inst<I> {
-        match self {
-            Self::Compiled(inst) => inst,
-            _ => unreachable!(
-                "must be called on a compiled instruction, \
-                 instead it was called on: {:?}",
-                self
-            ),
         }
     }
 }
@@ -589,75 +426,75 @@ impl<I: ~const Integral> Compiler<I> {
             Repr::Zero(Zero::Any) => self.c_empty(),
             Repr::One(seq) => self.c_one(seq),
             Repr::Interval(interval) => self.c_interval(interval),
-            // Repr::Zero(Zero::StartLine) if self.compiled.is_reverse => {
-            //     self.byte_classes.set_range(b'\n', b'\n');
-            //     self.c_zero(prog::Zero::EndLine)
-            // }
-            // Repr::Zero(Zero::StartLine) => {
-            //     self.byte_classes.set_range(b'\n', b'\n');
-            //     self.c_zero(prog::Zero::StartLine)
-            // }
-            // Repr::Zero(Zero::EndLine) if self.compiled.is_reverse => {
-            //     self.byte_classes.set_range(b'\n', b'\n');
-            //     self.c_zero(prog::Zero::StartLine)
-            // }
-            // Repr::Zero(Zero::EndLine) => {
-            //     self.byte_classes.set_range(b'\n', b'\n');
-            //     self.c_zero(prog::Zero::EndLine)
-            // }
-            // Repr::Zero(Zero::StartText) if self.compiled.is_reverse => {
-            //     self.c_zero(prog::Zero::EndText)
-            // }
-            // Repr::Zero(Zero::StartText) => {
-            //     self.c_zero(prog::Zero::StartText)
-            // }
-            // Repr::Zero(Zero::EndText) if self.compiled.is_reverse => {
-            //     self.c_zero(prog::Zero::StartText)
-            // }
-            // Repr::Zero(Zero::EndText) => {
-            //     self.c_zero(prog::Zero::EndText)
-            // }
-            // Repr::Zero(Zero::Unicode) => {
-            //     if !cfg!(feature = "unicode-perl") {
-            //         return Err(Error::Syntax(
-            //             "Unicode word boundaries are unavailable when \
-            //              the unicode-perl feature is disabled"
-            //                 .to_string(),
-            //         ));
-            //     }
-            //     self.compiled.has_unicode_word_boundary = true;
-            //     self.byte_classes.set_word_boundary();
-            //     // We also make sure that all ASCII bytes are in a different
-            //     // class from non-ASCII bytes. Otherwise, it's possible for
-            //     // ASCII bytes to get lumped into the same class as non-ASCII
-            //     // bytes. This in turn may cause the lazy DFA to falsely start
-            //     // when it sees an ASCII byte that maps to a byte class with
-            //     // non-ASCII bytes. This ensures that never happens.
-            //     self.byte_classes.set_range(0, 0x7F);
-            //     self.c_zero(prog::Zero::WordBoundary)
-            // }
-            // Repr::Zero(Zero::UnicodeNegate) => {
-            //     if !cfg!(feature = "unicode-perl") {
-            //         return Err(Error::Syntax(
-            //             "Unicode word boundaries are unavailable when \
-            //              the unicode-perl feature is disabled"
-            //                 .to_string(),
-            //         ));
-            //     }
-            //     self.compiled.has_unicode_word_boundary = true;
-            //     self.byte_classes.set_word_boundary();
-            //     // See comments above for why we set the ASCII range here.
-            //     self.byte_classes.set_range(0, 0x7F);
-            //     self.c_zero(prog::Zero::NotWordBoundary)
-            // }
-            // Repr::Zero(Zero::Ascii) => {
-            //     self.byte_classes.set_word_boundary();
-            //     self.c_zero(prog::Zero::WordBoundaryAscii)
-            // }
-            // Repr::Zero(Zero::AsciiNegate) => {
-            //     self.byte_classes.set_word_boundary();
-            //     self.c_zero(prog::Zero::NotWordBoundaryAscii)
-            // }
+            Repr::Zero(Zero::StartLine) if self.compiled.is_reverse => {
+                self.byte_classes.set_range(b'\n', b'\n');
+                self.c_zero(prog::Zero::EndLine)
+            }
+            Repr::Zero(Zero::StartLine) => {
+                self.byte_classes.set_range(b'\n', b'\n');
+                self.c_zero(prog::Zero::StartLine)
+            }
+            Repr::Zero(Zero::EndLine) if self.compiled.is_reverse => {
+                self.byte_classes.set_range(b'\n', b'\n');
+                self.c_zero(prog::Zero::StartLine)
+            }
+            Repr::Zero(Zero::EndLine) => {
+                self.byte_classes.set_range(b'\n', b'\n');
+                self.c_zero(prog::Zero::EndLine)
+            }
+            Repr::Zero(Zero::StartText) if self.compiled.is_reverse => {
+                self.c_zero(prog::Zero::EndText)
+            }
+            Repr::Zero(Zero::StartText) => {
+                self.c_zero(prog::Zero::StartText)
+            }
+            Repr::Zero(Zero::EndText) if self.compiled.is_reverse => {
+                self.c_zero(prog::Zero::StartText)
+            }
+            Repr::Zero(Zero::EndText) => {
+                self.c_zero(prog::Zero::EndText)
+            }
+            Repr::Zero(Zero::Unicode) => {
+                if !cfg!(feature = "unicode-perl") {
+                    return Err(Error::Syntax(
+                        "Unicode word boundaries are unavailable when \
+                         the unicode-perl feature is disabled"
+                            .to_string(),
+                    ));
+                }
+                self.compiled.has_unicode_word_boundary = true;
+                self.byte_classes.set_word_boundary();
+                // We also make sure that all ASCII bytes are in a different
+                // class from non-ASCII bytes. Otherwise, it's possible for
+                // ASCII bytes to get lumped into the same class as non-ASCII
+                // bytes. This in turn may cause the lazy DFA to falsely start
+                // when it sees an ASCII byte that maps to a byte class with
+                // non-ASCII bytes. This ensures that never happens.
+                self.byte_classes.set_range(0, 0x7F);
+                self.c_zero(prog::Zero::WordBoundary)
+            }
+            Repr::Zero(Zero::UnicodeNegate) => {
+                if !cfg!(feature = "unicode-perl") {
+                    return Err(Error::Syntax(
+                        "Unicode word boundaries are unavailable when \
+                         the unicode-perl feature is disabled"
+                            .to_string(),
+                    ));
+                }
+                self.compiled.has_unicode_word_boundary = true;
+                self.byte_classes.set_word_boundary();
+                // See comments above for why we set the ASCII range here.
+                self.byte_classes.set_range(0, 0x7F);
+                self.c_zero(prog::Zero::NotWordBoundary)
+            }
+            Repr::Zero(Zero::Ascii) => {
+                self.byte_classes.set_word_boundary();
+                self.c_zero(prog::Zero::WordBoundaryAscii)
+            }
+            Repr::Zero(Zero::AsciiNegate) => {
+                self.byte_classes.set_word_boundary();
+                self.c_zero(prog::Zero::NotWordBoundaryAscii)
+            }
             Repr::Mul(ref lhs, ref rhs) => self.c_mul(lhs, rhs),
             Repr::Or(ref lhs, ref rhs) => self.c_or(lhs, rhs),
             Repr::Exp(ref repr) => self.c_exp(repr),
@@ -785,56 +622,56 @@ impl<I: ~const Integral> Compiler<I> {
         Some(Patch { hole: Hole::Many(holes), entry: split_entry })
     }
 
-    // fn c_repeat_range(
-    //     &mut self,
-    //     repr: &Repr<I>,
-    //     min: u32,
-    //     max: u32,
-    // ) -> Option<Patch> {
-    //     let (min, max) = (u32_to_usize(min), u32_to_usize(max));
-    //     debug_assert!(min <= max);
-    //     let patch_concat = self.c_mul(iter::repeat(repr).take(min));
-    //     if min == max {
-    //         return Ok(patch_concat);
-    //     }
-    //     // Same reasoning as in c_repeat_range_min_or_more (we know that min <
-    //     // max at this point).
-    //     let patch_concat = patch_concat.unwrap_or_else(|| self.next_inst());
-    //     let initial_entry = patch_concat.entry;
-    //     // It is much simpler to compile, e.g., `a{2,5}` as:
-    //     //
-    //     //     aaa?a?a?
-    //     //
-    //     // But you end up with a sequence of instructions like this:
-    //     //
-    //     //     0: 'a'
-    //     //     1: 'a',
-    //     //     2: split(3, 4)
-    //     //     3: 'a'
-    //     //     4: split(5, 6)
-    //     //     5: 'a'
-    //     //     6: split(7, 8)
-    //     //     7: 'a'
-    //     //     8: MATCH
-    //     //
-    //     // This is *incredibly* inefficient because the splits end
-    //     // up forming a chain, which has to be resolved everything a
-    //     // transition is followed.
-    //     let mut holes = Vec::new();
-    //     let mut prev_hole = patch_concat.hole;
-    //     for _ in min..max {
-    //         self.fill_to_next(prev_hole);
-    //         let split = self.push_split_hole();
-    //         let Patch { hole, entry } = match self.c(repr)? {
-    //             Some(p) => p,
-    //             None => return self.pop_split_hole(),
-    //         };
-    //         prev_hole = hole;
-    //         holes.push(self.fill_split(split, Some(entry), None));
-    //     }
-    //     holes.push(prev_hole);
-    //     Ok(Some(Patch { hole: Hole::Many(holes), entry: initial_entry }))
-    // }
+    fn c_repeat_range(
+        &mut self,
+        repr: &Repr<I>,
+        min: u32,
+        max: u32,
+    ) -> Option<Patch> {
+        let (min, max) = (u32_to_usize(min), u32_to_usize(max));
+        debug_assert!(min <= max);
+        let patch_concat = self.c_mul(iter::repeat(repr).take(min));
+        if min == max {
+            return Ok(patch_concat);
+        }
+        // Same reasoning as in c_repeat_range_min_or_more (we know that min <
+        // max at this point).
+        let patch_concat = patch_concat.unwrap_or_else(|| self.next_inst());
+        let initial_entry = patch_concat.entry;
+        // It is much simpler to compile, e.g., `a{2,5}` as:
+        //
+        //     aaa?a?a?
+        //
+        // But you end up with a sequence of instructions like this:
+        //
+        //     0: 'a'
+        //     1: 'a',
+        //     2: split(3, 4)
+        //     3: 'a'
+        //     4: split(5, 6)
+        //     5: 'a'
+        //     6: split(7, 8)
+        //     7: 'a'
+        //     8: MATCH
+        //
+        // This is *incredibly* inefficient because the splits end
+        // up forming a chain, which has to be resolved everything a
+        // transition is followed.
+        let mut holes = Vec::new();
+        let mut prev_hole = patch_concat.hole;
+        for _ in min..max {
+            self.fill_to_next(prev_hole);
+            let split = self.push_split_hole();
+            let Patch { hole, entry } = match self.c(repr)? {
+                Some(p) => p,
+                None => return self.pop_split_hole(),
+            };
+            prev_hole = hole;
+            holes.push(self.fill_split(split, Some(entry), None));
+        }
+        holes.push(prev_hole);
+        Ok(Some(Patch { hole: Hole::Many(holes), entry: initial_entry }))
+    }
 
     /// Can be used as a default value for the c_* functions when the call to
     /// c_function is followed by inserting at least one instruction that is

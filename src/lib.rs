@@ -32,7 +32,6 @@ mod interval;
 mod operators;
 mod partition;
 mod pattern;
-mod pikevm;
 mod pool;
 mod process;
 mod seq;
@@ -40,7 +39,6 @@ mod sparse;
 mod unicode;
 mod wrappers;
 
-pub mod char;
 pub mod constants;
 pub mod macros;
 pub mod quotient;
