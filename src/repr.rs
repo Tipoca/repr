@@ -171,6 +171,16 @@ impl<I: ~const Integral> Repr<I> {
             _ => unimplemented!()
         }
     }
+
+    // #[inline(always)]
+    // pub const fn map<F: FnMut(Self) -> Self>(self, mut f: F) -> Self {
+    //     match self {
+    //         // One(seq) => One(f(seq)),
+    //         Mul(lhs, rhs) => Mul(box f(*lhs), box f(*rhs)),
+    //         Or(lhs, rhs) => Or(box f(*lhs), box f(*rhs)),
+    //         _ => unimplemented!()
+    //     }
+    // }
 }
 
 #[unconst]
