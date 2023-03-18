@@ -1,4 +1,7 @@
-use core::ops::{BitOr, BitAnd, BitXor, Range, Add, Mul, RangeFull, RangeFrom};
+use core::{
+    cmp::{PartialOrd, Ord},
+    ops::{BitOr, BitAnd, BitXor, Range, Add, Mul, RangeFull, RangeFrom}
+};
 
 use unconst::unconst;
 
