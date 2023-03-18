@@ -50,8 +50,8 @@
 | \[a-z\] (class) | | Interval(a, z) | | |
 | `[^a-z]` (negation) | TODO this is complementary op | `Neg(a)`/`-a` | | |
 | a<sup>†</sup> (reverse) | right law vs left law | a.rev() | | len(a) |
-| a / b (right quotient) | a ⊸ b | Div(a, b) | | len(a) - len(b) |
-| a \ b (left quotient) | | `Div(a, b)` | | |
+| a / b (right quotient) | a ⊸ b | Div(a, b) | | len(a) - len(b) | (hiding) |
+| a \ b (left quotient) | | `Div(a, b)` | | | (hiding) |
 | RegexSet | a ⅋ b (multiplicative disjunction/par) | Add(a, b) | ⊕ (direct sum) | | (nondeterministic choice) |
 | a ∩ b (intersection) | a & b (additive conjunction/with) | And(a, b) | × (product) | | (interface parallel) |
 | `a(?=b)` (positive lookahead) | | And(a, b) | | |
