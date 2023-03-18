@@ -52,8 +52,8 @@
 | a<sup>†</sup> (reverse) | right law vs left law | a.rev() | | len(a) |
 | a / b (right quotient) | a ⊸ b | Div(a, b) | | len(a) - len(b) |
 | a \ b (left quotient) | | `Div(a, b)` | | |
-| RegexSet | a ⅋ b (multiplicative disjunction/par) | Add(a, b) | ⊕ (direct sum) | (nondeterministic choice) |
-| a ∩ b (intersection) | a & b (additive conjunction/with) | And(a, b) | × (product) | (interface parallel) |
+| RegexSet | a ⅋ b (multiplicative disjunction/par) | Add(a, b) | ⊕ (direct sum) | | (nondeterministic choice) |
+| a ∩ b (intersection) | a & b (additive conjunction/with) | And(a, b) | × (product) | | (interface parallel) |
 | `a(?=b)` (positive lookahead) | | And(a, b) | | |
 | `a(?!b)` (negative lookahead) | | And(a, Not(b)) | | |
 | `(?<=a)b` (positive lookbehind) | | And(a, b) | | |
