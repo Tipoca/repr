@@ -1,7 +1,7 @@
 **Kind**
 
 - Decidable
-- Non-commuative/orderd
+- Non-commutative/orderd
 
 **TODO**
 
