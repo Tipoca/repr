@@ -51,6 +51,7 @@ impl<I: ~const Integral> Repr<I> {
     pub const fn mul(self, other: Self) -> Self {
         match (self, other) {
             (One(lhs), One(rhs)) => One(lhs.mul(rhs)),
+            (Mul(llhs, lrhs), rhs) => Mul(llhs, Box::new(Mul(lrhs, Box::new(rhs)))),
             (lhs, rhs) => Mul(Box::new(lhs), Box::new(rhs))
         }
     }
@@ -58,7 +59,7 @@ impl<I: ~const Integral> Repr<I> {
     pub const fn or(self, other: Self) -> Self {
         match (self, other) {
             (lhs, rhs) if lhs == rhs => lhs,
-            (Or(llhs, lrhs), rhs)=> Or(llhs, Box::new(Or(lrhs, Box::new(rhs)))),
+            (Or(llhs, lrhs), rhs) => Or(llhs, Box::new(Or(lrhs, Box::new(rhs)))),
             (lhs, rhs) => Or(Box::new(lhs), Box::new(rhs))
         }
     }
