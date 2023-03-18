@@ -3,6 +3,8 @@ use repr::wrappers::{one, seq};
 #[test]
 fn reflexivity() {
     assert_eq!(one('a'), one('a'));
+    assert_eq!(one('a').mul(one('b')), one('a').mul(one('b')));
+    assert_eq!(one('a').or(one('b')), one('a').or(one('b'));
 }
 
 #[test]
