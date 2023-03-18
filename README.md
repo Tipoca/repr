@@ -36,28 +36,28 @@
 
 | regular expressions /<br/>set theory | linear logic | repr | type theory /<br/>category theory | len | process calculus |
 | - | - | - | - | - | - |
-| a ∈ L (match) | `a` : `A` (judgement) | | |
-| ∅ | 0 | `Zero` | | |
-| `a` | `a` | `One(a)` | | len(a) |
-| ε (empty)/{ε} | 1 | `Seq([])` | \*/1 | 0 |
-| `.` | | `Interval(MIN, MAX)` | | 1 |
-| `ab`/`a` · `b` (concatenation) | `a` ⊗ `b` (multiplicative conjunction/times) | `Mul(a, b)`/`a * b` | ⊗ (tensor product) | len(a) + len(b) |
-| `a\|b` (alternation) | `a` ⊕ `b` (additive disjuction/plus) | `Or(a, b)`/`a \| b` | + (coproduct) | max(len(a), len(b)) | |
-| `a*` (kleen star),<br/>..\|aa\|a\|ε | `!a` (exponential conjunction/of course),<br/>νX.1 & a & (X ⊗ X) | `Exp(a)` | ν, fixed point/trace, comonad, final coalgebra | |
-| `a*?` (non greedy),<br/>ε\|a\|aa\|.. | `?a` (exponential disjunction/why not),<br/>µX.⊥ ⊕ a ⊕ (X ⅋ X) | `Exp(a)` | μ, monad, initial algebra | |
-| `a?` () | `a` | `Or(Zero, a)` | |
-| `a{n,m}` (repetition) | `a` | `Or(Mul(a, Mul(a, ..)), Or(..))` | |
-| `[a-z]` (class) | | `Interval(a, z)`/`a..z` | | |
+| a ∈ L (match) | a : A (judgement) | | |
+| ∅ | 0 | Zero | | |
+| a | a | One(a) | | len(a) |
+| ε (empty)/{ε} | 1 | Seq(\[\]) | \*/1 | 0 |
+| . | | Interval(MIN, MAX) | | 1 |
+| ab/a · b (concatenation) | a ⊗ b (multiplicative conjunction/times) | Mul(a, b) | ⊗ (tensor product) | len(a) + len(b) |
+| a\|b (alternation) | a ⊕ b (additive disjuction/plus) | Or(a, b) | + (coproduct) | max(len(a), len(b)) | |
+| a* (kleen star),<br/>..\|aa\|a\|ε | !a (exponential conjunction/of course),<br/>νX.1 & a & (X ⊗ X) | Exp(a) | ν, fixed point/trace, comonad, final coalgebra | |
+| a*? (non greedy),<br/>ε\|a\|aa\|.. | ?a (exponential disjunction/why not),<br/>µX.⊥ ⊕ a ⊕ (X ⅋ X) | TODO Exp(a) | μ, monad, initial algebra | |
+| a? | a + 1 | Or(Zero, a) | |
+| a{n,m} (repetition) | `a` | Or(Mul(a, Mul(a, ..)), Or(..)) | |
+| \[a-z\] (class) | | Interval(a, z) | | |
 | `[^a-z]` (negation) | TODO this is complementary op | `Neg(a)`/`-a` | | |
-| `a`<sup>†</sup> (reverse) | right law vs left law | `Rev(a)` | | len(a) |
-| `a` / `b` (right quotient) | `a` ⊸ `b` | `Div(a, b)`/`a / b` | | len(a) - len(b) |
-| `a` \ `b` (left quotient) | | `Div(a, b)` | | |
-| RegexSet | `a` ⅋ `b` (multiplicative disjunction/par) | `Add(a, b)`/`a + b` | ⊕ (direct sum) | |
-| `a` ∩ `b` (intersection) | `a` & `b` (additive conjunction/with) | `And(a, b)`/`a & b` | × (product) | |
-| `a(?=b)` (positive lookahead) | | `And(a, b)` | | |
-| `a(?!b)` (negative lookahead) | | `And(a, Not(b))` | | |
-| `(?<=a)b` (positive lookbehind) | | `And(a, b)` | | |
-| `(?<!a)b` (negative lookbehind) | | `And(a, b)` | | |
+| a<sup>†</sup> (reverse) | right law vs left law | a.rev() | | len(a) |
+| a / b (right quotient) | a ⊸ b | Div(a, b) | | len(a) - len(b) |
+| a \ b (left quotient) | | `Div(a, b)` | | |
+| RegexSet | a ⅋ b (multiplicative disjunction/par) | Add(a, b) | ⊕ (direct sum) | |
+| a ∩ b (intersection) | a & b (additive conjunction/with) | And(a, b) | × (product) | |
+| `a(?=b)` (positive lookahead) | | And(a, b) | | |
+| `a(?!b)` (negative lookahead) | | And(a, Not(b)) | | |
+| `(?<=a)b` (positive lookbehind) | | And(a, b) | | |
+| `(?<!a)b` (negative lookbehind) | | And(a, b) | | |
 
 **about symbols**
 
@@ -76,20 +76,20 @@ TODO:
 - `Seq::empty()` - can be empty because negative
 - `Interval::full()` - can't be empty because positive
 
-| linear logic/quantale | repr | title |
-| - | - | - |
-| | Or(a, Or(b, c)) = Or(Or(a, b), c) | Or-associativity |
-| | |
-| a ⊕ a = a | Or(a, a) = a | Or-idempotence |
-| a ⊕ 0 = 0 ⊕ a = a| Or(a, Zero) = Or(Zero, a) = a | Zero, Or-unit |
-| a ⊗ 1 = 1 ⊗ a = a | Mul(a, One('')) = Mul(One(''), a) = a | One(''), Mul-unit |
-| a ⊗ (b ⊕ c) = (a ⊗ b) ⊕ (a ⊗ c) | Mul(a, Or(b, c)) = Or(Mul(a, b), Mul(a, c)) | right-distributivity |
-| (a ⊕ b) ⊗ c = (a ⊗ c) ⊕ (b ⊗ c) | Mul(Or(a, b), c) = Or(Mul(a, c), Mul(b, c)) | left-distributivity |
-| a<sup>†</sup> = a | Rev(One(a)) = One(a) | |
-| (a & b)<sup>†</sup> = (b<sup>†</sup>) & (a<sup>†</sup>)| Rev(Mul(a, b)) = Mul(Rev(b), Rev(a)) | |
-| | Mul(One(a), One(b)) = One(ab) | |
-| a ⅋ (b & c) = (a ⅋ b) & (a ⅋ c) | Add(a, And(b, c)) = And(Add(a, b), Add(a, c)) | right-distributivity |
-| (a & b) ⅋ c = (a ⅋ c) & (b ⅋ c) | Add(And(a, b), c) = And(Add(a, c), Add(b, c)) | left-distributivity |
+| regular expressions | linear logic/quantale | repr | title |
+| - | - | - | - |
+| | | Or(a, Or(b, c)) = Or(Or(a, b), c) | Or-associativity |
+| | | |
+| a \| a = a | a ⊕ a = a | Or(a, a) = a | Or-idempotence |
+| | a ⊕ 0 = 0 ⊕ a = a| Or(a, Zero) = Or(Zero, a) = a | Zero, Or-unit |
+| a · ε = ε · a = a | a ⊗ 1 = 1 ⊗ a = a | Mul(a, One('')) = Mul(One(''), a) = a | One(''), Mul-unit |
+| a · (b \| c) | a ⊗ (b ⊕ c) = (a ⊗ b) ⊕ (a ⊗ c) | Mul(a, Or(b, c)) = Or(Mul(a, b), Mul(a, c)) | right-distributivity |
+| | (a ⊕ b) ⊗ c = (a ⊗ c) ⊕ (b ⊗ c) | Mul(Or(a, b), c) = Or(Mul(a, c), Mul(b, c)) | left-distributivity |
+| | a<sup>†</sup> = a | Rev(One(a)) = One(a) | |
+| | (a & b)<sup>†</sup> = (b<sup>†</sup>) & (a<sup>†</sup>)| Rev(Mul(a, b)) = Mul(Rev(b), Rev(a)) | |
+| | | Mul(One(a), One(b)) = One(ab) | |
+| | a ⅋ (b & c) = (a ⅋ b) & (a ⅋ c) | Add(a, And(b, c)) = And(Add(a, b), Add(a, c)) | right-distributivity |
+| | (a & b) ⅋ c = (a ⅋ c) & (b ⅋ c) | Add(And(a, b), c) = And(Add(a, c), Add(b, c)) | left-distributivity |
 
 Relationship among additive, multiplicative and exponential
 
