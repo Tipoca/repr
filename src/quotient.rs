@@ -7,9 +7,9 @@ mod search;
 use alloc::vec::Vec;
 use core::{
     cmp,
-    fmt::{self, Debug},
+    fmt::Debug,
     mem,
-    ops::{Deref, DerefMut}
+    ops::Deref
 };
 
 use unconst::unconst;
