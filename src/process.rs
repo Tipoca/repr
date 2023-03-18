@@ -1,3 +1,5 @@
+//! <https://en.wikipedia.org/wiki/Communicating_sequential_processes>
+
 use unconst::unconst;
 
 use crate::context::Context;
