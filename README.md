@@ -34,8 +34,8 @@
 
 **Comparisons**
 
-| regular expressions /<br/>set theory | linear logic | repr | type theory /<br/>category theory | len |
-| - | - | - | - | - |
+| regular expressions /<br/>set theory | linear logic | repr | type theory /<br/>category theory | len | process calculus |
+| - | - | - | - | - | - |
 | a ∈ L (match) | `a` : `A` (judgement) | | |
 | ∅ | 0 | `Zero` | | |
 | `a` | `a` | `One(a)` | | len(a) |
