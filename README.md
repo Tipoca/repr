@@ -34,7 +34,7 @@
 
 **Comparisons**
 
-| regular&nbsp;expressions&nbsp;/<br/>set theory | linear logic | repr | type theory&nbsp;/<br/>category theory | len | process calculus | probability theory |
+| regular&nbsp;expressions&nbsp;/<br/>set theory | linear logic | repr | type theory&nbsp;/<br/>category&nbsp;theory | len | process calculus | probability theory |
 | - | - | - | - | - | - | - |
 | a ∈ L (match) | a : A (judgement) | | |
 | ∅ | 0 | | | | nil, STOP |
