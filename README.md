@@ -11,7 +11,7 @@
 - Equational reasoning, bisimulation
 - Induction
 - `True(I, Box<Repr<I>>)` (assertions, dependent types)
-- Fixed points
+- action a.P, a ⊙ P 
 - Spherical conic (tennis ball)
 
 **`Map`**
