@@ -75,9 +75,9 @@ impl<I: ~const Integral> Repr<I> {
         And(Box::new(self), Box::new(other))
     }
     
-    pub const fn le(&self, _other: &Self) -> bool {
-        match self {
-            // Or(lhs, rhs) => other == lhs || other == rhs,
+    pub const fn le(&self, other: &Self) -> bool {
+        match other {
+            Or(lhs, rhs) => self.le(lhs) || self.le(rhs),
             _ => unimplemented!()
         }
     }
