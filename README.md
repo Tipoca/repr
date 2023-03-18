@@ -38,7 +38,7 @@
 | - | - | - | - | - | - |
 | a ∈ L (match) | a : A (judgement) | | |
 | ∅ | 0 | | | | STOP |
-| | ⊤ | Zero | | | SKIP | 
+| | ⊤ | True | | | SKIP | 
 | a | a | One(a) | | len(a) | (prefix) |
 | ε (empty) ∈ {ε} | 1 | Seq(\[\]) | \* : 1 | 0 |
 | . | | Interval(MIN, MAX) | | 1 |
