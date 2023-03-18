@@ -32,3 +32,10 @@ fn or_associativity() {
 fn or_idempotence() {
     assert_eq!(one('a').or(one('a')), one('a'));
 }
+
+#[test]
+
+
+
+fndual_involution() {
+}
