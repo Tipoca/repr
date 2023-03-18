@@ -1,4 +1,7 @@
-use core::ops::{BitOr, BitAnd, BitXor, Range, Add, Mul, RangeFull, RangeFrom};
+use core::{
+    cmp::{PartialOrd, Ord},
+    ops::{BitOr, BitAnd, BitXor, Range, Add, Mul, RangeFull, RangeFrom}
+};
 
 use unconst::unconst;
 
@@ -24,22 +27,6 @@ impl<I: ~const Integral> const BitAnd<I> for Repr<I> {
     }
 }
 
-// impl const BitAnd<Repr<char>> for &str {
-//     type Output = Repr<char>;
-
-//     fn bitand(self, rhs: Repr<char>) -> Self::Output {
-//         rhs.clone().and(self)
-//     }
-// }
-
-// impl const BitAnd<Range<u8>> for Repr<char> {
-//     type Output = Self;
-
-//     fn bitand(self, rhs: Range<u8>) -> Repr<char> {
-//         self.and(rhs)
-//     }
-// }
-
 #[unconst]
 impl<I: ~const Integral> const BitAnd<Range<I>> for Repr<I> {
     type Output = Self;
@@ -54,7 +41,7 @@ impl<I: ~const Integral, T: Into<Self>> const BitAnd<[T; 1]> for Repr<I> {
     type Output = Self;
 
     fn bitand(self, rhs: [T; 1]) -> Self::Output {
-        self.and(Repr::from(rhs) * ..)
+        self.and(Repr::from(rhs).exp())
     }
 }
 
@@ -75,22 +62,6 @@ impl<I: ~const Integral> const BitOr<I> for Repr<I> {
         self.or(Self::One(rhs.into()))
     }
 }
-
-// impl const BitOr<&str> for Repr<char> {
-//     type Output = Repr<char>;
-
-//     fn bitor(self, rhs: &str) -> Repr<char> {
-//         self.or(Self::One(rhs))
-//     }
-// }
-
-// impl const BitOr<Repr<char>> for &str {
-//     type Output = Repr<char>;
-
-//     fn bitor(self, rhs: Repr<char>) -> Repr<char> {
-//         Self::One(rhs).or(self)
-//     }
-// }
 
 #[unconst]
 impl<I: ~const Integral> const BitOr<Range<I>> for Repr<I> {
