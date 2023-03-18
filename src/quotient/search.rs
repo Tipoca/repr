@@ -313,9 +313,9 @@ impl<'a, I: ~const Integral> const Iterator for LiteralIter<'a, I> {
 #[unconst]
 #[derive(Clone, Debug)]
 struct SeqSet<I: ~const Integral + ~const Hash> {
-    set: SparseSet<bool, I>,
-    // sparse: Vec<bool>,
-    // dense: Vec<I>,
+    // set: SparseSet<bool, I>,
+    sparse: Vec<bool>,
+    dense: Vec<I>,
     complete: bool,
     all_ascii: bool,
 }
