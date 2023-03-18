@@ -1,5 +1,6 @@
 //! <https://en.wikipedia.org/wiki/Process_calculus>
 //! <https://en.wikipedia.org/wiki/Communicating_sequential_processes>
+//! <https://en.wikipedia.org/wiki/Calculus_of_communicating_systems>
 
 use unconst::unconst;
 
