@@ -36,13 +36,13 @@ mod pool;
 mod seq;
 // mod sparse;
 mod unicode;
-mod wrappers;
 
 pub mod constants;
 pub mod macros;
 // pub mod quotient;
 pub mod traits;
 pub mod repr;
+pub mod wrappers;
 
 pub use constants::perl::{DIGIT, WORD};
 pub use context::Context;
