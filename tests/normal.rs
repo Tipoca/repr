@@ -34,8 +34,5 @@ fn or_idempotence() {
 }
 
 #[test]
-
-
-
 fndual_involution() {
 }
