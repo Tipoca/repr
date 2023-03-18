@@ -15,7 +15,7 @@ readme = "README.md"
 
 [dependencies]
 regex-syntax = "0.6"
-unconst = { git = "https://github.com/synthet-ic/unconst", branch = "verbatim", features = [] }
+unconst = { version = "0", features = [] }
 
 aho-corasick = { version = "0.7", optional = true }
 # For skipping along search text quickly when a leading byte is known.
