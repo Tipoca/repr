@@ -37,8 +37,8 @@
 | regular expressions /<br/>set theory | linear logic | repr | type theory /<br/>category theory | len | process calculus |
 | - | - | - | - | - | - |
 | a ∈ L (match) | a : A (judgement) | | |
-| ∅ | 0 | Zero | | | STOP |
-| | ⊤ | | | | SKIP | 
+| ∅ | 0 | | | | STOP |
+| | ⊤ | Zero | | | SKIP | 
 | a | a | One(a) | | len(a) | (prefix) |
 | ε (empty) ∈ {ε} | 1 | Seq(\[\]) | \* : 1 | 0 |
 | . | | Interval(MIN, MAX) | | 1 |
