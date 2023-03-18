@@ -85,7 +85,7 @@ TODO:
 | a · ε = ε · a = a | a ⊗ 1 = 1 ⊗ a = a | Mul(a, One('')) = Mul(One(''), a) = a | One(''), Mul-unit |
 | a · (b \| c) | a ⊗ (b ⊕ c) = (a ⊗ b) ⊕ (a ⊗ c) | Mul(a, Or(b, c)) = Or(Mul(a, b), Mul(a, c)) | right-distributivity |
 | | (a ⊕ b) ⊗ c = (a ⊗ c) ⊕ (b ⊗ c) | Mul(Or(a, b), c) = Or(Mul(a, c), Mul(b, c)) | left-distributivity |
-| | a<sup>†</sup> = a | Rev(One(a)) = One(a) | |
+| ε<sup>†</sup> = ε | | | |
 | | (a & b)<sup>†</sup> = (b<sup>†</sup>) & (a<sup>†</sup>)| Rev(Mul(a, b)) = Mul(Rev(b), Rev(a)) | |
 | | | Mul(One(a), One(b)) = One(ab) | |
 | | a ⅋ (b & c) = (a ⅋ b) & (a ⅋ c) | Add(a, And(b, c)) = And(Add(a, b), Add(a, c)) | right-distributivity |
