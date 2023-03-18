@@ -1,7 +1,4 @@
-use repr::{
-    Repr,
-    wrappers::one
-};
+use repr::wrappers::{one, seq};
 
 #[test]
 fn reflexivity() {
@@ -10,7 +7,7 @@ fn reflexivity() {
 
 #[test]
 fn mul_linearity() {
-    assert_eq!(one('a').mul(one('b')), one("ab"));
+    assert_eq!(one('a').mul(one('b')), seq(['a', 'b']));
 }
 
 #[test]

@@ -16,8 +16,8 @@ impl<I: ~const Integral> Seq<I> {
         Seq(Vec::new())
     }
 
-    pub const fn new<M: ~const Iterator<Item = I>>(is: M) -> Self {
-        Seq(is.collect())
+    pub const fn new<M: ~const IntoIterator<Item = I>>(is: M) -> Self {
+        Seq(is.into_iter().collect())
     }
 
     pub const fn one(i: I) -> Self {
