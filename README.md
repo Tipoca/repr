@@ -79,7 +79,7 @@ TODO:
 
 | regular expressions | linear logic/quantale | repr | title |
 | - | - | - | - |
-| | | Or(a, Or(b, c)) = Or(Or(a, b), c) | Or-associativity |
+| a \| (b \| c) = (a \| b) \| c | a ⊕ (b ⊕ c) = (a ⊕ b) ⊕ c | Or(a, Or(b, c)) = Or(Or(a, b), c) | Or-associativity |
 | | | |
 | a \| a = a | a ⊕ a = a | Or(a, a) = a | Or-idempotence |
 | | a ⊕ 0 = 0 ⊕ a = a| Or(a, Zero) = Or(Zero, a) = a | Zero, Or-unit |
