@@ -34,5 +34,15 @@ fn or_idempotence() {
 }
 
 #[test]
-fndual_involution() {
+fn dual_involution() {
+    assert_eq!(one('a').dual(), one('a'));
+}
+
+
+
+
+
+
+
+
 }
