@@ -36,7 +36,7 @@
 
 | regular&nbsp;expressions&nbsp;/<br/>set theory | linear logic | repr | type theory&nbsp;/<br/>category&nbsp;theory | len | process calculus | probability&nbsp;theory&nbsp;/<br/>learning&nbsp;theory |
 | - | - | - | - | - | - | - |
-| a ∈ L (match) | a : A (judgement) | | |
+| a ∈ L (match) | | | a : A (judgement) | |
 | ∅ | 0 | | | | nil, STOP |
 | | ⊤ | True | | | SKIP | 
 | a | a | One(Seq(a)) | | len(a) | (sequential composition, prefix) |
