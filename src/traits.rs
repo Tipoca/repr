@@ -23,5 +23,5 @@ pub trait Integral: Copy + ~const Clone
     const MAX: Self;
     fn succ(self) -> Self;
     fn pred(self) -> Self;
-    // fn nul(&self, zero: &Zero) -> bool;
+    // fn null(&self, zero: &Zero) -> bool;
 }

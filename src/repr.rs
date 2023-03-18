@@ -141,20 +141,20 @@ impl<I: ~const Integral> Repr<I> {
         }
     }
 
-    // TODO(anarkk) Make this inductive
-    /// Note that this is not defined inductively. For example, while `a*`
-    /// will report `true`, `()+` will not, even though `()` matches the empty
-    /// string and one or more occurrences of something that matches the empty
-    /// string will always match the empty string. In order to get the
-    /// inductive definition, see the corresponding method on
-    /// [`Hir`](struct.Hir.html).
-    pub const fn nul(&self) -> bool {
+    /*
+    TODO(anarkk) Make this inductive.
+
+    For example, while `a*` will report `true`, `()+` will not, even though `()` matches the empty string and one or more occurrences of something that matches the empty string will always match the empty string. In order to get the inductive definition, see the corresponding method on
+    [`Hir`](struct.Hir.html).
+    */
+    /// ε-production, nullable
+    pub const fn null(&self) -> bool {
         match self {
             Self::Zero(_) => true,
             One(seq) => seq == &Seq::empty(),
-            Mul(lhs, rhs) => lhs.nul() && rhs.nul(),
-            Or(lhs, rhs) => lhs.nul() || rhs.nul(),
-            And(lhs, rhs) => lhs.nul() || rhs.nul(),
+            Mul(lhs, rhs) => lhs.null() && rhs.null(),
+            Or(lhs, rhs) => lhs.null() || rhs.null(),
+            And(lhs, rhs) => lhs.null() || rhs.null(),
             Exp(_) => true,
             _ => false
         }
@@ -173,7 +173,7 @@ impl<I: ~const Integral> Repr<I> {
     // pub const fn map<F: FnMut(Self) -> Self>(self, mut f: F) -> Self {
     //     match self {
     //         // One(seq) => One(f(seq)),
-    //         Mul(lhs, rhs) => f(*lhs).nul(f(*rhs)),
+    //         Mul(lhs, rhs) => f(*lhs).mul(f(*rhs)),
     //         Or(lhs, rhs) => f(*lhs).or(f(*rhs)),
     //         _ => unimplemented!()
     //     }
