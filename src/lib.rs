@@ -31,7 +31,7 @@ mod interval;
 mod operators;
 // mod partition;
 // mod pattern;
-mod pool;
+// mod pool;
 // mod process;
 mod seq;
 // mod sparse;

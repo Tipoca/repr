@@ -8,6 +8,11 @@ fn or_associativity() {
     assert_eq!(one('a').or(one('b').or(one('c'))), one('a').or(one('b')).or(one('c')));
 }
 
+#[test]
+fn or_idempotence() {
+    assert_eq!(one('a').or(one('a')), one('a'));
+}
+
 /*
 #[test]
 fn mul_unit() {
