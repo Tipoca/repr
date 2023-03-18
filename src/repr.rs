@@ -56,7 +56,10 @@ impl<I: ~const Integral> Repr<I> {
     }
     
     pub const fn or(self, other: Self) -> Self {
-        Or(Box::new(self), Box::new(other))
+        match (self, other) {
+            (lhs, rhs) if lhs == rhs => lhs,
+            (lhs, rhs) => Or(Box::new(lhs), Box::new(rhs))
+        }
     }
     
 //     pub const fn xor(self, other: Self) -> Self {
