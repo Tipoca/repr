@@ -36,8 +36,15 @@ fn or_idempotence() {
 }
 
 #[test]
+fn dual() {
+    
+}
+
+#[test]
 fn dual_involution() {
     assert_eq!(one('a').dual(), one('a'));
+    assert_eq!(one('a').mul(one('b')).dual(), one('a').mul(one('b')));
+    assert_eq!(one('a').or(one('b')).dual(), one('a').or(one('b'));
 }
 
 
