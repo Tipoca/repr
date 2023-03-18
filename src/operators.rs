@@ -1,5 +1,5 @@
 use core::{
-    cmp::{PartialOrd, Ord},
+    cmp::{PartialOrd, Ordering},
     ops::{BitOr, BitAnd, BitXor, Range, Add, Mul, RangeFull, RangeFrom}
 };
 
@@ -8,6 +8,19 @@ use unconst::unconst;
 use crate::interval::Interval;
 use crate::repr::Repr;
 use crate::traits::Integral;
+
+#[unconst]
+impl<I: ~const Integral> const PartialOrd for Repr<I> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        if self == other {
+            Some(Ordering::Equal)
+        } else if self.le(other) {
+            Some(Ordering::Less)
+        } else {
+            Some(Ordering::Greater)
+        }
+    }
+}
 
 #[unconst]
 impl<I: ~const Integral> const BitAnd<Self> for Repr<I> {
