@@ -9,6 +9,11 @@ fn reflexivity() {
 }
 
 #[test]
+fn mul_linearity() {
+    assert_eq!(one('a').mul(one('b')), one("ab"));
+}
+
+#[test]
 fn or_associativity() {
     assert_eq!(one('a').or(one('b').or(one('c'))), one('a').or(one('b')).or(one('c')));
 }
