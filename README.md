@@ -115,6 +115,10 @@ Linearity (which)
 
 - And(True, a) -> 
 
+**Stream processor**
+
+- νX.μY. (A → Y) + B × X + 1
+
 **Flags (TODO)**
 - `i`, CaseInsensitive
 - `m`, MultiLine
