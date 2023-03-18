@@ -38,11 +38,11 @@
 | - | - | - | - | - | - |
 | a ∈ L (match) | a : A (judgement) | | |
 | ∅ | 0 | Zero | | |
-| a | a | One(a) | | len(a) |
+| a | a | One(a) | | len(a) | (prefix) |
 | ε (empty) ∈ {ε} | 1 | Seq(\[\]) | \* : 1 | 0 |
 | . | | Interval(MIN, MAX) | | 1 |
-| ab/a · b (concatenation) | a ⊗ b (multiplicative conjunction/times) | Mul(a, b) | ⊗ (tensor product) | len(a) + len(b) |
-| a\|b (alternation) | a ⊕ b (additive disjuction/plus) | Or(a, b) | + (coproduct) | max(len(a), len(b)) | |
+| ab/a · b (concatenation) | a ⊗ b (multiplicative conjunction/times) | Mul(a, b) | ⊗ (tensor product) | len(a) + len(b) | P \|\|\| Q (interleaving) |
+| a\|b (alternation) | a ⊕ b (additive disjuction/plus) | Or(a, b) | + (coproduct) | max(len(a), len(b)) | (deterministic choice) |
 | a* (kleen star),<br/>..\|aa\|a\|ε | !a (exponential conjunction/of course),<br/>νX.1 & a & (X ⊗ X) | Exp(a) | ν, fixed point/trace, comonad, final coalgebra | |
 | a*? (non greedy),<br/>ε\|a\|aa\|.. | ?a (exponential disjunction/why not),<br/>µX.⊥ ⊕ a ⊕ (X ⅋ X) | TODO Exp(a) | μ, monad, initial algebra | |
 | a? | a + 1 | Or(Zero, a) | |
@@ -52,8 +52,8 @@
 | a<sup>†</sup> (reverse) | right law vs left law | a.rev() | | len(a) |
 | a / b (right quotient) | a ⊸ b | Div(a, b) | | len(a) - len(b) |
 | a \ b (left quotient) | | `Div(a, b)` | | |
-| RegexSet | a ⅋ b (multiplicative disjunction/par) | Add(a, b) | ⊕ (direct sum) | |
-| a ∩ b (intersection) | a & b (additive conjunction/with) | And(a, b) | × (product) | |
+| RegexSet | a ⅋ b (multiplicative disjunction/par) | Add(a, b) | ⊕ (direct sum) | (nondeterministic choice) |
+| a ∩ b (intersection) | a & b (additive conjunction/with) | And(a, b) | × (product) | (interface parallel) |
 | `a(?=b)` (positive lookahead) | | And(a, b) | | |
 | `a(?!b)` (negative lookahead) | | And(a, Not(b)) | | |
 | `(?<=a)b` (positive lookbehind) | | And(a, b) | | |
@@ -72,9 +72,9 @@ Symbols are grouped and assigned primarily by additive/multiplicative distincito
 
 TODO:
 
-- `I::EMPTY` ε
-- `Seq::empty()` - can be empty because negative
-- `Interval::full()` - can't be empty because positive
+- I::EMPTY ε
+- Seq::empty() - can be empty because negative
+- Interval::full() - can't be empty because positive
 
 | regular expressions | linear logic/quantale | repr | title |
 | - | - | - | - |
