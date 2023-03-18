@@ -17,6 +17,12 @@ fn mul_linearity() {
 }
 
 #[test]
+fn mul_associativity() {
+    assert_eq!(one('a').mul(one('b').mul(one('c'))),
+               one('a').mul(one('b')).mul(one('c')));
+}
+
+#[test]
 fn or_associativity() {
     assert_eq!(one('a').or(one('b').or(one('c'))),
                one('a').or(one('b')).or(one('c')));
