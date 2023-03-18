@@ -39,7 +39,7 @@
 | a ∈ L (match) | a : A (judgement) | | |
 | ∅ | 0 | | | | STOP |
 | | ⊤ | True | | | SKIP | 
-| a | a | One(a) | | len(a) | (prefix) |
+| a | a | One(Seq(a)) | | len(a) | (sequential composition, prefix) |
 | ε (empty) ∈ {ε} | 1 | Seq(\[\]) | \* : 1 | 0 |
 | . | | Interval(MIN, MAX) | | 1 |
 | ab/a · b (concatenation) | a ⊗ b (multiplicative conjunction/times) | Mul(a, b) | ⊗ (tensor product) | len(a) + len(b) | P \|\|\| Q (interleaving) |
