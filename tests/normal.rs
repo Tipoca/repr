@@ -51,12 +51,3 @@ fn dual_involution() {
     assert_eq!(one('a').mul(one('b')).dual(), one('a').mul(one('b')));
     assert_eq!(one('a').or(one('b')).dual(), one('a').or(one('b')));
 }
-
-
-
-
-
-
-
-
-}
