@@ -13,7 +13,7 @@
 - a.le(b) → a.and(b) = a, a.add(b) = b 
 - Equational reasoning, bisimulation
 - Induction
-- True(I, Box<Repr<I>>), assertions, dependent types, backreference
+- True(Seq\<I\>, Box\<Repr\<I\>\>), assertions, dependent types, backreference
 - action a.P, a ⊙ P, guard, scalar product
 - Normalisation
 - characteristic function/morphism
