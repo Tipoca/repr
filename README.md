@@ -103,7 +103,7 @@ Relationship among additive, multiplicative and exponential
 Linearity (which)
 
 - f(a + b) = f(a) + f(b)
-- (a → b) + (b → a)
+- (a → b) + (b → a)  (non-constructive)
 - functions take only one argument
 
 **Derivative (TODO)**
