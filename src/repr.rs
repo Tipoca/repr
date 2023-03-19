@@ -19,11 +19,12 @@ pub enum Repr<I: ~const Integral> {
     Mul(Box<Repr<I>>, Box<Repr<I>>),
     /// a ⊕ b (additive disjuction/plus)
     Or(Box<Repr<I>>, Box<Repr<I>>),
-    // Xor(Box<Repr<I>>, Box<Repr<I>>),
-    // Sub(Box<Repr<I>>, Box<Repr<<I>>),
     /// a ⊸ b (linear implication)
     Div(Box<Repr<I>>, Box<Repr<I>>),
-    Exp(Box<Repr<I>>),
+    /// νa (largest fixed point)
+    Inf(Box<Repr<I>>),
+    /// µa (smallest fixed point)
+    Sup(Box<Repr<I>>),
     Not(Box<Repr<I>>),
     /// a ⅋ b (multiplicative disjunction/par)
     Add(Box<Repr<I>>, Box<Repr<I>>),
@@ -32,7 +33,7 @@ pub enum Repr<I: ~const Integral> {
     // Map(Box<Repr<I>>, Fn(Box<Repr<I>>), Fn(Box<Repr<I>>))
 }
 
-use Repr::{One, Mul, Or, Div, Exp, Add, And};
+use Repr::{One, Mul, Or, Div, Inf, Sup, Add, And};
 
 #[unconst]
 impl<I: ~const Integral> Repr<I> {
@@ -75,9 +76,13 @@ impl<I: ~const Integral> Repr<I> {
     pub const fn div(self, other: Self) -> Self {
         Div(Box::new(self), Box::new(other))
     }
+
+    pub const fn inf(self) -> Self {
+        Inf(Box::new(self))
+    }
     
-    pub const fn exp(self) -> Self {
-        Exp(Box::new(self))
+    pub const fn sup(self) -> Self {
+        Sup(Box::new(self))
     }
 
     pub const fn and(self, other: Self) -> Self {
@@ -111,7 +116,7 @@ impl<I: ~const Integral> Repr<I> {
             Mul(lhs, rhs) => rhs.rev().mul(lhs.rev()),
             Or(lhs, rhs) => lhs.rev().or(rhs.rev()),
             // Div(lhs, rhs) => ,
-            Exp(repr) => repr.rev().exp(),
+            Inf(repr) => repr.rev().inf(),
             // Not => ,
             Add(lhs, rhs) => lhs.rev().add(rhs.rev()),
             And(lhs, rhs) => lhs.rev().and(rhs.rev()),
@@ -164,7 +169,7 @@ impl<I: ~const Integral> Repr<I> {
             Mul(lhs, rhs) => lhs.null() && rhs.null(),
             Or(lhs, rhs) => lhs.null() || rhs.null(),
             And(lhs, rhs) => lhs.null() || rhs.null(),
-            Exp(_) => true,
+            Inf(_) => true,
             _ => false
         }
     }

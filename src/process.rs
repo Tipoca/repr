@@ -52,6 +52,9 @@ pub const fn next<I>(
             next(lhs, slice, &mut partition.clone());
             next(rhs, slice, &mut partition)
         }
+        Inf(repr) => {
+            
+        }
         // Add(lhs, rhs) => {
 
         // }

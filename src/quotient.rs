@@ -15,7 +15,7 @@ use core::{
 use unconst::unconst;
 
 use crate::interval::Interval;
-use crate::repr::{Repr, Zero};
+use crate::repr::{Repr::{self, One, Mul, Or, Div, Inf, Sup, Add, And}, Zero};
 use crate::seq::Seq;
 use crate::traits::Integral;
 
@@ -375,9 +375,9 @@ const fn prefixes<I: ~const Integral>(expr: &Repr<I>, set: &mut Set<I>)
 {
     match expr {
         Repr::Zero(_) => {}
-        Repr::One(seq) => set.cross_add(&seq),
+        One(seq) => set.cross_add(&seq),
         Repr::Interval(ref interval) => set.add_interval(interval),
-        Repr::Or(ref lhs, ref rhs) => {
+        Or(ref lhs, ref rhs) => {
             let mut lits2 = Set::empty();
             for e in [lhs, rhs] {
                 let mut lits3 = Set::empty();
@@ -394,7 +394,7 @@ const fn prefixes<I: ~const Integral>(expr: &Repr<I>, set: &mut Set<I>)
                 set.cut();
             }
         }
-        Repr::Exp(repr) => {
+        Inf(repr) => {
             let (mut lits2, mut lits3) = (set.clone(), Set::empty());
             prefixes(repr, &mut lits3);
 
@@ -406,7 +406,7 @@ const fn prefixes<I: ~const Integral>(expr: &Repr<I>, set: &mut Set<I>)
             lits2.add(Literal::empty());
             set.union(lits2);
         },
-        Repr::And(ref lhs, ref rhs) => {
+        And(ref lhs, ref rhs) => {
             for e in [lhs, rhs] {
                 if let Repr::Zero(Zero::StartText) = **e {
                     if !set.is_empty() {
@@ -490,7 +490,7 @@ impl<I: ~const Integral> Parsed<I> {
         // expressions, then disable all literal optimizations.
         let mut reprs = Vec::new();
         let mut current = repr;
-        while let Repr::Add(lhs, rhs) = current {
+        while let Add(lhs, rhs) = current {
             if !repr.is_anchored_start() && repr.is_any_anchored_start() {
                 // Partial anchors unfortunately make it hard to use
                 // prefixes, so disable them.

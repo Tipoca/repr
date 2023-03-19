@@ -47,8 +47,8 @@
 | . | | Interval(MIN, MAX) | | 1 |
 | ab/a · b (concatenation) | a ⊗ b (multiplicative conjunction/times) | Mul(a, b) | ⊗ (tensor product) | len(a) + len(b) | P \|\|\| Q (interleaving) |
 | a\|b (alternation) | a ⊕ b (additive disjuction/plus) | Or(a, b) | + (coproduct) | max(len(a), len(b)) | (deterministic choice) |
-| a* (kleen star),<br/>..\|aa\|a\|ε | !a (exponential conjunction/of course),<br/>νX.1 & a & (X ⊗ X) | Exp(a) | ν, fixed point/trace, comonad, final coalgebra | | (replication) |
-| a*? (non greedy),<br/>ε\|a\|aa\|.. | ?a (exponential disjunction/why not),<br/>µX.⊥ ⊕ a ⊕ (X ⅋ X) | TODO Exp(a) | μ, monad, initial algebra | |
+| a* (kleen star),<br/>..\|aa\|a\|ε | !a (exponential conjunction/of course),<br/>νX.1 & a & (X ⊗ X) | Inf(a) | ν, fixed point/trace, comonad, final coalgebra | | (replication) |
+| a*? (non greedy),<br/>ε\|a\|aa\|.. | ?a (exponential disjunction/why not),<br/>µX.⊥ ⊕ a ⊕ (X ⅋ X) | Sup(a) | μ, monad, initial algebra | |
 | a? | a + 1 | Or(Zero, a) | |
 | a{n,m} (repetition) | `a` | Or(Mul(a, Mul(a, ..)), Or(..)) | |
 | \[a-z\] (class) | | Interval(a, z) | | |
@@ -111,7 +111,7 @@ Linearity (which)
 - d(Zero) = Zero
 - d(Or(a, b)) = Or(d(a), d(b))
 - d(Mul(a, b)) = Or(Mul(d(a), b), Mul(a, d(b))  *
-- d(Exp(a)) = Mul(d(a), Exp(a))
+- d(Inf(a)) = Mul(d(a), Inf(a))
 - a : D(a)
 - 
 

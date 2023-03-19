@@ -44,6 +44,6 @@ impl<I: ~const Integral> const From<Range<I>> for Repr<I> {
 #[unconst]
 impl<I: ~const Integral, T: Into<Repr<I>>> const From<[T; 1]> for Repr<I> {
     fn from(value: [T; 1]) -> Repr<I> {
-        value.into_iter().nth(0).unwrap().into().exp()
+        value.into_iter().nth(0).unwrap().into().inf()
     }
 }

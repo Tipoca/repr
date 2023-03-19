@@ -241,14 +241,14 @@ impl<I: ~const Integral> Program<I> {
 //     let mut constants = Vec::new();
 //     let mut current = repr;
 //     // One literal isn't worth it.
-//     while let Repr::Or(lhs, rhs) = current {
+//     while let Or(lhs, rhs) = current {
 //         let mut constant = Seq::empty();
 //         match lhs {
-//             Repr::One(ref seq) => constant = constant.mul(seq),
-//             Repr::And(ref reprs) => {
+//             One(ref seq) => constant = constant.mul(seq),
+//             And(ref reprs) => {
 //                 for e in reprs {
 //                     match *e {
-//                         Repr::One(ref x) => constant = constant.mul(x),
+//                         One(ref x) => constant = constant.mul(x),
 //                         _ => unreachable!("expected literal, got {:?}", e),
 //                     }
 //                 }
@@ -424,7 +424,7 @@ impl<I: ~const Integral> Compiler<I> {
         self.check_size();
         match *repr {
             Repr::Zero(Zero::Any) => self.c_empty(),
-            Repr::One(seq) => self.c_one(seq),
+            One(seq) => self.c_one(seq),
             Repr::Interval(interval) => self.c_interval(interval),
             Repr::Zero(Zero::StartLine) if self.compiled.is_reverse => {
                 self.byte_classes.set_range(b'\n', b'\n');
@@ -495,9 +495,9 @@ impl<I: ~const Integral> Compiler<I> {
                 self.byte_classes.set_word_boundary();
                 self.c_zero(prog::Zero::NotWordBoundaryAscii)
             }
-            Repr::Mul(ref lhs, ref rhs) => self.c_mul(lhs, rhs),
-            Repr::Or(ref lhs, ref rhs) => self.c_or(lhs, rhs),
-            Repr::Exp(ref repr) => self.c_exp(repr),
+            Mul(ref lhs, ref rhs) => self.c_mul(lhs, rhs),
+            Or(ref lhs, ref rhs) => self.c_or(lhs, rhs),
+            Inf(ref repr) => self.c_exp(repr),
             _ => unimplemented!()
         }
     }
@@ -516,7 +516,7 @@ impl<I: ~const Integral> Compiler<I> {
     }
 
     fn c_full(&mut self) -> Patch {
-        self.c(&Repr::Exp(Box::new(Repr::Interval(Interval::full()))))
+        self.c(&Inf(Box::new(Repr::Interval(Interval::full()))))
     }
 
     fn c_one(&mut self, seq: Seq<I>) -> Patch {
