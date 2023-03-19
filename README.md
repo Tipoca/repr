@@ -13,7 +13,7 @@
 - Equational reasoning, bisimulation
 - Induction
 - `True(I, Box<Repr<I>>)` (assertions, dependent types)
-- action a.P, a ⊙ P 
+- action a.P, a ⊙ P, guard
 - characteristic function/morphism
 - parameterise some laws as features
 - Spherical conic (tennis ball)
