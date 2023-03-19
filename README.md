@@ -14,6 +14,7 @@
 - Induction
 - `True(I, Box<Repr<I>>)` (assertions, dependent types)
 - action a.P, a ⊙ P 
+- characteristic function/morphism
 - Spherical conic (tennis ball)
 
 **`Map`**
