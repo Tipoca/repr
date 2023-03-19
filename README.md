@@ -2,6 +2,7 @@
 
 - Decidable
 - Non-commutative/orderd
+- Linear/non-deterministic (⊇ regular/deterministic)
 
 **TODO**
 
