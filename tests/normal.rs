@@ -47,7 +47,7 @@ fn dual() {
 
 #[test]
 fn dual_involution() {
-    assert_eq!(one('a').dual(), one('a'));
-    assert_eq!(one('a').mul(one('b')).dual(), one('a').mul(one('b')));
-    assert_eq!(one('a').or(one('b')).dual(), one('a').or(one('b')));
+    assert_eq!(one('a').dual().dual(), one('a'));
+    assert_eq!(one('a').mul(one('b')).dual().dual(), one('a').mul(one('b')));
+    assert_eq!(one('a').or(one('b')).dual().dual(), one('a').or(one('b')));
 }
