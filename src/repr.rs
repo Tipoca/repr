@@ -100,8 +100,11 @@ impl<I: ~const Integral> Repr<I> {
         match self {
             // Self::Interval(i) => {
             // },
+            One(repr) => One(repr),
             Mul(lhs, rhs) => lhs.dual().add(rhs.dual()),
             Or(lhs, rhs) => lhs.dual().and(rhs.dual()),
+            Inf(repr) => repr.dual().sup(),
+            Sup(repr) => repr.dual().inf(),
             Add(lhs, rhs) => lhs.dual().mul(rhs.dual()),
             And(lhs, rhs) => lhs.dual().or(rhs.dual()),
             _ => unimplemented!()
