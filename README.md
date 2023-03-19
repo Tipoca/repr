@@ -41,9 +41,9 @@
 | - | - | - | - | - | - | - |
 | a ∈ L (match) | | | a : A (judgement) | |
 | ∅ | 0 | | | | nil, STOP |
-| | ⊤ | True | | | SKIP | 
+| | ⊤ | True | | | | 
 | a | a | One(Seq(a)) | | len(a) | (sequential composition, prefix) |
-| ε (empty) ∈ {ε} | 1 | Seq(\[\]) | \* : 1 | 0 |
+| ε (empty) ∈ {ε} | 1 | Seq(\[\]) | \* : 1 | 0 | SKIP | 
 | . | | Interval(MIN, MAX) | | 1 |
 | ab/a · b (concatenation) | a ⊗ b (multiplicative conjunction/times) | Mul(a, b) | ⊗ (tensor product) | len(a) + len(b) | P \|\|\| Q (interleaving) |
 | a\|b (alternation) | a ⊕ b (additive disjuction/plus) | Or(a, b) | + (coproduct) | max(len(a), len(b)) | (deterministic choice) |
