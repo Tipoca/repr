@@ -36,6 +36,11 @@ fn or_idempotence() {
 }
 
 #[test]
+fn add_idempotence() {
+    assert_eq!(one('a').add(one('a')), one('a'));
+}
+
+#[test]
 fn dual() {
     
 }
