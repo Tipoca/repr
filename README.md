@@ -91,6 +91,7 @@ TODO:
 | | | Mul(One(a), One(b)) = One(ab) | |
 | | a ⅋ (b & c) = (a ⅋ b) & (a ⅋ c) | Add(a, And(b, c)) = And(Add(a, b), Add(a, c)) | right-distributivity |
 | | (a & b) ⅋ c = (a ⅋ c) & (b ⅋ c) | Add(And(a, b), c) = And(Add(a, c), Add(b, c)) | left-distributivity |
+| | a ⅋ a = a | Add(a, a) = a | Add-idempotence |
 
 Relationship among additive, multiplicative and exponential
 
