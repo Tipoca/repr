@@ -11,7 +11,7 @@ use crate::traits::Integral;
 #[derive_const(Clone, PartialEq)]
 #[derive(Debug, Eq)]
 pub enum Repr<I: ~const Integral> {
-    True,
+    True(Box<dyn Fn(Seq<I>) -> bool>),
     Zero(Zero),
     One(Seq<I>),
     Interval(Interval<I>),
