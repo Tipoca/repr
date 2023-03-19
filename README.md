@@ -71,7 +71,7 @@ Symbols are grouped and assigned primarily by additive/multiplicative distincito
 | positive/extensional | ⊕ 0 | ⊗ 1 | ! |
 | negative/intensional | & ⊤ | ⅋ ⊥ | ? |
 
-**Laws**
+**Laws/Coherence**
 
 TODO:
 
