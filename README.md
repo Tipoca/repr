@@ -16,7 +16,6 @@
 - `True(I, Box<Repr<I>>)` (assertions, dependent types)
 - action a.P, a ⊙ P, guard, scalar product
 - Normalisation
-- Sizedness of input instead of terminal symbols/states
 - characteristic function/morphism
 - parameterise some laws as features
 - Spherical conic (tennis ball)
