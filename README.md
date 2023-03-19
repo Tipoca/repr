@@ -15,6 +15,7 @@
 - `True(I, Box<Repr<I>>)` (assertions, dependent types)
 - action a.P, a ⊙ P 
 - characteristic function/morphism
+- parameterise some laws as features
 - Spherical conic (tennis ball)
 
 **`Map`**
