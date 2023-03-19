@@ -15,6 +15,7 @@
 - Induction
 - `True(I, Box<Repr<I>>)` (assertions, dependent types)
 - action a.P, a ⊙ P, guard, scalar product
+- Normalisation
 - characteristic function/morphism
 - parameterise some laws as features
 - Spherical conic (tennis ball)
