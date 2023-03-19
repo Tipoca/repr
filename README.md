@@ -8,6 +8,8 @@
 - TextStart and TextEnd as left / right units
 - Interpretation of `match`, is it a judgement `a : A` or a test that one is divisible by another (quotient is equal to zero) `a / b`?
 - Representation of the four units
+- Intensional/extensional commutativity/idempotence
+- a.le(b) → a.and(b) = a, a.add(b) = b 
 - Equational reasoning, bisimulation
 - Induction
 - `True(I, Box<Repr<I>>)` (assertions, dependent types)
@@ -92,6 +94,7 @@ TODO:
 | | a ⅋ (b & c) = (a ⅋ b) & (a ⅋ c) | Add(a, And(b, c)) = And(Add(a, b), Add(a, c)) | right-distributivity |
 | | (a & b) ⅋ c = (a ⅋ c) & (b ⅋ c) | Add(And(a, b), c) = And(Add(a, c), Add(b, c)) | left-distributivity |
 | | a ⅋ a = a | Add(a, a) = a | Add-idempotence |
+| | a & a = a | And(a, a) = a | And-idempotence |
 
 Relationship among additive, multiplicative and exponential
 
