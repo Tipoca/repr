@@ -75,8 +75,7 @@ Symbols are grouped and assigned primarily by additive/multiplicative distincito
 
 TODO:
 
-- I::EMPTY ε
-- Seq::empty() - can be empty because negative
+- Seq::empty(), ε - can be empty because negative
 - Interval::full() - can't be empty because positive
 
 | regular expressions | linear logic/quantale | repr | title |
