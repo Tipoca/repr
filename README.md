@@ -109,6 +109,7 @@ Linearity (which)
 - f(a + b) = f(a) + f(b)
 - (a → b) + (b → a)  (non-constructive)
 - functions take only one argument
+- presheaves of modules
 
 **Derivative (TODO)**
 
