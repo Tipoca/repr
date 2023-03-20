@@ -8,7 +8,7 @@
 
 - Relatipnship between nominality, input-ness/string, and function arguments/abstraction, the Integral trait and the De Bruijn index
 - TextStart and TextEnd as left / right units
-- Interpretation of `match`, is it a judgement `a : A` or a test that one is divisible by another (quotient is equal to zero) `a / b`? Proof search
+- Interpretation of `match`, is it a judgement `a : A` or a test that one is divisible by another (quotient is equal to zero) `a / b`, one (string) is contained by another (regex) a → b? Proof search
 - Representation of the four units
 - Intensional/extensional commutativity/idempotence
 - a.le(b) → a.and(b) = a, a.add(b) = b 
