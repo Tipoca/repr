@@ -148,6 +148,10 @@ Linearity (which)
 
 ![Drawing Hands](https://upload.wikimedia.org/wikipedia/en/b/ba/DrawingHands.jpg)
 
+**References**
+
+- [Regular Expression Containment as a Proof Search Problem](https://hal.inria.fr/inria-00614042)
+
 **Algorithms (TODO)**
 
 - Bit-pararell
