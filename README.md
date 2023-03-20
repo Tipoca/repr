@@ -17,6 +17,7 @@
 - action a.P, a ⊙ P, guard, scalar product
 - Normalisation
 - characteristic function/morphism
+- limit, colimit, end
 - parameterise some laws as features
 - Spherical conic (tennis ball)
 
