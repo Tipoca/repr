@@ -67,6 +67,7 @@
 | `(?<=a)b` (positive lookbehind) | | And(a, b) | | |
 | `(?<!a)b` (negative lookbehind) | | And(a, b) | | |
 | a ⊆ b | a ≤ b (≃ a = b ⅋ a < b) | a.le(b) |
+| | a<sup>⊥</sup> (dual) | a.dual() |
 
 **about symbols**
 
