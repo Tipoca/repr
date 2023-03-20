@@ -65,6 +65,7 @@
 | `a(?!b)` (negative lookahead) | | And(a, Not(b)) | | |
 | `(?<=a)b` (positive lookbehind) | | And(a, b) | | |
 | `(?<!a)b` (negative lookbehind) | | And(a, b) | | |
+| a ⊆ b | a ≤ b (≃ a = b ⅋ a < b) | a.le(b) |
 
 **about symbols**
 
