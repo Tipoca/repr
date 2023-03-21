@@ -63,10 +63,6 @@ impl<I: ~const Integral> Repr<I> {
         }
     }
     
-//     pub const fn xor(self, other: Self) -> Self {
-//         Xor(Box::new(self), Box::new(other))
-//     }
-    
     pub const fn add(self, other: Self) -> Self {
         Add(Box::new(self), Box::new(other))
     }
@@ -87,37 +83,6 @@ impl<I: ~const Integral> Repr<I> {
         And(Box::new(self), Box::new(other))
     }
 
-    pub const fn dual(self) -> Self {
-        match self {
-            // Self::Interval(i) => {
-            // },
-            One(repr) => One(repr),
-            Mul(lhs, rhs) => lhs.dual().add(rhs.dual()),
-            Or(lhs, rhs) => lhs.dual().and(rhs.dual()),
-            Inf(repr) => repr.dual().sup(),
-            Sup(repr) => repr.dual().inf(),
-            Add(lhs, rhs) => lhs.dual().mul(rhs.dual()),
-            And(lhs, rhs) => lhs.dual().or(rhs.dual()),
-            _ => unimplemented!()
-        }
-    }
-    
-    pub const fn rev(self) -> Self {
-        match self {
-            Self::Zero(zero) => Self::Zero(zero),
-            One(seq) => One(seq.rev()),
-            Self::Interval(i) => Self::Interval(i),
-            Mul(lhs, rhs) => rhs.rev().mul(lhs.rev()),
-            Or(lhs, rhs) => lhs.rev().or(rhs.rev()),
-            // Div(lhs, rhs) => ,
-            Inf(repr) => repr.rev().inf(),
-            // Not => ,
-            Add(lhs, rhs) => lhs.rev().add(rhs.rev()),
-            And(lhs, rhs) => lhs.rev().and(rhs.rev()),
-            _ => unimplemented!()
-        }
-    }
-
     pub const fn prod<M: ~const Iterator<Item = Self>>(reprs: M) -> Self {
         reprs.reduce(|acc, e| acc.mul(e)).unwrap()
     }
@@ -136,6 +101,37 @@ impl<I: ~const Integral> Repr<I> {
 
     pub const fn rep(self, count: usize) -> Self {
         Self::prod(vec![self; count].into_iter())
+    }
+    
+    pub const fn rev(self) -> Self {
+        match self {
+            Self::Zero(zero) => Self::Zero(zero),
+            One(seq) => One(seq.rev()),
+            Self::Interval(i) => Self::Interval(i),
+            Mul(lhs, rhs) => rhs.rev().mul(lhs.rev()),
+            Or(lhs, rhs) => lhs.rev().or(rhs.rev()),
+            // Div(lhs, rhs) => ,
+            Inf(repr) => repr.rev().inf(),
+            // Not => ,
+            Add(lhs, rhs) => lhs.rev().add(rhs.rev()),
+            And(lhs, rhs) => lhs.rev().and(rhs.rev()),
+            _ => unimplemented!()
+        }
+    }
+    
+    pub const fn dual(self) -> Self {
+        match self {
+            // Self::Interval(i) => {
+            // },
+            One(repr) => One(repr),
+            Mul(lhs, rhs) => lhs.dual().add(rhs.dual()),
+            Or(lhs, rhs) => lhs.dual().and(rhs.dual()),
+            Inf(repr) => repr.dual().sup(),
+            Sup(repr) => repr.dual().inf(),
+            Add(lhs, rhs) => lhs.dual().mul(rhs.dual()),
+            And(lhs, rhs) => lhs.dual().or(rhs.dual()),
+            _ => unimplemented!()
+        }
     }
 
     pub const fn der(self, seq: Seq<I>) -> Self {
