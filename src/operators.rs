@@ -29,6 +29,9 @@ impl<I: ~const Integral> const core::cmp::PartialEq for Repr<I> {
 }
 
 #[unconst]
+impl<I: ~const Integral> Eq for Repr<I> {}
+
+#[unconst]
 impl<I: ~const Integral> const PartialOrd for Repr<I> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         if self == other {
