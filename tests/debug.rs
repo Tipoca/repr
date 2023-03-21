@@ -1,10 +1,12 @@
 use repr::wrappers::one;
 
 macro_rules! debug {
-    ($expr:expr) => { format!("{:?}", $expr) }
+    ($expr:expr, $rhs:literal) => {
+        assert_eq!(format!("{:?}", $expr), $rhs)
+    }
 }
 
 #[test]
 fn debug() {
-    assert!(debug!(one('a')), "One(['a'])");
+    debug!(one('a'), "One(['a'])");
 }
