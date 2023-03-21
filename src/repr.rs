@@ -185,9 +185,11 @@ impl<I: ~const Integral> Repr<I> {
             (True(_), True(_)) => panic!("True variant is uncomparable"),
             (Self::Zero(lhs), Self::Zero(rhs)) => lhs == rhs,
             (One(lhs), One(rhs)) => lhs == rhs,
-            // (Self::Interval(lhs), Self::Interval(rhs)) => lhs == rhs,
+            // TODO(rnarkk)
+            (Self::Interval(lhs), Self::Interval(rhs)) => lhs == rhs,
             (Mul(llhs, lrhs), Mul(rlhs, rrhs)) => llhs == rlhs && lrhs == rrhs,
-            // Or(Box<Repr<I>>, Box<Repr<I>>),
+            // TODO(rnarkk)
+            (Or(llhs, lrhs), Or(rlhs, rrhs)) => llhs == rlhs && lrhs == rrhs,
             (Inf(lhs), Inf(rhs)) => lhs == rhs,
             _ => unimplemented!()
         }
