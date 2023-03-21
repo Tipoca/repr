@@ -24,8 +24,10 @@ impl<I: ~const Integral> const Clone for Repr<I> {
         match self {
             Repr::True(_) => panic!("True variant cannot be cloned"),
             Repr::One(seq) => Repr::One(seq.clone()),
+            Repr::Interval(interval) => Repr::Interval(interval.clone()),
             Repr::Mul(lhs, rhs) => Repr::Mul(lhs.clone(), rhs.clone()),
             Repr::Or(lhs, rhs) => Repr::Or(lhs.clone(), rhs.clone()),
+            Repr::Inf(repr) => Repr::Inf(repr.clone()),
             _ => unimplemented!()
         }
     }
