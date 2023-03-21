@@ -15,3 +15,8 @@ pub const fn seq<I, M>(is: M) -> Repr<I>
 {
     Repr::seq(is)
 }
+
+#[unconst]
+pub const fn interval<I: ~const Integral>(from: I, to: I) -> Repr<I> {
+    Repr::interval(from, to)
+}
