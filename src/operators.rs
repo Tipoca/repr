@@ -8,7 +8,7 @@ use core::{
 use unconst::unconst;
 
 use crate::interval::Interval;
-use crate::repr::Repr::{self, True, One, Or, Div, Inf, Sup, And};
+use crate::repr::Repr;
 use crate::traits::Integral;
 
 #[unconst]
@@ -22,8 +22,10 @@ impl<I: ~const Integral> const Debug for Repr<I> {
 impl<I: ~const Integral> const Clone for Repr<I> {
     fn clone(&self) -> Self {
         match self {
-            True(_) => panic!("True variant cannot be cloned"),
-            One(seq) => One(seq.clone()),
+            Repr::True(_) => panic!("True variant cannot be cloned"),
+            Repr::One(seq) => Repr::One(seq.clone()),
+            Repr::Mul(lhs, rhs) => Repr::Mul(lhs.clone(), rhs.clone()),
+            Repr::Or(lhs, rhs) => Repr::Or(lhs.clone(), rhs.clone()),
             _ => unimplemented!()
         }
     }
