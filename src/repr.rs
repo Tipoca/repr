@@ -46,6 +46,10 @@ impl<I: ~const Integral> Repr<I> {
     pub const fn seq<M: ~const IntoIterator<Item = I>>(is: M) -> Self {
         One(Seq::new(is))
     }
+    
+    pub const fn interval(from: I, to: I) -> Repr<I> {
+        Repr::Interval(Interval::new(from, to))
+    }
 
     pub const fn mul(self, other: Self) -> Self {
         match (self, other) {
