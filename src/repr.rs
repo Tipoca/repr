@@ -169,6 +169,7 @@ impl<I: ~const Integral> Repr<I> {
         match self {
             Self::Zero(_) => true,
             One(seq) => seq.null(),
+            Self::Interval(_) => false,
             Mul(lhs, rhs) => lhs.null() && rhs.null(),
             Or(lhs, rhs) => lhs.null() || rhs.null(),
             Inf(_) => true,
@@ -179,7 +180,8 @@ impl<I: ~const Integral> Repr<I> {
 
     pub const fn len(&self) -> usize {
         match self {
-            One(_) => 1,
+            One(seq) => seq.len(),
+            Self::Interval(_) => 1,
             Mul(lhs, rhs) => lhs.len() + rhs.len(),
             Or(lhs, rhs) => lhs.len() + rhs.len(),
             _ => unimplemented!()
