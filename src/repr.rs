@@ -168,7 +168,7 @@ impl<I: ~const Integral> Repr<I> {
     pub const fn null(&self) -> bool {
         match self {
             Self::Zero(_) => true,
-            One(seq) => seq == &Seq::empty(),
+            One(seq) => seq.null(),
             Mul(lhs, rhs) => lhs.null() && rhs.null(),
             Or(lhs, rhs) => lhs.null() || rhs.null(),
             Inf(_) => true,
