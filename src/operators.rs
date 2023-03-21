@@ -10,6 +10,13 @@ use crate::repr::Repr;
 use crate::traits::Integral;
 
 #[unconst]
+impl<I: ~const Integral> const core::cmp::PartialEq for Repr<I> {
+    fn eq(&self, other: &Self) -> bool {
+        self.eq(other)
+    }
+}
+
+#[unconst]
 impl<I: ~const Integral> const PartialOrd for Repr<I> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         if self == other {
