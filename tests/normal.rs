@@ -8,14 +8,14 @@ fn reflexivity() {
 }
 
 #[test]
-fn mul_unit() {
-    assert_eq!(one('a').mul(seq([])), one('a'));
-    assert_eq!(seq([]).mul(one('a')), one('a'));
+fn mul_linearity() {
+    assert_eq!(one('a').mul(one('b')), seq(['a', 'b']));
 }
 
 #[test]
-fn mul_linearity() {
-    assert_eq!(one('a').mul(one('b')), seq(['a', 'b']));
+fn mul_unit() {
+    assert_eq!(one('a').mul(seq([])), one('a'));
+    assert_eq!(seq([]).mul(one('a')), one('a'));
 }
 
 #[test]
