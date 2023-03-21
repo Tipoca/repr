@@ -63,8 +63,9 @@
 | `a(?!b)` (negative lookahead) | | And(a, Not(b)) | | |
 | `(?<=a)b` (positive lookbehind) | | And(a, b) | | |
 | `(?<!a)b` (negative lookbehind) | | And(a, b) | | |
-| a ⊆ b | a ≤ b (≃ a = b ⅋ a < b) | a.le(b) |
+| a ⊆ b, a ≤ b (containmemt) | a ≤ b (≃ a = b ⅋ a < b) | a.le(b) |
 | | a<sup>⊥</sup> (dual) | a.dual() |
+| a = b (equality) | | | a = b (identity type) | 
 
 **about symbols**
 
