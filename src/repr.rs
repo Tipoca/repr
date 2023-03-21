@@ -31,7 +31,7 @@ pub enum Repr<I: ~const Integral> {
     // Map(Box<Repr<I>>, Fn(Box<Repr<I>>), Fn(Box<Repr<I>>))
 }
 
-use Repr::{One, Mul, Or, Div, Inf, Sup, Add, And};
+use Repr::{True, One, Mul, Or, Div, Inf, Sup, Add, And};
 
 #[unconst]
 impl<I: ~const Integral> Repr<I> {
