@@ -1,6 +1,6 @@
 use repr::wrappers::one;
 
-macro_rule! debug {
+macro_rules! debug {
     ($expr:expr) => { format!("{:?}", $expr) }
 }
 
