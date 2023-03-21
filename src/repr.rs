@@ -180,6 +180,8 @@ impl<I: ~const Integral> Repr<I> {
             // TODO(rnarkk)
             (Or(llhs, lrhs), Or(rlhs, rrhs)) => llhs == rlhs && lrhs == rrhs,
             (Inf(lhs), Inf(rhs)) => lhs == rhs,
+            // TODO(rnarkk)
+            (Add(llhs, lrhs), Add(rlhs, rrhs)) => llhs == rlhs && lrhs == rrhs,
             _ => unimplemented!()
         }
     }
