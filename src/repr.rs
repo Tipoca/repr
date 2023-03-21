@@ -86,13 +86,6 @@ impl<I: ~const Integral> Repr<I> {
     pub const fn and(self, other: Self) -> Self {
         And(Box::new(self), Box::new(other))
     }
-    
-    pub const fn le(&self, other: &Self) -> bool {
-        match other {
-            Or(lhs, rhs) => self.le(lhs) || self.le(rhs),
-            _ => unimplemented!()
-        }
-    }
 
     pub const fn dual(self) -> Self {
         match self {
@@ -191,6 +184,15 @@ impl<I: ~const Integral> Repr<I> {
             // TODO(rnarkk)
             (Or(llhs, lrhs), Or(rlhs, rrhs)) => llhs == rlhs && lrhs == rrhs,
             (Inf(lhs), Inf(rhs)) => lhs == rhs,
+            _ => unimplemented!()
+        }
+    }
+    
+    pub const fn le(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Interval(lhs), Self::Interval(rhs)) => lhs.le(rhs),
+            // TODO(rnarkk)
+            (lhs, Or(rlhs, rrhs)) => lhs.le(rlhs) || lhs.le(rrhs),
             _ => unimplemented!()
         }
     }
