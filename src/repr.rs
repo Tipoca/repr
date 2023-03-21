@@ -157,13 +157,7 @@ impl<I: ~const Integral> Repr<I> {
             _ => unimplemented!()
         }
     }
-
-    /*
-    TODO(anarkk) Make this inductive.
-
-    For example, while `a*` will report `true`, `()+` will not, even though `()` matches the empty string and one or more occurrences of something that matches the empty string will always match the empty string. In order to get the inductive definition, see the corresponding method on
-    [`Hir`](struct.Hir.html).
-    */
+ 
     /// ε-production, nullable
     pub const fn null(&self) -> bool {
         match self {
