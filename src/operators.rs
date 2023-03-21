@@ -1,6 +1,7 @@
 use core::{
     clone::Clone,
     cmp::{PartialEq, PartialOrd, Ordering},
+    fmt::{self, Debug},
     ops::{BitOr, BitAnd, BitXor, Range, Add, Mul, RangeFull, RangeFrom}
 };
 
@@ -9,6 +10,12 @@ use unconst::unconst;
 use crate::interval::Interval;
 use crate::repr::Repr::{self, True, One, Or, Div, Inf, Sup, And};
 use crate::traits::Integral;
+
+#[unconst]
+impl<I: ~const Integral> const Debug for Repr<I> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    }
+}
 
 #[unconst]
 impl<I: ~const Integral> const Clone for Repr<I> {
