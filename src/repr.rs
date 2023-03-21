@@ -172,14 +172,14 @@ impl<I: ~const Integral> Repr<I> {
     pub const fn eq(&self, other: &Repr<I>) -> bool {
         match (self, other) {
             (True(_), True(_)) => panic!("True variant is uncomparable"),
-            (Self::Zero(lhs), Self::Zero(rhs)) => lhs == rhs,
-            (One(lhs), One(rhs)) => lhs == rhs,
+            (Self::Zero(lhs), Self::Zero(rhs)) => lhs.eq(rhs),
+            (One(lhs), One(rhs)) => lhs.eq(rhs),
             // TODO(rnarkk)
-            (Self::Interval(lhs), Self::Interval(rhs)) => lhs == rhs,
+            (Self::Interval(lhs), Self::Interval(rhs)) => lhs.eq(rhs),
             (Mul(llhs, lrhs), Mul(rlhs, rrhs)) => llhs == rlhs && lrhs == rrhs,
             // TODO(rnarkk)
-            (Or(llhs, lrhs), Or(rlhs, rrhs)) => llhs == rlhs && lrhs == rrhs,
-            (Inf(lhs), Inf(rhs)) => lhs == rhs,
+            (Or(llhs, lrhs), Or(rlhs, rrhs)) => llhs.eq(rlhs) && lrhs.eq(rrhs),
+            (Inf(lhs), Inf(rhs)) => lhs.eq(rhs),
             // TODO(rnarkk)
             (Add(llhs, lrhs), Add(rlhs, rrhs)) => llhs == rlhs && lrhs == rrhs,
             _ => panic!("eq not implemented between {:?}, {:?}", self, other)
