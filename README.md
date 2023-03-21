@@ -1,7 +1,7 @@
 **Kind**
 
 - Decidable
-- Non-commutative/orderd
+- Orderd/non-commutative
 - Linear/non-deterministic (⊇ regular/deterministic)
 - Promonoidal category
 
