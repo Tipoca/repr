@@ -187,6 +187,19 @@ impl<I: ~const Integral> Repr<I> {
             _ => unimplemented!()
         }
     }
+    
+    pub const fn eq(&self, other: &Repr<I>) -> bool {
+        match (self, other) {
+            (True(_), True(_)) => panic!("True variant is uncomparable"),
+            (Self::Zero(lhs), Self::Zero(rhs)) => lhs == rhs,
+            (One(lhs), One(rhs)) => lhs == rhs,
+            // (Self::Interval(lhs), Self::Interval(rhs)) => lhs == rhs,
+            (Mul(llhs, lrhs), Mul(rlhs, rrhs)) => llhs == rlhs && lrhs == rrhs,
+            // Or(Box<Repr<I>>, Box<Repr<I>>),
+            (Inf(lhs), Inf(rhs)) => lhs == rhs,
+            _ => unimplemented!()
+        }
+    }
 
     // #[inline(always)]
     // pub const fn map<F: FnMut(Self) -> Self>(self, mut f: F) -> Self {
