@@ -32,6 +32,10 @@ impl<I: ~const Integral> Seq<I> {
     pub const fn rev(self) -> Self {
         Seq(self.0.into_iter().rev().collect())
     }
+    
+    pub const fn null(&self) -> bool {
+        self.0.is_empty()
+    }
 }
 
 #[unconst]
