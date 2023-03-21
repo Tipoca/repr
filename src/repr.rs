@@ -176,13 +176,13 @@ impl<I: ~const Integral> Repr<I> {
             (One(lhs), One(rhs)) => lhs.eq(rhs),
             // TODO(rnarkk)
             (Self::Interval(lhs), Self::Interval(rhs)) => lhs.eq(rhs),
-            (Mul(llhs, lrhs), Mul(rlhs, rrhs)) => llhs == rlhs && lrhs == rrhs,
+            (Mul(llhs, lrhs), Mul(rlhs, rrhs)) => llhs.eq(rlhs) && lrhs.eq(rrhs),
             // TODO(rnarkk)
             (Or(llhs, lrhs), Or(rlhs, rrhs)) => llhs.eq(rlhs) && lrhs.eq(rrhs),
             (Inf(lhs), Inf(rhs)) => lhs.eq(rhs),
             // TODO(rnarkk)
-            (Add(llhs, lrhs), Add(rlhs, rrhs)) => llhs == rlhs && lrhs == rrhs,
-            _ => panic!("eq not implemented between {:?}, {:?}", self, other)
+            (Add(llhs, lrhs), Add(rlhs, rrhs)) => llhs.eq(rlhs) && lrhs.eq(rrhs),
+            (lhs, rhs) => panic!("eq not implemented between {:?}, {:?}", lhs, rhs)
         }
     }
     
