@@ -10,7 +10,7 @@
   - Representation of the four units, or do we need them?
   - 1	as Seq(Seq::empty())
   - ⊤ as Inf(Interval::full())
-  - 0; for Interval(a, b) and c : Interval(a, b), Interval(c, c) is 0 for Interval(a, b)
+  - 0; for Interval(c, d) ⊆ Interval(a, b), Interval(c, d) is unit for Interval(a, b)
 - One as Seq(\['a'\]) vs Interval('a', 'a')
 - Relatipnship between nominality, input-ness/string, and function arguments/abstraction, the Integral trait and the De Bruijn index
 - TextStart and TextEnd as left / right units
