@@ -11,7 +11,7 @@ fn reflexivity() {
 fn mul_linearity() {
     assert_eq!(one('a').mul(one('b')), seq(['a', 'b']));
     assert_eq!(one('a').mul(one('b')).mul(one('c')), seq(['a', 'b', 'c']));
-    assert_eq!(one('a').mul(one('b')).mul(one('c').mul('d')), seq(['a', 'b', 'c', 'd']));
+    assert_eq!(one('a').mul(one('b')).mul(one('c').mul(one('d'))), seq(['a', 'b', 'c', 'd']));
 }
 
 #[test]
