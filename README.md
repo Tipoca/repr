@@ -47,7 +47,7 @@
 | ε (empty) ∈ {ε} | 1 | Seq(\[\]) | \* : 1 | 0 | SKIP | 
 | . | | Interval(MIN, MAX) | | 1 |
 | ab/a · b (concatenation) | a ⊗ b (multiplicative conjunction/times) | Mul(a, b) | ⊗ (tensor product) | len(a) + len(b) | P \|\|\| Q (interleaving) |
-| a\|b (alternation) | a ⊕ b (additive disjuction/plus) | Or(a, b) | + (coproduct) | max(len(a), len(b)) | (deterministic choice) |
+| a\|b (alternation),<br/>a ∪ b (union) | a ⊕ b (additive disjuction/plus) | Or(a, b) | + (coproduct) | max(len(a), len(b)) | (deterministic choice) |
 | a* (kleen star),<br/>..\|aa\|a\|ε | !a (exponential conjunction/of course),<br/>νX.1 & a & (X ⊗ X) | Inf(a) | ν, fixed point/trace, comonad, final coalgebra | | (replication) |
 | a*? (non greedy),<br/>ε\|a\|aa\|.. | ?a (exponential disjunction/why not),<br/>µX.⊥ ⊕ a ⊕ (X ⅋ X) | Sup(a) | μ, monad, initial algebra | |
 | a? | a + 1 | Or(Zero, a) | |
