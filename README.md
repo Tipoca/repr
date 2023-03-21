@@ -6,7 +6,7 @@
 
 **TODO**
 
-- Representation of the four units, or do we need them?
+- Representation of the four units, or do we need them? (Decidability is affecting)
   - 1	as Seq::empty()
   - ⊤ as Inf(Interval::full())
   - ⊥ as a & b when a ≠ b
