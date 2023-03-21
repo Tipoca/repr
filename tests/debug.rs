@@ -8,5 +8,6 @@ macro_rules! debug {
 
 #[test]
 fn debug() {
-    debug!(one('a'), "One(['a'])");
+    debug!(one('a'), "One(Seq(['a']))");
+    debug!(one('a').mul(one('b')), "One(Seq(['a', 'b']))");
 }
