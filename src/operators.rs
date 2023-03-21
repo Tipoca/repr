@@ -14,6 +14,7 @@ use crate::traits::Integral;
 #[unconst]
 impl<I: ~const Integral> const Debug for Repr<I> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "TODO")
     }
 }
 
