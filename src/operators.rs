@@ -1,13 +1,13 @@
 use core::{
     clone::Clone,
-    cmp::{PartialOrd, Ordering},
+    cmp::{PartialEq, PartialOrd, Ordering},
     ops::{BitOr, BitAnd, BitXor, Range, Add, Mul, RangeFull, RangeFrom}
 };
 
 use unconst::unconst;
 
 use crate::interval::Interval;
-use crate::repr::Repr;
+use crate::repr::Repr::{self, True, One, Mul, Or, Div, Inf, Sup, Add, And};
 use crate::traits::Integral;
 
 #[unconst]
@@ -22,7 +22,7 @@ impl<I: ~const Integral> const Clone for Repr<I> {
 }
 
 #[unconst]
-impl<I: ~const Integral> const core::cmp::PartialEq for Repr<I> {
+impl<I: ~const Integral> const PartialEq for Repr<I> {
     fn eq(&self, other: &Self) -> bool {
         self.eq(other)
     }
