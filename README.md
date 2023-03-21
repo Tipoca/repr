@@ -3,6 +3,7 @@
 - Decidable
 - Non-commutative/orderd
 - Linear/non-deterministic (⊇ regular/deterministic)
+- Promonoidal category
 
 **TODO**
 
