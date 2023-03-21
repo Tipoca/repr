@@ -6,9 +6,8 @@
 
 **TODO**
 
-- Units
-  - Representation of the four units, or do we need them?
-  - 1	as Seq(Seq::empty())
+- Representation of the four units, or do we need them?
+  - 1	as Seq::empty()
   - ⊤ as Inf(Interval::full())
   - ⊥ as a & b when a ≠ b
 - One as Seq(\['a'\]) vs Interval('a', 'a')
