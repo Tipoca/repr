@@ -14,7 +14,15 @@ use crate::traits::Integral;
 #[unconst]
 impl<I: ~const Integral> const Debug for Repr<I> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "TODO")
+        match self {
+            Repr::True(_) => panic!("True variant cannot be cloned"),
+            Repr::One(seq) => write!(f, "One({:?})", seq),
+            Repr::Interval(interval) => write!(f, "Interval({:?})", interval),
+            Repr::Mul(lhs, rhs) => write!(f, "Mul({:?}, {:?})", lhs, rhs),
+            Repr::Or(lhs, rhs) => write!(f, "Or({:?}, {:?})", lhs, rhs),
+            Repr::Inf(repr) => write!(f, "Inf({:?})", repr),
+            _ => unimplemented!()
+        }
     }
 }
 
