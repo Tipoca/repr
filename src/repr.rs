@@ -182,7 +182,7 @@ impl<I: ~const Integral> Repr<I> {
             (Inf(lhs), Inf(rhs)) => lhs == rhs,
             // TODO(rnarkk)
             (Add(llhs, lrhs), Add(rlhs, rrhs)) => llhs == rlhs && lrhs == rrhs,
-            _ => unimplemented!()
+            _ => panic!("eq not implemented between {:?}, {:?}", self, other)
         }
     }
     
