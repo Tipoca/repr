@@ -167,4 +167,6 @@ Linearity (which)
 
 **References**
 
+- Proof Equivalence in MLL Is PSPACE-Complete, Willem Heijltjes, Robin Houston, 2016 [[arxiv](https://arxiv.org/abs/1510.06178)]
+- Linear Logic Without Units, Robin Houston, 2013 [[arxiv](https://arxiv.org/abs/1305.2231)]
 - Regular Expression Containment as a Proof Search Problem, Vladimir Komendantsky, 2011 [[inria](https://hal.inria.fr/inria-00614042)]
