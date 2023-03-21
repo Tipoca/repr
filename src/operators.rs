@@ -14,6 +14,9 @@ use crate::traits::Integral;
 impl<I: ~const Integral> const Clone for Repr<I> {
     fn clone(&self) -> Self {
         match self {
+            True(_) => panic!("True variant cannot be cloned"),
+            One(seq) => One(seq.clone()),
+            _ => unimplemented!()
         }
     }
 }
