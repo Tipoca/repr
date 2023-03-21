@@ -36,6 +36,10 @@ impl<I: ~const Integral> Seq<I> {
     pub const fn null(&self) -> bool {
         self.0.is_empty()
     }
+    
+    pub const fn len(&self) -> bool {
+        self.0.len()
+    }
 }
 
 #[unconst]
