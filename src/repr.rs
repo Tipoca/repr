@@ -8,7 +8,6 @@ use crate::seq::Seq;
 use crate::traits::Integral;
 
 #[unconst]
-#[derive(Debug)]
 pub enum Repr<I: ~const Integral> {
     True(Box<dyn Fn(Seq<I>) -> bool>),
     Zero(Zero),
