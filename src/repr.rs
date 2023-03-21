@@ -171,8 +171,8 @@ impl<I: ~const Integral> Repr<I> {
             One(seq) => seq == &Seq::empty(),
             Mul(lhs, rhs) => lhs.null() && rhs.null(),
             Or(lhs, rhs) => lhs.null() || rhs.null(),
-            And(lhs, rhs) => lhs.null() || rhs.null(),
             Inf(_) => true,
+            // And(lhs, rhs) => lhs.null() || rhs.null(),
             _ => false
         }
     }
