@@ -21,6 +21,8 @@ impl<I: ~const Integral> const Debug for Repr<I> {
             Repr::Mul(lhs, rhs) => write!(f, "Mul({:?}, {:?})", lhs, rhs),
             Repr::Or(lhs, rhs) => write!(f, "Or({:?}, {:?})", lhs, rhs),
             Repr::Inf(repr) => write!(f, "Inf({:?})", repr),
+            Repr::Add(lhs, rhs) => write!(f, "Add({:?}, {:?})", lhs, rhs),
+            Repr::And(lhs, rhs) => write!(f, "And({:?}, {:?})", lhs, rhs),
             _ => unimplemented!()
         }
     }
@@ -36,6 +38,8 @@ impl<I: ~const Integral> const Clone for Repr<I> {
             Repr::Mul(lhs, rhs) => Repr::Mul(lhs.clone(), rhs.clone()),
             Repr::Or(lhs, rhs) => Repr::Or(lhs.clone(), rhs.clone()),
             Repr::Inf(repr) => Repr::Inf(repr.clone()),
+            Repr::Add(lhs, rhs) => Repr::Add(lhs.clone(), rhs.clone()),
+            Repr::And(lhs, rhs) => Repr::And(lhs.clone(), rhs.clone()),
             _ => unimplemented!()
         }
     }
