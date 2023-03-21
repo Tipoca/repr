@@ -7,7 +7,7 @@ use core::{
 use unconst::unconst;
 
 use crate::interval::Interval;
-use crate::repr::Repr::{self, True, One, Mul, Or, Div, Inf, Sup, Add, And};
+use crate::repr::Repr::{self, True, One, Or, Div, Inf, Sup, And};
 use crate::traits::Integral;
 
 #[unconst]
