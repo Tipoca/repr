@@ -8,6 +8,7 @@
 
 - Units
   - Representation of the four units, or do we need them?
+  - 1	as Seq(Seq::empty())
   - ⊤ as Inf(Interval::full())
 - One as Seq(\['a'\]) vs Interval('a', 'a')
 - Relatipnship between nominality, input-ness/string, and function arguments/abstraction, the Integral trait and the De Bruijn index
