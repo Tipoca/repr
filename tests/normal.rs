@@ -53,12 +53,15 @@ fn or_idempotence() {
     assert_eq!(one('a').or(one('a')), one('a'));
 }
 
-/*
 #[test]
-fn add_idempotence() {
-    assert_eq!(one('a').add(one('a')), one('a'));
+fn add_non_commutativity() {
+    assert_ne!(one('a').add(one('b')), one('b').add(one('a')));
 }
-*/
+
+#[test]
+fn add_non_idempotence() {
+    assert_ne!(one('a').add(one('a')), one('a'));
+}
 
 #[test]
 fn add_associativity() {
