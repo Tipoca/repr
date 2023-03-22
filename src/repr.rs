@@ -177,8 +177,9 @@ impl<I: ~const Integral> Repr<I> {
             // TODO(rnarkk)
             (Self::Interval(lhs), Self::Interval(rhs)) => lhs.eq(rhs),
             (Mul(llhs, lrhs), Mul(rlhs, rrhs)) => llhs.eq(rlhs) && lrhs.eq(rrhs),
-            // TODO(rnarkk)
-            (Or(llhs, lrhs), Or(rlhs, rrhs)) => llhs.eq(rlhs) && lrhs.eq(rrhs),
+            (Or(llhs, lrhs), Or(rlhs, rrhs))
+                => llhs.eq(rlhs) && lrhs.eq(rrhs)
+                || llhs.eq(rrhs) && lrhs.eq(rlhs),
             (Inf(lhs), Inf(rhs)) => lhs.eq(rhs),
             // TODO(rnarkk)
             (Add(llhs, lrhs), Add(rlhs, rrhs)) => llhs.eq(rlhs) && lrhs.eq(rrhs),
