@@ -80,7 +80,10 @@ impl<I: ~const Integral> Repr<I> {
     }
 
     pub const fn add(self, other: Self) -> Self {
-        Add(Box::new(self), Box::new(other))
+        match (self, other) {
+            (Add(llhs, lrhs), rhs) => Add(llhs, Box::new(Add(lrhs, Box::new(rhs)))),
+            (lhs, rhs) => Add(Box::new(lhs), Box::new(rhs))
+        }
     }
 
     pub const fn and(self, other: Self) -> Self {
