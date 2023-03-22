@@ -79,8 +79,8 @@ Symbols are grouped and assigned primarily by additive/multiplicative distincito
 
 | | additive | multiplicative | exponential |
 | - | - | - | - |
-| positive/extensional | $⊕$ $0$ Add | $⊗$ $1$ Mul | ! |
-| negative/intensional | & ⊤ And | ⅋ ⊥ Or | ? |
+| positive/extensional | $⊕$ $0$ Or | $⊗$ $1$ Mul | ! |
+| negative/intensional | & ⊤ And | ⅋ ⊥ Add | ? |
 
 **Laws/Coherence**
 
