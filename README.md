@@ -167,6 +167,7 @@ Linearity (which)
 
 **References**
 
+- Completeness for Categories of Generalized Automata, Guido Boccali, Andrea Laretto, Fosco Loregian, Stefano Luneia, 2023 [[arxiv](https://arxiv.org/abs/2303.03867)]
 - Beyond Initial Algebras and Final Coalgebras, Ezra Schoen, Jade Master, Clemens Kupke, 2023 [[arxiv](https://arxiv.org/abs/2303.02065)]
 - The Functional Machine Calculus, Willem Heijltjes, 2023 [[arxiv](https://arxiv.org/abs/2212.08177)]
 - The Functional Machine Calculus II: Semantics, Chris Barrett, Willem Heijltjes, Guy McCusker, 2023 [[arxiv](https://arxiv.org/abs/2211.13140)]
