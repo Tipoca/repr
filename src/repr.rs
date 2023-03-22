@@ -165,7 +165,7 @@ impl<I: ~const Integral> Repr<I> {
         }
     }
     
-    pub const fn eq(&self, other: &Repr<I>) -> bool {
+    pub const fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (True(_), True(_)) => panic!("True variant is uncomparable"),
             (Zero, Zero) => true,
@@ -204,6 +204,14 @@ impl<I: ~const Integral> Repr<I> {
             Or(lhs, rhs) => lhs.len() + rhs.len(),
             _ => unimplemented!()
         }
+    }
+
+    pub const fn lookahead(self, other: Self) -> Self {
+        self.clone().and(self.mul(other))
+    }
+
+    pub const fn lookbehind(self, other: Self) -> Self {
+        self.clone().and(other.mul(self))
     }
 
     // #[inline(always)]
