@@ -116,7 +116,11 @@ Linearity (which)
 - functions take only one argument
 - presheaves of modules
 
-**Derivative (TODO)**
+**𝜕, derivation**
+
+| math | repr |
+| - | - |
+| 𝜕(a ⊗ b) ≃ 𝜕(a) ⊗ b + a ⊗ 𝜕(b) | der(Mul(a, b)) = Or(Mul(der(a), b), Mul(a, d(b))) |
 
 - d(Zero) = Zero
 - d(Or(a, b)) = Or(d(a), d(b))
