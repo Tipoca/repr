@@ -173,6 +173,7 @@ Linearity (which)
 - The Functional Machine Calculus II: Semantics, Chris Barrett, Willem Heijltjes, Guy McCusker, 2023 [[arxiv](https://arxiv.org/abs/2211.13140)]
 - Differential 2-Rigs, Fosco Loregian, Todd Trimble, 2022 [[arxiv](https://arxiv.org/abs/2103.00938)]
 - On the Pre- and Promonoidal Structure of Spacetime, James Hefford, Aleks Kissinger, 2022 [[arxiv](https://arxiv.org/abs/2206.09678)]
+- Diagrammatic Differentiation for Quantum Machine Learning, Alexis Toumi, Richie Yeung, Giovanni de Felice, 2021 [[arxiv](https://arxiv.org/abs/2103.07960)]
 - Coend Calculus, Fosco Loregian, 2020 [[arxiv](https://arxiv.org/abs/1501.02503)]
 - Proof Equivalence in MLL Is PSPACE-Complete, Willem Heijltjes, Robin Houston, 2016 [[arxiv](https://arxiv.org/abs/1510.06178)]
 - Linear Logic Without Units, Robin Houston, 2013 [[arxiv](https://arxiv.org/abs/1305.2231)]
