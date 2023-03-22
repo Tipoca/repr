@@ -139,6 +139,7 @@ impl<I: ~const Integral> Repr<I> {
         }
     }
 
+    /// 𝜕, endofunctor
     pub const fn der(self, seq: Seq<I>) -> Self {
         match self {
             One(_seq) => unimplemented!(),
