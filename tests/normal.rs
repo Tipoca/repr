@@ -43,6 +43,11 @@ fn or_unit() {
 }
 
 #[test]
+fn or_commutativity() {
+    assert_eq!(one('a').or(one('b')), one('b').or(one('a')));
+}
+
+#[test]
 fn or_associativity() {
     assert_eq!(one('a').or(one('b').or(one('c'))),
                one('a').or(one('b')).or(one('c')));
@@ -67,6 +72,11 @@ fn add_non_idempotence() {
 fn add_associativity() {
     assert_eq!(one('a').add(one('b').add(one('c'))),
                one('a').add(one('b')).add(one('c')));
+}
+
+#[test]
+fn and_commutativity() {
+    assert_eq!(one('a').and(one('b')), one('b').and(one('a')));
 }
 
 #[test]
