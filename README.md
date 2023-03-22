@@ -46,12 +46,12 @@
 | regular&nbsp;expressions&nbsp;/<br/>set theory | linear logic | repr | type theory&nbsp;/<br/>category&nbsp;theory | len | process calculus | probability&nbsp;theory&nbsp;/<br/>learning&nbsp;theory | quantum&nbsp;theory |
 | - | - | - | - | - | - | - | - |
 | a ∈ L (match) | | | a : A (judgement) | |
-| ∅ | 0 | | | | nil, STOP |
-| | ⊤ | True | | | | 
+| $∅$ | $0$ | | | | nil, STOP |
+| | $⊤$ | True | | | | 
 | a | a | One(Seq(a)) | | len(a) | (sequential composition, prefix) |
-| ε (empty) ∈ {ε} | 1 | Seq(\[\]) | \* : 1 | 0 | SKIP | 
+| $ε$ (empty) ∈ {ε} | $1$ | Seq(\[\]) | \* : 1 | 0 | SKIP | 
 | . | | Interval(MIN, MAX) | | 1 |
-| ab/a · b (concatenation) | $a ⊗ b$ (multiplicative conjunction/times) | Mul(a, b) | ⊗ (tensor product) | len(a) + len(b) | P \|\|\| Q (interleaving) |
+| ab / $a · b$ (concatenation) | $a ⊗ b$ (multiplicative conjunction/times) | Mul(a, b) | ⊗ (tensor product) | len(a) + len(b) | P \|\|\| Q (interleaving) |
 | a\|b (alternation),<br/>$a ∪ b$ (union) | $a ⊕ b$ (additive disjuction/plus) | Or(a, b) | + (coproduct) | max(len(a), len(b)) | (deterministic choice) |
 | a* (kleen star),<br/>..\|aa\|a\|ε | $!a$ (exponential conjunction/of course),<br/>νX.1 & a & (X ⊗ X) | Inf(a) | ν, fixed point/trace, comonad, final coalgebra | | (replication) |
 | a*? (non greedy),<br/>ε\|a\|aa\|.. | $?a$ (exponential disjunction/why not),<br/>$µX.⊥ ⊕ a ⊕ (X ⅋ X)$ | Sup(a) | μ, monad, initial algebra | |
