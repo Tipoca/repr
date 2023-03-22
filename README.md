@@ -52,8 +52,8 @@
 | a | a | One(Seq(a)) | | len(a) | (sequential composition, prefix) |
 | $ε$ (empty) ∈ {ε} | $1$ | Seq(\[\]) | \* : 1 | 0 | SKIP | 
 | . | | Interval(MIN, MAX) | | 1 |
-| ab / $a · b$ (concatenation) | $a ⊗ b$ (multiplicative conjunction/times) | Mul(a, b) | ⊗ (tensor product) | len(a) + len(b) | P \|\|\| Q (interleaving) |
-| a\|b (alternation),<br/>$a ∪ b$ (union) | $a ⊕ b$ (additive disjuction/plus) | Or(a, b) | + (coproduct) | max(len(a), len(b)) | (deterministic choice) |
+| ab / $a · b$ (concatenation) | $a ⊗ b$ (multiplicative conjunction/times) | Mul(a, b) | $a ⊗ b$ (tensor product) | len(a) + len(b) | P \|\|\| Q (interleaving) |
+| a\|b (alternation),<br/>$a ∪ b$ (union) | $a ⊕ b$ (additive disjuction/plus) | Or(a, b) | $a + b$ (coproduct) | max(len(a), len(b)) | (deterministic choice) |
 | a* (kleen star),<br/>..\|aa\|a\|ε | $!a$ (exponential conjunction/of course),<br/>νX.1 & a & (X ⊗ X) | Inf(a) | ν, fixed point/trace, comonad, final coalgebra | | (replication) |
 | a*? (non greedy),<br/>ε\|a\|aa\|.. | $?a$ (exponential disjunction/why not),<br/>$µX.⊥ ⊕ a ⊕ (X ⅋ X)$ | Sup(a) | μ, monad, initial algebra | |
 | a? | a + 1 | Or(Zero, a) | |
@@ -63,8 +63,8 @@
 | a<sup>†</sup> (reverse) | right law vs left law | a.rev() | | len(a) |
 | $a / b$ (right quotient) | $a ⊸ b$ | Div(a, b) | | len(a) - len(b) | (hiding) |
 | a \ b (left quotient) | | `Div(a, b)` | | | (hiding) |
-| RegexSet | a ⅋ b (multiplicative disjunction/par) | Add(a, b) | ⊕ (direct sum) | | (nondeterministic choice) |
-| $a ∩ b$ (intersection) | a & b (additive conjunction/with) | And(a, b) | × (product) | | (interface parallel) |
+| RegexSet | a ⅋ b (multiplicative disjunction/par) | Add(a, b) | $a ⊕ b$ (direct sum) | | (nondeterministic choice) |
+| $a ∩ b$ (intersection) | a & b (additive conjunction/with) | And(a, b) | $a × b$ (product) | | (interface parallel) |
 | `a(?=b)` (positive lookahead) | | And(a, b) | | |
 | `a(?!b)` (negative lookahead) | | And(a, Not(b)) | | |
 | `(?<=a)b` (positive lookbehind) | | And(a, b) | | |
