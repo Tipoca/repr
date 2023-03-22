@@ -70,7 +70,6 @@ impl<I: ~const Integral> Repr<I> {
             (lhs, rhs) => Or(Box::new(lhs), Box::new(rhs))
         }
     }
-
     
     pub const fn inf(self) -> Self {
         Inf(Box::new(self))
