@@ -85,6 +85,7 @@ impl<I: ~const Integral> Repr<I> {
 
     pub const fn and(self, other: Self) -> Self {
         match (self, other) {
+            (lhs, rhs) if lhs == rhs => lhs,
             (Self::Interval(lhs), Self::Interval(rhs)) => lhs.and(rhs),
             (lhs, rhs) => And(Box::new(lhs), Box::new(rhs))
         }
