@@ -198,6 +198,7 @@ impl<I: ~const Integral> Repr<I> {
             (Self::Interval(lhs), Self::Interval(rhs)) => lhs.le(rhs),
             // TODO(rnarkk)
             (lhs, Or(rlhs, rrhs)) => lhs.le(rlhs) || lhs.le(rrhs),
+            (Or(llhs, lrhs), Or(rlhs, rrhs)) => llhs.le(rlhs) && lrhs.le(rrhs) || llhs.le(rrhs) && lrhs.le(rlhs),
             _ => unimplemented!()
         }
     }
