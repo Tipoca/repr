@@ -174,15 +174,16 @@ impl<I: ~const Integral> Repr<I> {
             (True(_), True(_)) => panic!("True variant is uncomparable"),
             (Zero, Zero) => true,
             (One(lhs), One(rhs)) => lhs.eq(rhs),
-            // TODO(rnarkk)
             (Self::Interval(lhs), Self::Interval(rhs)) => lhs.eq(rhs),
             (Mul(llhs, lrhs), Mul(rlhs, rrhs)) => llhs.eq(rlhs) && lrhs.eq(rrhs),
             (Or(llhs, lrhs), Or(rlhs, rrhs))
                 => llhs.eq(rlhs) && lrhs.eq(rrhs)
                 || llhs.eq(rrhs) && lrhs.eq(rlhs),
             (Inf(lhs), Inf(rhs)) => lhs.eq(rhs),
-            // TODO(rnarkk)
             (Add(llhs, lrhs), Add(rlhs, rrhs)) => llhs.eq(rlhs) && lrhs.eq(rrhs),
+            (And(llhs, lrhs), And(rlhs, rrhs))
+                => llhs.eq(rlhs) && lrhs.eq(rrhs)
+                || llhs.eq(rrhs) && lrhs.eq(rlhs),
             // TODO(rnarkk)
             _ => false
         }
