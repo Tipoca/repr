@@ -35,11 +35,12 @@ impl<I: ~const Integral> Interval<I> {
     
     /// Intersect this Interval with the given Interval and return the result.
     ///
-    /// If the intersection is empty, then don't intersect them.
+    /// If the intersection is empty, then return Zero.
     pub const fn and(self, other: Self) -> Repr<I> {
-        match (max(self.0, other.0), min(self.1, other.1)) {
-            (from, to) if from <= to => Repr::Interval(Self::new(from, to)),
-            _ => Repr::Interval(self).or(Repr::Interval(other))
+        if max(self.0, other.0) <= min(self.1, other.1) {
+            Repr::Interval(Self::new(max(self.0, other.0), min(self.1, other.1)))
+        } else {
+            Zero
         }
     }
     

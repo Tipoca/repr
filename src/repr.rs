@@ -85,7 +85,10 @@ impl<I: ~const Integral> Repr<I> {
     }
 
     pub const fn and(self, other: Self) -> Self {
-        And(Box::new(self), Box::new(other))
+        match (self, other) {
+            (Self::Interval(lhs), Self::Interval(rhs)) => lhs.and(rhs),
+            (lhs, rhs) => And(Box::new(lhs), Box::new(rhs))
+        }
     }
 
     pub const fn prod<M: ~const Iterator<Item = Self>>(reprs: M) -> Self {
