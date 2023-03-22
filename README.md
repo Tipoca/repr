@@ -51,24 +51,24 @@
 | a | a | One(Seq(a)) | | len(a) | (sequential composition, prefix) |
 | ε (empty) ∈ {ε} | 1 | Seq(\[\]) | \* : 1 | 0 | SKIP | 
 | . | | Interval(MIN, MAX) | | 1 |
-| ab/a · b (concatenation) | a ⊗ b (multiplicative conjunction/times) | Mul(a, b) | ⊗ (tensor product) | len(a) + len(b) | P \|\|\| Q (interleaving) |
-| a\|b (alternation),<br/>a ∪ b (union) | a ⊕ b (additive disjuction/plus) | Or(a, b) | + (coproduct) | max(len(a), len(b)) | (deterministic choice) |
-| a* (kleen star),<br/>..\|aa\|a\|ε | !a (exponential conjunction/of course),<br/>νX.1 & a & (X ⊗ X) | Inf(a) | ν, fixed point/trace, comonad, final coalgebra | | (replication) |
-| a*? (non greedy),<br/>ε\|a\|aa\|.. | ?a (exponential disjunction/why not),<br/>µX.⊥ ⊕ a ⊕ (X ⅋ X) | Sup(a) | μ, monad, initial algebra | |
+| ab/a · b (concatenation) | $a ⊗ b$ (multiplicative conjunction/times) | Mul(a, b) | ⊗ (tensor product) | len(a) + len(b) | P \|\|\| Q (interleaving) |
+| a\|b (alternation),<br/>$a ∪ b$ (union) | $a ⊕ b$ (additive disjuction/plus) | Or(a, b) | + (coproduct) | max(len(a), len(b)) | (deterministic choice) |
+| a* (kleen star),<br/>..\|aa\|a\|ε | $!a$ (exponential conjunction/of course),<br/>νX.1 & a & (X ⊗ X) | Inf(a) | ν, fixed point/trace, comonad, final coalgebra | | (replication) |
+| a*? (non greedy),<br/>ε\|a\|aa\|.. | $?a$ (exponential disjunction/why not),<br/>$µX.⊥ ⊕ a ⊕ (X ⅋ X)$ | Sup(a) | μ, monad, initial algebra | |
 | a? | a + 1 | Or(Zero, a) | |
-| a{n,m} (repetition) | `a` | Or(Mul(a, Mul(a, ..)), Or(..)) | |
+| a{n,m} (repetition) | a | Or(Mul(a, Mul(a, ..)), Or(..)) | |
 | \[a-z\] (class) | | Interval(a, z) | | |
 | `[^a-z]` (negation) | TODO this is complementary op | `Neg(a)`/`-a` | | |
 | a<sup>†</sup> (reverse) | right law vs left law | a.rev() | | len(a) |
-| a / b (right quotient) | a ⊸ b | Div(a, b) | | len(a) - len(b) | (hiding) |
+| $a / b$ (right quotient) | $a ⊸ b$ | Div(a, b) | | len(a) - len(b) | (hiding) |
 | a \ b (left quotient) | | `Div(a, b)` | | | (hiding) |
 | RegexSet | a ⅋ b (multiplicative disjunction/par) | Add(a, b) | ⊕ (direct sum) | | (nondeterministic choice) |
-| a ∩ b (intersection) | a & b (additive conjunction/with) | And(a, b) | × (product) | | (interface parallel) |
+| $a ∩ b$ (intersection) | a & b (additive conjunction/with) | And(a, b) | × (product) | | (interface parallel) |
 | `a(?=b)` (positive lookahead) | | And(a, b) | | |
 | `a(?!b)` (negative lookahead) | | And(a, Not(b)) | | |
 | `(?<=a)b` (positive lookbehind) | | And(a, b) | | |
 | `(?<!a)b` (negative lookbehind) | | And(a, b) | | |
-| a ⊆ b, a ≤ b (containmemt) | a ≤ b (≃ a = b ⅋ a < b) | a.le(b) |
+| $a ⊆ b, a ≤ b$ (containmemt) | $a ≤ b (≃ a = b ⅋ a < b)$ | a.le(b) |
 | | a<sup>⊥</sup> (dual) | a.dual() |
 | a = b (equality) | | | a = b (identity type) | 
 
@@ -92,9 +92,9 @@ TODO:
 | - | - | - | - |
 | a \| (b \| c) = (a \| b) \| c | a ⊕ (b ⊕ c) = (a ⊕ b) ⊕ c | Or(a, Or(b, c)) = Or(Or(a, b), c) | Or-associativity |
 | | | |
-| a \| a = a | a ⊕ a = a | Or(a, a) = a | Or-idempotence |
-| | a ⊕ 0 = 0 ⊕ a = a| Or(a, Zero) = Or(Zero, a) = a | Zero, Or-unit |
-| a · ε = ε · a = a | a ⊗ 1 = 1 ⊗ a = a | Mul(a, One('')) = Mul(One(''), a) = a | One(''), Mul-unit |
+| a \| a = a | $a ⊕ a = a$ | Or(a, a) = a | Or-idempotence |
+| | $a ⊕ 0 = 0 ⊕ a = a$ | Or(a, Zero) = Or(Zero, a) = a | Zero, Or-unit |
+| $a · ε = ε · a = a$ | a ⊗ 1 = 1 ⊗ a = a | Mul(a, One('')) = Mul(One(''), a) = a | One(''), Mul-unit |
 | a · (b \| c) | a ⊗ (b ⊕ c) = (a ⊗ b) ⊕ (a ⊗ c) | Mul(a, Or(b, c)) = Or(Mul(a, b), Mul(a, c)) | right-distributivity |
 | | (a ⊕ b) ⊗ c = (a ⊗ c) ⊕ (b ⊗ c) | Mul(Or(a, b), c) = Or(Mul(a, c), Mul(b, c)) | left-distributivity |
 | ε<sup>†</sup> = ε | | | |
@@ -120,7 +120,7 @@ Linearity (which)
 
 | math | repr |
 | - | - |
-| 𝜕(a ⊗ b) ≃ 𝜕(a) ⊗ b + a ⊗ 𝜕(b) | der(Mul(a, b)) = Or(Mul(der(a), b), Mul(a, d(b))) |
+| $𝜕(a ⊗ b) ≃ 𝜕(a) ⊗ b + a ⊗ 𝜕(b)$ | der(Mul(a, b)) = Or(Mul(der(a), b), Mul(a, d(b))) |
 
 - d(Zero) = Zero
 - d(Or(a, b)) = Or(d(a), d(b))
