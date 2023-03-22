@@ -171,9 +171,9 @@ Linearity (which)
 - Beyond Initial Algebras and Final Coalgebras, Ezra Schoen, Jade Master, Clemens Kupke, 2023 [[arxiv](https://arxiv.org/abs/2303.02065)]
 - The Functional Machine Calculus, Willem Heijltjes, 2023 [[arxiv](https://arxiv.org/abs/2212.08177)]
 - The Functional Machine Calculus II: Semantics, Chris Barrett, Willem Heijltjes, Guy McCusker, 2023 [[arxiv](https://arxiv.org/abs/2211.13140)]
-- Differential 2-Rigs, Fosco Loregian, Todd Trimble, 2022 [[arxiv](https://arxiv.org/abs/2103.00938)
+- Differential 2-Rigs, Fosco Loregian, Todd Trimble, 2022 [[arxiv](https://arxiv.org/abs/2103.00938)]
 - On the Pre- and Promonoidal Structure of Spacetime, James Hefford, Aleks Kissinger, 2022 [[arxiv](https://arxiv.org/abs/2206.09678)]
-- Coend Calculus, Fosco Loregian, 2020 [[arxiv](https://arxiv.org/abs/1501.02503)]]
+- Coend Calculus, Fosco Loregian, 2020 [[arxiv](https://arxiv.org/abs/1501.02503)]
 - Proof Equivalence in MLL Is PSPACE-Complete, Willem Heijltjes, Robin Houston, 2016 [[arxiv](https://arxiv.org/abs/1510.06178)]
 - Linear Logic Without Units, Robin Houston, 2013 [[arxiv](https://arxiv.org/abs/1305.2231)]
 - Imperative Programs as Proofs via Game Semantics, Martin Churchill, Jim Laird, Guy McCusker, 2013 [[arxiv](https://arxiv.org/abs/1307.2004)]
