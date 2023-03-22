@@ -47,9 +47,10 @@ impl<I: ~const Integral> Interval<I> {
     ///
     /// If the two Seqs aren't contiguous, then don't union them.
     pub const fn or(self, other: Self) -> Repr<I> {
-        match (max(self.0, other.0), min(self.1, other.1)) {
-            (from, to) if from <= to.succ() => Repr::Interval(Self::new(from, to)),
-            _ => Repr::Interval(self).or(Repr::Interval(other))
+        if max(self.0, other.0) <= min(self.1, other.1).succ() {
+            Repr::Interval(Self::new(min(self.0, other.0), max(self.1, other.1)))
+        } else {
+            Or(Box::new(Repr::Interval(self)), Box::new(Repr::Interval(other)))
         }
     }
     
@@ -99,6 +100,7 @@ impl<I: ~const Integral> Interval<I> {
     //     ret
     // }
 
+    /// 
     pub const fn contiguous(&self, other: &Self) -> bool {
         max(self.0, other.0) <= min(self.1, other.1)
     }

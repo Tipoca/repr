@@ -183,13 +183,14 @@ impl<I: ~const Integral> Repr<I> {
     
     pub const fn le(&self, other: &Self) -> bool {
         match (self, other) {
+            (One(lhs), One(rhs)) => lhs.eq(rhs),
             (Self::Interval(lhs), Self::Interval(rhs)) => lhs.le(rhs),
             (Or(llhs, lrhs), Or(rlhs, rrhs))
                 => llhs.le(rlhs) && lrhs.le(rrhs)
                 || llhs.le(rrhs) && lrhs.le(rlhs),
             // TODO(rnarkk)
             (lhs, Or(rlhs, rrhs)) => lhs.le(rlhs) || lhs.le(rrhs),
-            _ => unimplemented!()
+            (lhs, rhs) => panic!("le not implemented between {:?} {:?}", lhs, rhs)
         }
     }
 
