@@ -1,6 +1,6 @@
 **Kind**
 
-- Decidable
+- Decidable (or only complete?)
 - Orderd/non-commutative
 - Linear/non-deterministic (⊇ regular/deterministic)
 - Promonoidal
