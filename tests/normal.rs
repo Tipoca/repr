@@ -1,4 +1,4 @@
-use repr::wrappers::{one, seq};
+use repr::wrappers::{zero, one, seq};
 
 #[test]
 fn reflexivity() {
@@ -24,6 +24,12 @@ fn mul_unit() {
 fn mul_associativity() {
     assert_eq!(one('a').mul(one('b').mul(one('c'))),
                one('a').mul(one('b')).mul(one('c')));
+}
+
+#[test]
+fn or_unit() {
+    assert_eq!(one('a').or(zero()), one('a'));
+    assert_eq!(zero().or(one('a')), one('a'));
 }
 
 #[test]
