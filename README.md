@@ -7,6 +7,7 @@
 
 **TODO**
 
+- Is there such as selective/projective mul to concatenate only one side of And?
 - Representation of the four units, or do we need them? (Decidability is affecting)
   - 1	as Seq::empty()
   - ⊤ as Inf(Interval::full())
@@ -16,7 +17,7 @@
 - TextStart and TextEnd as left / right units
 - Interpretation of `match`, is it a judgement `a : A` or a test that one is divisible by another (quotient is equal to zero) `a / b`, one (string) is contained by another (regex) a → b? Proof search
 - Intensional/extensional commutativity/idempotence
-- a.le(b) → a.and(b) = a, a.add(b) = b 
+- a.le(b) → a.and(b) = a, a.add(b) = b
 - Equational reasoning, bisimulation
 - Induction
 - True(Seq\<I\>, Box\<Repr\<I\>\>), assertions, dependent types, backreference
