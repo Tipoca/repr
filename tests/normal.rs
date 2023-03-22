@@ -61,6 +61,12 @@ fn add_idempotence() {
 */
 
 #[test]
+fn add_associativity() {
+    assert_eq!(one('a').add(one('b').add(one('c'))),
+               one('a').add(one('b')).add(one('c')));
+}
+
+#[test]
 fn and_idempotence() {
     assert_eq!(one('a').and(one('a')), one('a'));
 }
