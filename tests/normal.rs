@@ -21,6 +21,11 @@ fn mul_unit() {
 }
 
 #[test]
+fn mul_non_commutativity() {
+    assert_ne!(one('a').mul(one('b')), one('b').mul(one('a')));
+}
+
+#[test]
 fn mul_associativity() {
     assert_eq!(one('a').mul(one('b').mul(one('c'))),
                one('a').mul(one('b')).mul(one('c')));
@@ -49,6 +54,11 @@ fn add_idempotence() {
     assert_eq!(one('a').add(one('a')), one('a'));
 }
 */
+
+#[test]
+fn and_idempotence() {
+    assert_eq!(one('a').and(one('a')), one('a'));
+}
 
 #[test]
 fn dual() {
