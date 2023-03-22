@@ -91,14 +91,14 @@ TODO:
 
 | regular expressions | linear logic/quantale | repr | title |
 | - | - | - | - |
-| a \| (b \| c) = (a \| b) \| c | a ⊕ (b ⊕ c) = (a ⊕ b) ⊕ c | Or(a, Or(b, c)) = Or(Or(a, b), c) | Or-associativity |
+| $a \| (b \| c) = (a \| b) \| c$ | $a ⊕ (b ⊕ c) = (a ⊕ b) ⊕ c$ | Or(a, Or(b, c)) = Or(Or(a, b), c) | Or-associativity |
 | | | |
 | a \| a = a | $a ⊕ a = a$ | Or(a, a) = a | Or-idempotence |
 | | $a ⊕ 0 = 0 ⊕ a = a$ | Or(a, Zero) = Or(Zero, a) = a | Zero, Or-unit |
-| $a · ε = ε · a = a$ | a ⊗ 1 = 1 ⊗ a = a | Mul(a, One('')) = Mul(One(''), a) = a | One(''), Mul-unit |
-| a · (b \| c) | a ⊗ (b ⊕ c) = (a ⊗ b) ⊕ (a ⊗ c) | Mul(a, Or(b, c)) = Or(Mul(a, b), Mul(a, c)) | right-distributivity |
-| | (a ⊕ b) ⊗ c = (a ⊗ c) ⊕ (b ⊗ c) | Mul(Or(a, b), c) = Or(Mul(a, c), Mul(b, c)) | left-distributivity |
-| ε<sup>†</sup> = ε | | | |
+| $a · ε = ε · a = a$ | $a ⊗ 1 = 1 ⊗ a = a$ | Mul(a, One('')) = Mul(One(''), a) = a | One(''), Mul-unit |
+| $a · (b \| c)$ | $a ⊗ (b ⊕ c) = (a ⊗ b) ⊕ (a ⊗ c)$ | Mul(a, Or(b, c)) = Or(Mul(a, b), Mul(a, c)) | right-distributivity |
+| | $(a ⊕ b) ⊗ c = (a ⊗ c) ⊕ (b ⊗ c)$ | Mul(Or(a, b), c) = Or(Mul(a, c), Mul(b, c)) | left-distributivity |
+| $ε^† = ε$ | | | |
 | | (a & b)<sup>†</sup> = (b<sup>†</sup>) & (a<sup>†</sup>)| Rev(Mul(a, b)) = Mul(Rev(b), Rev(a)) | |
 | | | Mul(One(a), One(b)) = One(ab) | |
 | | a ⅋ (b & c) = (a ⅋ b) & (a ⅋ c) | Add(a, And(b, c)) = And(Add(a, b), Add(a, c)) | right-distributivity |
