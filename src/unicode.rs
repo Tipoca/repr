@@ -2,9 +2,8 @@ use core::char::from_u32;
 
 use unconst::unconst;
 
-use crate::context::Context;
 use crate::interval::Interval;
-use crate::repr::{Repr, Zero};
+use crate::repr::Repr;
 use crate::traits::Integral;
 
 #[unconst]
@@ -43,6 +42,7 @@ impl Repr<char> {
     // }
 }
 
+/*
 /// An abstraction over input used in the matching engines.
 impl Context<char> {
     /// Return true if the given empty width instruction matches at the
@@ -79,6 +79,7 @@ impl Context<char> {
         }
     }
 }
+*/
 
 #[unconst]
 /// Returns true iff the character is a word character.

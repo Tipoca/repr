@@ -36,6 +36,7 @@ use core::{
 
 use unconst::unconst;
 
+use crate::repr::Repr::{self, Zero, Or};
 use crate::traits::Integral;
 
 #[unconst]
@@ -63,77 +64,80 @@ impl<I: ~const Integral> Interval<I> {
     
     /// Intersect this Interval with the given Interval and return the result.
     ///
-    /// If the intersection is empty, then this returns `None`.
-    pub const fn and(self, other: Self) -> Option<Self> {
+    /// If the intersection is empty, then don't intersect them.
+    pub const fn and(self, other: Self) -> Repr<I> {
         match (max(self.0, other.0), min(self.1, other.1)) {
-            (from, to) if from <= to => Some(Self::new(from, to)),
-            _ => None
+            (from, to) if from <= to => Repr::Interval(Self::new(from, to)),
+            _ => Repr::Interval(self).or(Repr::Interval(other))
         }
     }
     
-    // TODO return two reprs if 
     /// Union the given overlapping Interval into this Interval.
     ///
-    /// If the two Seqs aren't contiguous, then this returns `None`.
-    pub const fn or(self, other: Self) -> Option<Self> {
+    /// If the two Seqs aren't contiguous, then don't union them.
+    pub const fn or(self, other: Self) -> Repr<I> {
         match (max(self.0, other.0), min(self.1, other.1)) {
-            (from, to) if from <= to.succ() => Some(Self::new(from, to)),
-            _ => None
+            (from, to) if from <= to.succ() => Repr::Interval(Self::new(from, to)),
+            _ => Repr::Interval(self).or(Repr::Interval(other))
         }
     }
     
-    /// Compute the symmetric difference the given Interval from this Interval. This
-    /// returns the union of the two Seqs minus its intersection.
-    pub const fn xor(self, other: Self) -> (Option<Self>, Option<Self>) {
-        let or = match self.or(other) {
-            None => return (Some(self.clone()), Some(other.clone())),
-            Some(or) => or,
-        };
-        let and = match self.and(other) {
-            None => return (Some(self.clone()), Some(other.clone())),
-            Some(and) => and,
-        };
-        or.sub(and)
-    }
+    // /// Compute the symmetric difference the given Interval from this Interval. This
+    // /// returns the union of the two Intervals minus its intersection.
+    // pub const fn xor(self, other: Self) -> Repr<I> {
+    //     let or = match self.or(other) {
+    //         Or(lhs, rhs) => return Or(lhs, rhs),
+    //         Repr::Interval(or) => or,
+    //     };
+    //     let and = match self.and(other) {
+    //         Or(lhs, rhs) => return Or(lhs, rhs),
+    //         Repr::Interval(and) => and,
+    //     };
+    //     or.sub(and)
+    // }
     
-    /// Subtract the given Interval from this Interval and return the resulting
-    /// Seqs.
-    ///
-    /// If subtraction would result in an empty Interval, then no Seqs are
-    /// returned.
-    /// 
-    /// other.0 <= self.0 <= self.1 <= other.1 (self <= other) => (None, None)
-    /// self.0 <= other.0 <= other.1 <= self.1 (other <= self) => (lower, upper)
-    /// self.0 <= other.0 <= self.1 <= other.1 => (lower, None)
-    /// other.0 <= self.0 <= other.1 <= self.1 => (None, uppper)
-    pub const fn sub(self, other: Self) -> (Option<Self>, Option<Self>) {
-        if self.le(&other) {
-            return (None, None);
-        }
-        if self.and(other).is_none() {
-            return (Some(self.clone()), None);
-        }
-        let mut ret = (None, None);
-        if self.0 < other.0 {
-            ret.0 = Some(Self::new(self.0, other.0.pred()));
-        }
-        if other.1 < self.1 {
-            let range = Self::new(other.1.succ(), self.1);
-            if ret.0.is_none() {
-                ret.0 = Some(range);
-            } else {
-                ret.1 = Some(range);
-            }
-        }
-        ret
+    // /// Subtract the given Interval from this Interval and return the resulting
+    // /// Seqs.
+    // ///
+    // /// If subtraction would result in an empty Interval, then no Seqs are
+    // /// returned.
+    // /// 
+    // /// other.0 <= self.0 <= self.1 <= other.1 (self <= other) => Zero
+    // /// self.0 <= other.0 <= other.1 <= self.1 (other <= self) => (lower, upper)
+    // /// self.0 <= other.0 <= self.1 <= other.1 => (lower, None)
+    // /// other.0 <= self.0 <= other.1 <= self.1 => (None, uppper)
+    // pub const fn sub(self, other: Self) -> Repr<I> {
+    //     if self.le(&other) {
+    //         return Zero;
+    //     }
+    //     if self.contiguous(&other) {
+    //         return Repr::Interval(self.clone());
+    //     }
+    //     let mut ret = (None, None);
+    //     if self.0 < other.0 {
+    //         ret.0 = Some(Self::new(self.0, other.0.pred()));
+    //     }
+    //     if other.1 < self.1 {
+    //         let range = Self::new(other.1.succ(), self.1);
+    //         if ret.0.is_none() {
+    //             ret.0 = Some(range);
+    //         } else {
+    //             ret.1 = Some(range);
+    //         }
+    //     }
+    //     ret
+    // }
+
+    pub const fn contiguous(&self, other: &Self) -> bool {
+        max(self.0, other.0) <= min(self.1, other.1)
     }
 
-    /// Negate this Interval.
-    ///
-    /// For all `a` where `a` is any element, if `a` is in this interval, then it will not be in this set after negation.
-    pub const fn not(self) -> (Option<Self>, Option<Self>) {
-        Self::full().sub(self)
-    }
+    // /// Negate this Interval.
+    // ///
+    // /// For all `a` where `a` is any element, if `a` is in this interval, then it will not be in this set after negation.
+    // pub const fn not(self) -> Repr<I> {
+    //     Self::full().sub(self)
+    // }
 
     // TODO(rnarkk) Why not simply `other.0 <= self.0 && self.1 <= other.1`
     /// a ⊆ b

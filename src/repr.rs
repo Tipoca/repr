@@ -1,5 +1,4 @@
 use alloc::{boxed::Box, vec};
-use core::fmt::Debug;
 
 use unconst::unconst;
 
@@ -10,20 +9,20 @@ use crate::traits::Integral;
 #[unconst]
 pub enum Repr<I: ~const Integral> {
     True(Box<dyn Fn(Seq<I>) -> bool>),
-    Zero(Zero),
+    /// 0 (additive disjuction unit)
+    Zero,
+    /// 
     One(Seq<I>),
+    /// 
     Interval(Interval<I>),
     /// a ⊗ b (multiplicative conjunction/times)
     Mul(Box<Repr<I>>, Box<Repr<I>>),
     /// a ⊕ b (additive disjuction/plus)
     Or(Box<Repr<I>>, Box<Repr<I>>),
-    /// a ⊸ b (linear implication)
-    Div(Box<Repr<I>>, Box<Repr<I>>),
     /// νa (largest fixed point)
     Inf(Box<Repr<I>>),
     /// µa (smallest fixed point)
     Sup(Box<Repr<I>>),
-    Not(Box<Repr<I>>),
     /// a ⅋ b (multiplicative disjunction/par)
     Add(Box<Repr<I>>, Box<Repr<I>>),
     /// a & b (additive conjunction/with)
@@ -31,12 +30,12 @@ pub enum Repr<I: ~const Integral> {
     // Map(Box<Repr<I>>, Fn(Box<Repr<I>>), Fn(Box<Repr<I>>))
 }
 
-use Repr::{True, One, Mul, Or, Div, Inf, Sup, Add, And};
+use Repr::{True, Zero, One, Mul, Or, Inf, Sup, Add, And};
 
 #[unconst]
 impl<I: ~const Integral> Repr<I> {
     pub const fn zero() -> Self {
-        Self::Zero(Default::default())
+        Zero
     }
 
     pub const fn one(i: I) -> Self {
@@ -53,6 +52,8 @@ impl<I: ~const Integral> Repr<I> {
 
     pub const fn mul(self, other: Self) -> Self {
         match (self, other) {
+            (Zero, _) => Zero,
+            (_, Zero) => Zero,
             (One(lhs), One(rhs)) => One(lhs.mul(rhs)),
             (Mul(llhs, lrhs), rhs) => Mul(llhs, Box::new(Mul(lrhs, Box::new(rhs)))),
             (lhs, rhs) => Mul(Box::new(lhs), Box::new(rhs))
@@ -62,26 +63,25 @@ impl<I: ~const Integral> Repr<I> {
     pub const fn or(self, other: Self) -> Self {
         match (self, other) {
             (lhs, rhs) if lhs == rhs => lhs,
+            (Zero, rhs) => rhs,
+            (lhs, Zero) => lhs,
             (Self::Interval(lhs), Self::Interval(rhs)) => lhs.or(rhs),
             (Or(llhs, lrhs), rhs) => Or(llhs, Box::new(Or(lrhs, Box::new(rhs)))),
             (lhs, rhs) => Or(Box::new(lhs), Box::new(rhs))
         }
     }
-    
-    pub const fn add(self, other: Self) -> Self {
-        Add(Box::new(self), Box::new(other))
-    }
-    
-    pub const fn div(self, other: Self) -> Self {
-        Div(Box::new(self), Box::new(other))
-    }
 
+    
     pub const fn inf(self) -> Self {
         Inf(Box::new(self))
     }
     
     pub const fn sup(self) -> Self {
         Sup(Box::new(self))
+    }
+
+    pub const fn add(self, other: Self) -> Self {
+        Add(Box::new(self), Box::new(other))
     }
 
     pub const fn and(self, other: Self) -> Self {
@@ -110,14 +110,12 @@ impl<I: ~const Integral> Repr<I> {
     
     pub const fn rev(self) -> Self {
         match self {
-            Self::Zero(zero) => Self::Zero(zero),
+            Zero => Zero,
             One(seq) => One(seq.rev()),
             Self::Interval(i) => Self::Interval(i),
             Mul(lhs, rhs) => rhs.rev().mul(lhs.rev()),
             Or(lhs, rhs) => lhs.rev().or(rhs.rev()),
-            // Div(lhs, rhs) => ,
             Inf(repr) => repr.rev().inf(),
-            // Not => ,
             Add(lhs, rhs) => lhs.rev().add(rhs.rev()),
             And(lhs, rhs) => lhs.rev().and(rhs.rev()),
             _ => unimplemented!()
@@ -154,7 +152,7 @@ impl<I: ~const Integral> Repr<I> {
     /// ε-production, nullable
     pub const fn null(&self) -> bool {
         match self {
-            Self::Zero(_) => true,
+            Zero => false,
             One(seq) => seq.null(),
             Self::Interval(_) => false,
             Mul(lhs, rhs) => lhs.null() && rhs.null(),
@@ -164,21 +162,11 @@ impl<I: ~const Integral> Repr<I> {
             _ => false
         }
     }
-
-    pub const fn len(&self) -> usize {
-        match self {
-            One(seq) => seq.len(),
-            Self::Interval(_) => 1,
-            Mul(lhs, rhs) => lhs.len() + rhs.len(),
-            Or(lhs, rhs) => lhs.len() + rhs.len(),
-            _ => unimplemented!()
-        }
-    }
     
     pub const fn eq(&self, other: &Repr<I>) -> bool {
         match (self, other) {
             (True(_), True(_)) => panic!("True variant is uncomparable"),
-            (Self::Zero(lhs), Self::Zero(rhs)) => lhs.eq(rhs),
+            (Zero, Zero) => true,
             (One(lhs), One(rhs)) => lhs.eq(rhs),
             // TODO(rnarkk)
             (Self::Interval(lhs), Self::Interval(rhs)) => lhs.eq(rhs),
@@ -196,9 +184,21 @@ impl<I: ~const Integral> Repr<I> {
     pub const fn le(&self, other: &Self) -> bool {
         match (self, other) {
             (Self::Interval(lhs), Self::Interval(rhs)) => lhs.le(rhs),
+            (Or(llhs, lrhs), Or(rlhs, rrhs))
+                => llhs.le(rlhs) && lrhs.le(rrhs)
+                || llhs.le(rrhs) && lrhs.le(rlhs),
             // TODO(rnarkk)
             (lhs, Or(rlhs, rrhs)) => lhs.le(rlhs) || lhs.le(rrhs),
-            (Or(llhs, lrhs), Or(rlhs, rrhs)) => llhs.le(rlhs) && lrhs.le(rrhs) || llhs.le(rrhs) && lrhs.le(rlhs),
+            _ => unimplemented!()
+        }
+    }
+
+    pub const fn len(&self) -> usize {
+        match self {
+            One(seq) => seq.len(),
+            Self::Interval(_) => 1,
+            Mul(lhs, rhs) => lhs.len() + rhs.len(),
+            Or(lhs, rhs) => lhs.len() + rhs.len(),
             _ => unimplemented!()
         }
     }
@@ -224,19 +224,19 @@ impl<I: ~const Integral> Repr<I> {
         unimplemented!()
     }
 
-    pub const fn is_anchored_start(&self) -> bool {
-        match self {
-            Self::Zero(Zero::StartText) => true,
-            _ => false
-        }
-    }
+    // pub const fn is_anchored_start(&self) -> bool {
+    //     match self {
+    //         Self::Zero(Zero::StartText) => true,
+    //         _ => false
+    //     }
+    // }
 
-    pub const fn is_anchored_end(&self) -> bool {
-        match self {
-            Self::Zero(Zero::EndText) => true,
-            _ => false
-        }
-    }
+    // pub const fn is_anchored_end(&self) -> bool {
+    //     match self {
+    //         Self::Zero(Zero::EndText) => true,
+    //         _ => false
+    //     }
+    // }
 
     pub const fn is_line_anchored_start(&self) -> bool {
         unimplemented!()
@@ -268,6 +268,7 @@ impl<I: ~const Integral> Repr<I> {
     }
 }
 
+/*
 /// An anchor assertion. An anchor assertion match always has zero length.
 /// The high-level intermediate representation for an anchor assertion.
 ///
@@ -317,3 +318,4 @@ pub enum Zero {
     /// Match an ASCII-only negation of a word boundary.
     NotWordBoundaryAscii,
 }
+*/

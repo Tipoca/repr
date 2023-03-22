@@ -178,7 +178,7 @@ impl<I: ~const Integral> const Add<Self> for Repr<I> {
 
 #[unconst]
 impl<I: ~const Integral> const BitAnd<Self> for Interval<I> {
-    type Output = Option<Self>;
+    type Output = Repr<I>;
 
     fn bitand(self, rhs: Self) -> Self::Output {
         self.and(rhs)
@@ -187,18 +187,18 @@ impl<I: ~const Integral> const BitAnd<Self> for Interval<I> {
 
 #[unconst]
 impl<I: ~const Integral> const BitOr<Self> for Interval<I> {
-    type Output = Option<Self>;
+    type Output = Repr<I>;
 
     fn bitor(self, rhs: Self) -> Self::Output {
         self.or(rhs)
     }
 }
 
-#[unconst]
-impl<I: ~const Integral> const BitXor<Self> for Interval<I> {
-    type Output = (Option<Self>, Option<Self>);
+// #[unconst]
+// impl<I: ~const Integral> const BitXor<Self> for Interval<I> {
+//     type Output = Repr<I>;
 
-    fn bitxor(self, rhs: Self) -> Self::Output {
-        self.xor(rhs)
-    }
-}
+//     fn bitxor(self, rhs: Self) -> Self::Output {
+//         self.xor(rhs)
+//     }
+// }
