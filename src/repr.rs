@@ -188,7 +188,7 @@ impl<I: ~const Integral> Repr<I> {
                 => llhs.eq(rlhs) && lrhs.eq(rrhs)
                 || llhs.eq(rrhs) && lrhs.eq(rlhs),
             (Inf(lhs), Inf(rhs)) => lhs.eq(rhs),
-            (Sup(lhs), Sup(rhs)) => lhs.eq(rhs)
+            (Sup(lhs), Sup(rhs)) => lhs.eq(rhs),
             (Add(llhs, lrhs), Add(rlhs, rrhs)) => llhs.eq(rlhs) && lrhs.eq(rrhs),
             (And(llhs, lrhs), And(rlhs, rrhs))
                 => llhs.eq(rlhs) && lrhs.eq(rrhs)
