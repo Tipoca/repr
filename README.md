@@ -9,7 +9,8 @@
 
 - Is there such as selective/projective mul to concatenate only one side of And?
 - Representation of the four units, or do we need them? (Decidability is affecting)
-  - 1	as Seq::empty()
+  - 1	as Seq::empty(), 𝟏 ≡ νX.X
+  - 𝟎 ≡ μX.X
   - ⊤ as Inf(Interval::full())
   - ⊥ as a & b when a ≠ b (?A)
 - One as Seq(\['a'\]) vs Interval('a', 'a')
