@@ -56,13 +56,14 @@ impl<I: ~const Integral> Repr<I> {
             (_, Zero) => Zero,
             (One(lhs), One(rhs)) => One(lhs.mul(rhs)),
             (Mul(llhs, lrhs), rhs) => Mul(llhs, Box::new(Mul(lrhs, Box::new(rhs)))),
+            (Inf(lhs), Inf(rhs)) if lhs.eq(rhs) => Inf(lhs),
             (lhs, rhs) => Mul(Box::new(lhs), Box::new(rhs))
         }
     }
     
     pub const fn or(self, other: Self) -> Self {
         match (self, other) {
-            (lhs, rhs) if lhs == rhs => lhs,
+            (lhs, rhs) if lhs.eq(rhs) => lhs,
             (Zero, rhs) => rhs,
             (lhs, Zero) => lhs,
             (Self::Interval(lhs), Self::Interval(rhs)) => lhs.or(rhs),
@@ -88,7 +89,7 @@ impl<I: ~const Integral> Repr<I> {
 
     pub const fn and(self, other: Self) -> Self {
         match (self, other) {
-            (lhs, rhs) if lhs == rhs => lhs,
+            (lhs, rhs) if lhs.eq(rhs) => lhs,
             (Self::Interval(lhs), Self::Interval(rhs)) => lhs.and(rhs),
             (lhs, rhs) => And(Box::new(lhs), Box::new(rhs))
         }
