@@ -97,6 +97,7 @@ impl<I: ~const Integral> Repr<I> {
         match (self, other) {
             (lhs, rhs) if lhs.eq(&rhs) => lhs,
             (Self::Interval(lhs), Self::Interval(rhs)) => lhs.and(rhs),
+            (And(llhs, lrhs), rhs) => And(llhs, Box::new(And(lrhs, Box::new(rhs)))),
             (lhs, rhs) => And(Box::new(lhs), Box::new(rhs))
         }
     }
