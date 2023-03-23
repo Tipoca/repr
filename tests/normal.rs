@@ -103,7 +103,7 @@ fn and_idempotence() {
 
 #[test]
 fn duality() {
-    assert_eq!(one('a').inf().dual(), one('a').dual().exp());
+    assert_eq!(one('a').inf().dual(), one('a').dual().sup());
 }
 
 #[test]
