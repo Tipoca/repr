@@ -45,17 +45,20 @@ fn or_unit() {
     assert_eq!(zero().or(one('a')), one('a'));
 }
 
+/// a ⊕ b = b ⊕ a
 #[test]
 fn or_commutativity() {
     assert_eq!(one('a').or(one('b')), one('b').or(one('a')));
 }
 
+/// a ⊕ (b ⊕ c) = (a ⊕ b) ⊕ c
 #[test]
 fn or_associativity() {
     assert_eq!(one('a').or(one('b').or(one('c'))),
                one('a').or(one('b')).or(one('c')));
 }
 
+/// a ⊕ a = a
 #[test]
 fn or_idempotence() {
     assert_eq!(one('a').or(one('a')), one('a'));
