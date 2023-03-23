@@ -85,6 +85,12 @@ fn and_commutativity() {
 }
 
 #[test]
+fn and_associativity() {
+    assert_eq!(one('a').and(one('b').and(one('c'))),
+               one('a').and(one('b')).and(one('c')));
+}
+
+#[test]
 fn and_idempotence() {
     assert_eq!(one('a').and(one('a')), one('a'));
 }
