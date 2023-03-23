@@ -27,6 +27,7 @@ extern crate alloc;
 
 mod context;
 mod conversion;
+mod functor;
 mod interval;
 mod operators;
 // mod partition;
