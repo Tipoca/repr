@@ -59,6 +59,11 @@ fn or_idempotence() {
 }
 
 #[test]
+fn inf_idempotence() {
+    assert_eq!(one('a').inf().inf(), one('a').inf());
+}
+
+#[test]
 fn add_non_commutativity() {
     assert_ne!(one('a').add(one('b')), one('b').add(one('a')));
 }

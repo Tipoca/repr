@@ -73,7 +73,11 @@ impl<I: ~const Integral> Repr<I> {
     }
     
     pub const fn inf(self) -> Self {
-        Inf(Box::new(self))
+        match self {
+            Inf(repr) => Inf(repr),
+            repr => Inf(Box::new(repr))
+        }
+        
     }
     
     pub const fn sup(self) -> Self {
