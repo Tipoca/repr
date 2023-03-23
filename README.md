@@ -25,7 +25,7 @@
 - action a.P, a ⊙ P, guard, scalar product
 - Normalisation vs equality rules
 - characteristic function/morphism
-- limit, colimit, end, coend
+- weighted limit, weighted colimit, end, coend
 - parameterise some laws as features
 - Spherical conic (tennis ball)
 
