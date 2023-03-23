@@ -5,6 +5,9 @@ fn reflexivity() {
     assert_eq!(one('a'), one('a'));
     assert_eq!(one('a').mul(one('b')), one('a').mul(one('b')));
     assert_eq!(one('a').or(one('b')), one('a').or(one('b')));
+    assert_eq!(one('a').inf(), one('a').inf());
+    assert_eq!(one('a').add(one('b')), one('a').add(one('b')));
+    assert_eq!(one('a').and(one('b')), one('a').and(one('b')));
 }
 
 #[test]
