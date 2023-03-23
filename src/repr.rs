@@ -9,6 +9,8 @@ use crate::traits::Integral;
 #[unconst]
 pub enum Repr<I: ~const Integral> {
     True(Box<dyn Fn(Seq<I>) -> bool>),
+    // ⊥ (multiplicative disjunction unit)
+    // False,
     /// 0 (additive disjuction unit)
     Zero,
     /// 
