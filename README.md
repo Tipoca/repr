@@ -84,6 +84,7 @@ Symbols are grouped and assigned primarily by additive/multiplicative distincito
 
 **Laws/Coherence**
 
+- All connectives are associative
 - Additive connectives are idempotent
 
 TODO:
