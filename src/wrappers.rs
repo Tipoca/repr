@@ -23,6 +23,11 @@ where
 }
 
 #[unconst]
+pub const fn empty<I: ~const Integral>() -> Repr<I> {
+    seq([])
+}
+
+#[unconst]
 pub const fn interval<I: ~const Integral>(from: I, to: I) -> Repr<I> {
     Repr::interval(from, to)
 }
