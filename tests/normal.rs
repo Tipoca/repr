@@ -1,4 +1,4 @@
-use repr::wrappers::{one, seq, zero};
+use repr::wrappers::{empty, one, seq, zero};
 
 #[test]
 fn reflexivity() {
@@ -22,8 +22,8 @@ fn mul_linearity() {
 
 #[test]
 fn mul_unit() {
-    assert_eq!(one('a').mul(seq([])), one('a'));
-    assert_eq!(seq([]).mul(one('a')), one('a'));
+    assert_eq!(one('a').mul(empty()), one('a'));
+    assert_eq!(empty().mul(one('a')), one('a'));
 }
 
 #[test]
