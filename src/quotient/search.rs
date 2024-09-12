@@ -35,13 +35,14 @@ fn build_aho_corasick(parsed: &Parsed<I>) -> Option<AhoCorasick<u32>> {
     // )
 }
 
-#[unconst]
 /// A prefix extracted from a compiled regular expression.
 ///
 /// A regex prefix is a set of literal strings that *must* be matched at the
 /// beginning of a regex in order for the entire regex to match. Similarly
 /// for a regex suffix.
-#[derive(Clone, Debug)]
+#[unconst]
+#[derive_const(Clone)]
+#[derive(Debug)]
 pub struct LiteralSearcher<I: ~const Integral> {
     complete: bool,
     lcp: Memmem,
@@ -50,7 +51,8 @@ pub struct LiteralSearcher<I: ~const Integral> {
 }
 
 #[unconst]
-#[derive(Clone, Debug)]
+#[derive_const(Clone)]
+#[derive(Debug)]
 enum Matcher<I: ~const Integral + ~const Hash> {
     /// No literals. (Never advances through the input.)
     Empty,
@@ -59,14 +61,20 @@ enum Matcher<I: ~const Integral + ~const Hash> {
     /// A single substring, using vector accelerated routines when available.
     Memmem(Memmem),
     /// An Aho-Corasick automaton.
-    AC { ac: AhoCorasick<u32>, lits: Vec<Literal<I>> },
+    AC {
+        ac: AhoCorasick<u32>,
+        lits: Vec<Literal<I>>,
+    },
     /// A packed multiple substring searcher, using SIMD.
     ///
     /// Note that Aho-Corasick will actually use this packed searcher
     /// internally automatically, however, there is some overhead associated
     /// with going through the Aho-Corasick machinery. So using the packed
     /// searcher directly results in some gains.
-    Packed { s: packed::Searcher, lits: Vec<Literal<I>> },
+    Packed {
+        s: packed::Searcher,
+        lits: Vec<Literal<I>>,
+    },
 }
 
 #[unconst]
@@ -116,12 +124,8 @@ impl<I: ~const Integral> LiteralSearcher<I> {
             Empty => Some((0, 0)),
             Seq(ref sset) => sset.find(context).map(|i| (i, i + 1)),
             Memmem(ref s) => s.find(context).map(|i| (i, i + s.len())),
-            AC { ref ac, .. } => {
-                ac.find(context).map(|m| (m.start(), m.end()))
-            }
-            Packed { ref s, .. } => {
-                s.find(context).map(|m| (m.start(), m.end()))
-            }
+            AC { ref ac, .. } => ac.find(context).map(|m| (m.start(), m.end())),
+            Packed { ref s, .. } => s.find(context).map(|m| (m.start(), m.end())),
         }
     }
 
@@ -388,8 +392,7 @@ impl<I: ~const Integral> SeqSet<I> {
     }
 
     fn approximate_size(&self) -> usize {
-        (self.dense.len() * mem::size_of::<u8>())
-            + (self.sparse.len() * mem::size_of::<bool>())
+        (self.dense.len() * mem::size_of::<u8>()) + (self.sparse.len() * mem::size_of::<bool>())
     }
 }
 
@@ -453,7 +456,8 @@ impl<'n> Finder<'n> {
     /// assert_eq!(None, Finder::new("quux").find(haystack));
     /// ```
     pub fn find(&self, haystack: &[u8]) -> Option<usize> {
-        self.searcher.find(&mut self.searcher.prefilter_state(), haystack)
+        self.searcher
+            .find(&mut self.searcher.prefilter_state(), haystack)
     }
 
     /// Returns an iterator over all occurrences of a substring in a haystack.
@@ -483,10 +487,7 @@ impl<'n> Finder<'n> {
     /// assert_eq!(None, it.next());
     /// ```
     #[inline]
-    pub fn find_iter<'a, 'h>(
-        &'a self,
-        haystack: &'h [u8],
-    ) -> FindIter<'h, 'a> {
+    pub fn find_iter<'a, 'h>(&'a self, haystack: &'h [u8]) -> FindIter<'h, 'a> {
         FindIter::new(haystack, self.as_ref())
     }
 
@@ -500,7 +501,9 @@ impl<'n> Finder<'n> {
     #[cfg(feature = "std")]
     #[inline]
     pub fn into_owned(self) -> Finder<'static> {
-        Finder { searcher: self.searcher.into_owned() }
+        Finder {
+            searcher: self.searcher.into_owned(),
+        }
     }
 
     /// Convert this finder into its borrowed variant.
@@ -515,7 +518,9 @@ impl<'n> Finder<'n> {
     /// shorter of the two.
     #[inline]
     pub fn as_ref(&self) -> Finder<'_> {
-        Finder { searcher: self.searcher.as_ref() }
+        Finder {
+            searcher: self.searcher.as_ref(),
+        }
     }
 
     /// Returns the needle that this finder searches for.
@@ -561,12 +566,13 @@ impl<'n> Searcher<'n> {
 
         let ninfo = NeedleInfo::new(needle);
         let mk = |kind: SearcherKind| {
-            let prefn = prefilter::forward(
-                &config.prefilter,
-                &ninfo.rarebytes,
-                needle,
-            );
-            Searcher { needle: CowBytes::new(needle), ninfo, prefn, kind }
+            let prefn = prefilter::forward(&config.prefilter, &ninfo.rarebytes, needle);
+            Searcher {
+                needle: CowBytes::new(needle),
+                ninfo,
+                prefn,
+                kind,
+            }
         };
         if needle.len() == 0 {
             return mk(Empty);
@@ -622,11 +628,7 @@ impl<'n> Searcher<'n> {
             TwoWay(tw) => TwoWay(tw),
             #[cfg(all(not(miri), memchr_runtime_simd))]
             GenericSIMD128(gs) => GenericSIMD128(gs),
-            #[cfg(all(
-                not(miri),
-                target_arch = "x86_64",
-                memchr_runtime_simd
-            ))]
+            #[cfg(all(not(miri), target_arch = "x86_64", memchr_runtime_simd))]
             GenericSIMD256(gs) => GenericSIMD256(gs),
         };
         Searcher {
@@ -647,11 +649,7 @@ impl<'n> Searcher<'n> {
             TwoWay(tw) => TwoWay(tw),
             #[cfg(all(not(miri), memchr_runtime_simd))]
             GenericSIMD128(gs) => GenericSIMD128(gs),
-            #[cfg(all(
-                not(miri),
-                target_arch = "x86_64",
-                memchr_runtime_simd
-            ))]
+            #[cfg(all(not(miri), target_arch = "x86_64", memchr_runtime_simd))]
             GenericSIMD256(gs) => GenericSIMD256(gs),
         };
         Searcher {
@@ -666,11 +664,7 @@ impl<'n> Searcher<'n> {
     /// chosen at construction and executing it on the given haystack with the
     /// prefilter's current state of effectiveness.
     #[inline(always)]
-    fn find(
-        &self,
-        state: &mut PrefilterState,
-        haystack: &[u8],
-    ) -> Option<usize> {
+    fn find(&self, state: &mut PrefilterState, haystack: &[u8]) -> Option<usize> {
         use self::SearcherKind::*;
 
         let needle = self.needle();
@@ -699,11 +693,7 @@ impl<'n> Searcher<'n> {
                     gs.find(haystack, needle)
                 }
             }
-            #[cfg(all(
-                not(miri),
-                target_arch = "x86_64",
-                memchr_runtime_simd
-            ))]
+            #[cfg(all(not(miri), target_arch = "x86_64", memchr_runtime_simd))]
             GenericSIMD256(ref gs) => {
                 // The SIMD matcher can't handle particularly short haystacks,
                 // so we fall back to RK in these cases.
@@ -740,7 +730,11 @@ impl<'n> Searcher<'n> {
             // haystacks, and, above, Rabin-Karp is employed for tiny haystacks
             // anyway.
             if state.is_effective() {
-                let mut pre = Pre { state, prefn, ninfo: &self.ninfo };
+                let mut pre = Pre {
+                    state,
+                    prefn,
+                    ninfo: &self.ninfo,
+                };
                 return tw.find(Some(&mut pre), haystack, needle);
             }
         }
@@ -778,7 +772,7 @@ impl Memmem {
         &context[context.len() - self.len()..] == self.finder.needle()
     }
 
-    pub fn len(&sell no f) -> usize {
+    pub fn len(&self) -> usize {
         self.finder.needle().len()
     }
 

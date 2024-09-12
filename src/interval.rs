@@ -5,12 +5,12 @@
 use core::{
     cmp::{max, min},
     iter::{IntoIterator, Step},
-    ops::RangeInclusive
+    ops::RangeInclusive,
 };
 
 use unconst::unconst;
 
-use crate::repr::Repr::{self, Zero, Or};
+use crate::repr::Repr::{self, Or, Zero};
 use crate::traits::Integral;
 
 #[unconst]
@@ -32,7 +32,7 @@ impl<I: ~const Integral> Interval<I> {
     pub const fn full() -> Self {
         Interval(I::MIN, I::MAX)
     }
-    
+
     /// Intersect this Interval with the given Interval and return the result.
     ///
     /// If the intersection is empty, then return Zero.
@@ -43,7 +43,7 @@ impl<I: ~const Integral> Interval<I> {
             Zero
         }
     }
-    
+
     /// Union the given overlapping Interval into this Interval.
     ///
     /// If the two Seqs aren't contiguous, then don't union them.
@@ -51,10 +51,13 @@ impl<I: ~const Integral> Interval<I> {
         if max(self.0, other.0) <= min(self.1, other.1).succ() {
             Repr::Interval(Self::new(min(self.0, other.0), max(self.1, other.1)))
         } else {
-            Or(Box::new(Repr::Interval(self)), Box::new(Repr::Interval(other)))
+            Or(
+                Box::new(Repr::Interval(self)),
+                Box::new(Repr::Interval(other)),
+            )
         }
     }
-    
+
     // /// Compute the symmetric difference the given Interval from this Interval. This
     // /// returns the union of the two Intervals minus its intersection.
     // pub const fn xor(self, other: Self) -> Repr<I> {
@@ -68,13 +71,13 @@ impl<I: ~const Integral> Interval<I> {
     //     };
     //     or.sub(and)
     // }
-    
+
     // /// Subtract the given Interval from this Interval and return the resulting
     // /// Seqs.
     // ///
     // /// If subtraction would result in an empty Interval, then no Seqs are
     // /// returned.
-    // /// 
+    // ///
     // /// other.0 <= self.0 <= self.1 <= other.1 (self <= other) => Zero
     // /// self.0 <= other.0 <= other.1 <= self.1 (other <= self) => (lower, upper)
     // /// self.0 <= other.0 <= self.1 <= other.1 => (lower, None)
@@ -101,7 +104,7 @@ impl<I: ~const Integral> Interval<I> {
     //     ret
     // }
 
-    /// 
+    ///
     pub const fn contiguous(&self, other: &Self) -> bool {
         max(self.0, other.0) <= min(self.1, other.1)
     }
@@ -116,17 +119,12 @@ impl<I: ~const Integral> Interval<I> {
     // TODO(rnarkk) Why not simply `other.0 <= self.0 && self.1 <= other.1`
     /// a ⊆ b
     pub const fn le(&self, other: &Self) -> bool {
-        (other.0 <= self.0 && self.0 <= other.1)
-        && (other.0 <= self.1 && self.1 <= other.1)
+        (other.0 <= self.0 && self.0 <= other.1) && (other.0 <= self.1 && self.1 <= other.1)
     }
 
     /// i ∈ a
     pub fn has(&self, i: I) -> bool {
-        if self.0 <= i && i <= self.1 {
-            true
-        } else {
-            false
-        }
+        self.0 <= i && i <= self.1
     }
 
     pub const fn len(&self) -> usize {

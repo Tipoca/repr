@@ -24,6 +24,7 @@ impl<I: ~const Integral> Seq<I> {
         Seq(vec![i])
     }
 
+    #[allow(clippy::should_implement_trait)]
     pub const fn mul(mut self, other: Self) -> Self {
         self.0.extend(other);
         self
@@ -32,11 +33,11 @@ impl<I: ~const Integral> Seq<I> {
     pub const fn rev(self) -> Self {
         Seq(self.0.into_iter().rev().collect())
     }
-    
+
     pub const fn null(&self) -> bool {
         self.0.is_empty()
     }
-    
+
     pub const fn len(&self) -> usize {
         self.0.len()
     }

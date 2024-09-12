@@ -1,29 +1,22 @@
 // #![no_std]
 #![feature(pattern)]
-#![feature(lazy_cell)]
 #![feature(step_trait)]
 #![feature(stmt_expr_attributes)]
-// #![feature(negative_impls)]
+#![feature(negative_impls)]
 // #![feature(specialization)]
 #![feature(derive_const)]
 #![feature(const_trait_impl)]
 #![feature(const_try)]
 #![feature(const_for)]
 #![feature(const_box)]
-// #![feature(const_cmp)]
-#![feature(const_discriminant)]
-// #![feature(const_clone)]
-// #![feature(const_reverse)]
 #![feature(const_slice_index)]
 #![feature(const_mut_refs)]
 #![feature(const_option)]
 #![feature(const_refs_to_cell)]
 #![feature(const_heap)]
-// #![feature(const_convert)]
-#![feature(core_intrinsics)]
 // #![feature(const_iter)]
 
-extern crate alloc; 
+extern crate alloc;
 
 mod context;
 mod conversion;
@@ -40,9 +33,10 @@ mod unicode;
 
 pub mod constants;
 pub mod macros;
+// #[cfg(feature = "quotient")]
 // pub mod quotient;
-pub mod traits;
 pub mod repr;
+pub mod traits;
 pub mod wrappers;
 
 pub use constants::perl::{DIGIT, WORD};

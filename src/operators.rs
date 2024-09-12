@@ -1,8 +1,8 @@
 use core::{
     clone::Clone,
-    cmp::{PartialEq, PartialOrd, Ordering},
+    cmp::{Ordering, PartialEq, PartialOrd},
     fmt::{self, Debug},
-    ops::{BitOr, BitAnd, BitXor, Range, Add, Mul, RangeFull, RangeFrom}
+    ops::{Add, BitAnd, BitOr, BitXor, Mul, Range, RangeFrom, RangeFull},
 };
 
 use unconst::unconst;
@@ -23,7 +23,7 @@ impl<I: ~const Integral> const Debug for Repr<I> {
             Repr::Inf(repr) => write!(f, "Inf({:?})", repr),
             Repr::Add(lhs, rhs) => write!(f, "Add({:?}, {:?})", lhs, rhs),
             Repr::And(lhs, rhs) => write!(f, "And({:?}, {:?})", lhs, rhs),
-            _ => unimplemented!()
+            _ => unimplemented!(),
         }
     }
 }
@@ -34,13 +34,13 @@ impl<I: ~const Integral> const Clone for Repr<I> {
         match self {
             Repr::True(_) => panic!("True variant cannot be cloned"),
             Repr::One(seq) => Repr::One(seq.clone()),
-            Repr::Interval(interval) => Repr::Interval(interval.clone()),
+            Repr::Interval(interval) => Repr::Interval(*interval),
             Repr::Mul(lhs, rhs) => Repr::Mul(lhs.clone(), rhs.clone()),
             Repr::Or(lhs, rhs) => Repr::Or(lhs.clone(), rhs.clone()),
             Repr::Inf(repr) => Repr::Inf(repr.clone()),
             Repr::Add(lhs, rhs) => Repr::Add(lhs.clone(), rhs.clone()),
             Repr::And(lhs, rhs) => Repr::And(lhs.clone(), rhs.clone()),
-            _ => unimplemented!()
+            _ => unimplemented!(),
         }
     }
 }
@@ -116,7 +116,7 @@ impl<I: ~const Integral> const BitOr<Self> for Repr<I> {
 #[unconst]
 impl<I: ~const Integral> const BitOr<I> for Repr<I> {
     type Output = Self;
-    
+
     fn bitor(self, rhs: I) -> Self {
         self.or(Self::One(rhs.into()))
     }

@@ -1,6 +1,6 @@
 [package]
 name = "repr"
-version = "0.0.10"
+version = "0.1.0"
 edition = "2021"
 description = "The regular-expression-as-linear-logic interpretation and its implementation"
 license = "MIT/Apache-2.0"
@@ -8,14 +8,14 @@ keywords = ["regular-expression"]
 categories = ["regular-expression"]
 homepage = "https://gitlab.com/synthetic/repr"
 documentation = "https://docs.rs/repr"
-rust-version = "1.70.0"
+rust-version = "1.80.0"
 readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 regex-syntax = "0.7"
-unconst = { version = "0.9", features = [] }
+unconst = { version = "0", features = [] }
 
 aho-corasick = { version = "1", optional = true }
 # For skipping along search text quickly when a leading byte is known.

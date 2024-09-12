@@ -1,21 +1,19 @@
 //! Extract literal prefixes and suffixes from an `Repr<I>`.
 //! <https://en.wikipedia.org/wiki/Brzozowski_derivative>
-        
+
 #[cfg(feature = "quotient")]
 mod search;
 
 use alloc::vec::Vec;
-use core::{
-    cmp,
-    fmt::Debug,
-    mem,
-    ops::Deref
-};
+use core::{cmp, fmt::Debug, mem, ops::Deref};
 
 use unconst::unconst;
 
 use crate::interval::Interval;
-use crate::repr::{Repr::{self, One, Mul, Or, Div, Inf, Sup, Add, And}, Zero};
+use crate::repr::{
+    Repr::{self, Add, And, Div, Inf, Mul, One, Or, Sup},
+    Zero,
+};
 use crate::seq::Seq;
 use crate::traits::Integral;
 
@@ -115,7 +113,11 @@ impl<I: ~const Integral> Set<I> {
         for lit in &self.0[1..] {
             len = cmp::min(
                 len,
-                (lit.seq.deref()).iter().zip(*lit0).take_while(|(a, b)| a == &b).count(),
+                (lit.seq.deref())
+                    .iter()
+                    .zip(*lit0)
+                    .take_while(|(a, b)| a == &b)
+                    .count(),
             );
         }
         &self.0[0][..len]
@@ -371,7 +373,8 @@ impl<I: ~const Integral> Set<I> {
 
 #[unconst]
 const fn prefixes<I: ~const Integral>(expr: &Repr<I>, set: &mut Set<I>)
-    where I: ~const Integral,
+where
+    I: ~const Integral,
 {
     match expr {
         Repr::Zero(_) => {}
@@ -405,7 +408,7 @@ const fn prefixes<I: ~const Integral>(expr: &Repr<I>, set: &mut Set<I>)
             lits2.cut();
             lits2.add(Literal::empty());
             set.union(lits2);
-        },
+        }
         And(ref lhs, ref rhs) => {
             for e in [lhs, rhs] {
                 if let Repr::Zero(Zero::StartText) = **e {
@@ -435,12 +438,18 @@ const fn prefixes<I: ~const Integral>(expr: &Repr<I>, set: &mut Set<I>)
 impl<I: ~const Integral> Literal<I> {
     /// Returns a new complete literal with the bytes given.
     pub fn new(seq: Seq<I>) -> Literal<I> {
-        Literal { seq: seq.into(), cut: false }
+        Literal {
+            seq: seq.into(),
+            cut: false,
+        }
     }
 
     /// Returns a new complete empty literal.
     pub fn empty() -> Literal<I> {
-        Literal { seq: Seq::empty(), cut: false }
+        Literal {
+            seq: Seq::empty(),
+            cut: false,
+        }
     }
 }
 
@@ -454,7 +463,8 @@ impl<I: ~const Integral> Deref for Literal<I> {
 
 #[unconst]
 const fn position<I>(needle: &[I], mut context: &[I]) -> Option<usize>
-    where I: ~const Integral
+where
+    I: ~const Integral,
 {
     let mut i = 0;
     while context.len() >= needle.len() {

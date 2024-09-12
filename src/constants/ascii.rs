@@ -34,8 +34,7 @@ pub const LOWER: Repr<char> = Repr::from('a'..'z');
 pub const PRINT: Repr<char> = Repr::from(' '..'~');
 #[unconst]
 /// `[!-/:-@\[-`{-~]`, `[:punct:]`
-pub const PUNCT: Repr<char>
-    = Repr::from('!'..'/') | (':'..'@') | ('['..'`') | ('{'..'~');
+pub const PUNCT: Repr<char> = Repr::from('!'..'/') | (':'..'@') | ('['..'`') | ('{'..'~');
 #[unconst]
 /// `[\t\n\v\f\r ]`, `[:space:]`
 pub const SPACE: Repr<char> = HT | LF | VT | FF | CR | SP;

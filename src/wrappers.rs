@@ -15,8 +15,9 @@ pub const fn one<I: ~const Integral>(i: I) -> Repr<I> {
 
 #[unconst]
 pub const fn seq<I, M>(is: M) -> Repr<I>
-    where I: ~const Integral,
-          M: ~const IntoIterator<Item = I>
+where
+    I: ~const Integral,
+    M: ~const IntoIterator<Item = I>,
 {
     Repr::seq(is)
 }

@@ -79,18 +79,18 @@ macro_rules! c {
 macro_rules! e {
     ($tt:tt) => {
         Repr::from(format!(r"\{}", stringify!($tt)));
-    }
+    };
 }
 
 // /// Ignore pattern
 // #[macro_export]
 // macro_rules! i {
 //     ($tt:tt) => {
-        
+
 //     }
 // }
 
-/// Delimit pattern by 
+/// Delimit pattern by
 #[macro_export]
 macro_rules! delimit {
     ($tt:expr) => {
