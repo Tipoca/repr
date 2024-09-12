@@ -18,6 +18,7 @@
 
 extern crate alloc;
 
+mod bytes;
 mod context;
 mod conversion;
 mod functor;
@@ -27,9 +28,10 @@ mod operators;
 // mod pattern;
 // mod pool;
 // mod process;
+mod regex;
 mod seq;
 // mod sparse;
-mod unicode;
+mod string;
 
 pub mod constants;
 pub mod macros;
