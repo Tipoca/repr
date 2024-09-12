@@ -24,3 +24,21 @@ fn main() {
     assert_regex_eq!(one('a').mul(one('b')).cap(), "(ab)");
     assert_regex_eq!(one('a').inf().cap(), "(a*)");
 }
+
+#[test]
+fn escape() {
+    assert_regex_eq!(one('+'), "\\+");
+    assert_regex_eq!(one('*'), "\\*");
+    assert_regex_eq!(one('?'), "\\?");
+    assert_regex_eq!(one('.'), "\\.");
+    assert_regex_eq!(one('('), "\\(");
+    assert_regex_eq!(one(')'), "\\)");
+    assert_regex_eq!(one('['), "\\[");
+    assert_regex_eq!(one(']'), "\\]");
+    assert_regex_eq!(one('{'), "\\{");
+    assert_regex_eq!(one('}'), "\\}");
+    assert_regex_eq!(one('^'), "\\^");
+    assert_regex_eq!(one('$'), "\\$");
+    assert_regex_eq!(one('|'), "\\|");
+    assert_regex_eq!(one('\\'), "\\\\");
+}

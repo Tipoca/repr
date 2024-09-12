@@ -11,7 +11,23 @@ impl Repr<char> {
 
     pub fn to_regex_string(&self) -> String {
         match self {
-            Repr::One(s) => s.iter().collect(),
+            Repr::One(s) => match s.as_ref() {
+                ['+']
+                | ['*']
+                | ['?']
+                | ['.']
+                | ['(']
+                | [')']
+                | ['[']
+                | [']']
+                | ['{']
+                | ['}']
+                | ['^']
+                | ['$']
+                | ['|']
+                | ['\\'] => format!("\\{}", s[0]),
+                _ => s.iter().collect(),
+            },
             Repr::Interval(i) => format!("[{}-{}]", i.0, i.1),
             Repr::Mul(lhs, rhs) => format!("{}{}", lhs.to_regex_string(), rhs.to_regex_string()),
             Repr::Or(lhs, rhs) => format!("{}|{}", lhs.to_regex_string(), rhs.to_regex_string()),
