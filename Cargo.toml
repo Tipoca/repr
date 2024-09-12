@@ -1,6 +1,6 @@
 [package]
 name = "repr"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "The regular-expression-as-linear-logic interpretation and its implementation"
 license = "MIT/Apache-2.0"
@@ -14,12 +14,12 @@ readme = "README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-regex-syntax = "0.7"
+regex-syntax = "0.8"
 unconst = { version = "0", features = [] }
 
 aho-corasick = { version = "1", optional = true }
 # For skipping along search text quickly when a leading byte is known.
-memchr = { version = "2.5.0", optional = true }
+memchr = { version = "2", optional = true }
 
 [features]
 default = ["std", "perf-inline", "unicode", "regex-syntax/default"]
