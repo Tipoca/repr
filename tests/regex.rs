@@ -1,4 +1,7 @@
-use repr::wrappers::{one, seq};
+use repr::{
+    wrappers::{empty, interval, one, seq},
+    Repr,
+};
 
 macro_rules! assert_regex_eq {
     ($expr:expr, $rhs:literal) => {
@@ -13,8 +16,8 @@ fn main() {
     assert_regex_eq!(one('a').mul(one('b')).mul(one('c')), "abc");
     assert_regex_eq!(seq(['a', 'b']), "ab");
     assert_regex_eq!(seq(['a', 'b', 'c']), "abc");
-    assert_regex_eq!(one('a').or(one('b')), "a|b");
-    assert_regex_eq!(one('a').or(one('b')).or(one('c')), "a|b|c");
+    assert_regex_eq!(one('a').or(one('b')), "(a|b)");
+    assert_regex_eq!(one('a').or(one('b')).or(one('c')), "(a|(b|c))");
     assert_regex_eq!(one('a').mul(seq(['b', 'c'])), "abc");
     assert_regex_eq!(one('a').mul(seq(['b', 'c', 'd'])), "abcd");
     assert_regex_eq!(seq(['a', 'b']).mul(one('c')), "abc");
