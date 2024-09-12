@@ -42,6 +42,6 @@ pub const fn escape(c: char) -> std::sync::LazyLock<Repr<char>> {
         't' => HT,
         'v' => VT,
         '0' => NUL,
-        _ => unimplemented!()
+        _ => unimplemented!(),
     }
 }

@@ -1,4 +1,4 @@
-use repr::wrappers::{zero, one, seq};
+use repr::wrappers::{one, seq, zero};
 
 #[test]
 fn reflexivity() {
@@ -14,7 +14,10 @@ fn reflexivity() {
 fn mul_linearity() {
     assert_eq!(one('a').mul(one('b')), seq(['a', 'b']));
     assert_eq!(one('a').mul(one('b')).mul(one('c')), seq(['a', 'b', 'c']));
-    assert_eq!(one('a').mul(one('b')).mul(one('c').mul(one('d'))), seq(['a', 'b', 'c', 'd']));
+    assert_eq!(
+        one('a').mul(one('b')).mul(one('c').mul(one('d'))),
+        seq(['a', 'b', 'c', 'd'])
+    );
 }
 
 #[test]
@@ -35,8 +38,10 @@ fn mul_non_idempotence() {
 
 #[test]
 fn mul_associativity() {
-    assert_eq!(one('a').mul(one('b').mul(one('c'))),
-               one('a').mul(one('b')).mul(one('c')));
+    assert_eq!(
+        one('a').mul(one('b').mul(one('c'))),
+        one('a').mul(one('b')).mul(one('c'))
+    );
 }
 
 #[test]
@@ -54,8 +59,10 @@ fn or_commutativity() {
 /// a ⊕ (b ⊕ c) = (a ⊕ b) ⊕ c
 #[test]
 fn or_associativity() {
-    assert_eq!(one('a').or(one('b').or(one('c'))),
-               one('a').or(one('b')).or(one('c')));
+    assert_eq!(
+        one('a').or(one('b').or(one('c'))),
+        one('a').or(one('b')).or(one('c'))
+    );
 }
 
 /// a ⊕ a = a
@@ -81,8 +88,10 @@ fn add_non_idempotence() {
 
 #[test]
 fn add_associativity() {
-    assert_eq!(one('a').add(one('b').add(one('c'))),
-               one('a').add(one('b')).add(one('c')));
+    assert_eq!(
+        one('a').add(one('b').add(one('c'))),
+        one('a').add(one('b')).add(one('c'))
+    );
 }
 
 #[test]
@@ -92,8 +101,10 @@ fn and_commutativity() {
 
 #[test]
 fn and_associativity() {
-    assert_eq!(one('a').and(one('b').and(one('c'))),
-               one('a').and(one('b')).and(one('c')));
+    assert_eq!(
+        one('a').and(one('b').and(one('c'))),
+        one('a').and(one('b')).and(one('c'))
+    );
 }
 
 #[test]

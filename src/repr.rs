@@ -13,9 +13,9 @@ pub enum Repr<I: ~const Integral> {
     // False,
     /// 0 (additive disjuction unit)
     Zero,
-    /// 
+    ///
     One(Seq<I>),
-    /// 
+    ///
     Interval(Interval<I>),
     /// a ⊗ b (multiplicative conjunction/times)
     Mul(Box<Repr<I>>, Box<Repr<I>>),
@@ -32,7 +32,7 @@ pub enum Repr<I: ~const Integral> {
     // Map(Box<Repr<I>>, Fn(Box<Repr<I>>), Fn(Box<Repr<I>>))
 }
 
-use Repr::{True, Zero, One, Mul, Or, Inf, Sup, Add, And};
+use Repr::{Add, And, Inf, Mul, One, Or, Sup, True, Zero};
 
 #[unconst]
 impl<I: ~const Integral> Repr<I> {
@@ -47,11 +47,12 @@ impl<I: ~const Integral> Repr<I> {
     pub const fn seq<M: ~const IntoIterator<Item = I>>(is: M) -> Self {
         One(Seq::new(is))
     }
-    
+
     pub const fn interval(from: I, to: I) -> Repr<I> {
         Repr::Interval(Interval::new(from, to))
     }
 
+    #[allow(clippy::should_implement_trait)]
     pub const fn mul(self, other: Self) -> Self {
         match (self, other) {
             (Zero, _) => Zero,
@@ -59,10 +60,10 @@ impl<I: ~const Integral> Repr<I> {
             (One(lhs), One(rhs)) => One(lhs.mul(rhs)),
             (Mul(llhs, lrhs), rhs) => Mul(llhs, Box::new(Mul(lrhs, Box::new(rhs)))),
             (Inf(lhs), Inf(rhs)) if lhs.eq(&rhs) => Inf(lhs),
-            (lhs, rhs) => Mul(Box::new(lhs), Box::new(rhs))
+            (lhs, rhs) => Mul(Box::new(lhs), Box::new(rhs)),
         }
     }
-    
+
     pub const fn or(self, other: Self) -> Self {
         match (self, other) {
             (lhs, rhs) if lhs.eq(&rhs) => lhs,
@@ -70,26 +71,26 @@ impl<I: ~const Integral> Repr<I> {
             (lhs, Zero) => lhs,
             (Self::Interval(lhs), Self::Interval(rhs)) => lhs.or(rhs),
             (Or(llhs, lrhs), rhs) => Or(llhs, Box::new(Or(lrhs, Box::new(rhs)))),
-            (lhs, rhs) => Or(Box::new(lhs), Box::new(rhs))
+            (lhs, rhs) => Or(Box::new(lhs), Box::new(rhs)),
         }
     }
-    
+
     pub const fn inf(self) -> Self {
         match self {
             Inf(repr) => Inf(repr),
-            repr => Inf(Box::new(repr))
+            repr => Inf(Box::new(repr)),
         }
-        
     }
-    
+
     pub const fn sup(self) -> Self {
         Sup(Box::new(self))
     }
 
+    #[allow(clippy::should_implement_trait)]
     pub const fn add(self, other: Self) -> Self {
         match (self, other) {
             (Add(llhs, lrhs), rhs) => Add(llhs, Box::new(Add(lrhs, Box::new(rhs)))),
-            (lhs, rhs) => Add(Box::new(lhs), Box::new(rhs))
+            (lhs, rhs) => Add(Box::new(lhs), Box::new(rhs)),
         }
     }
 
@@ -98,7 +99,7 @@ impl<I: ~const Integral> Repr<I> {
             (lhs, rhs) if lhs.eq(&rhs) => lhs,
             (Self::Interval(lhs), Self::Interval(rhs)) => lhs.and(rhs),
             (And(llhs, lrhs), rhs) => And(llhs, Box::new(And(lrhs, Box::new(rhs)))),
-            (lhs, rhs) => And(Box::new(lhs), Box::new(rhs))
+            (lhs, rhs) => And(Box::new(lhs), Box::new(rhs)),
         }
     }
 
@@ -121,7 +122,7 @@ impl<I: ~const Integral> Repr<I> {
     pub const fn rep(self, count: usize) -> Self {
         Self::prod(vec![self; count].into_iter())
     }
-    
+
     pub const fn rev(self) -> Self {
         match self {
             Zero => Zero,
@@ -132,10 +133,10 @@ impl<I: ~const Integral> Repr<I> {
             Inf(repr) => repr.rev().inf(),
             Add(lhs, rhs) => lhs.rev().add(rhs.rev()),
             And(lhs, rhs) => lhs.rev().and(rhs.rev()),
-            _ => unimplemented!()
+            _ => unimplemented!(),
         }
     }
-    
+
     pub const fn dual(self) -> Self {
         match self {
             // Self::Interval(i) => {
@@ -147,7 +148,7 @@ impl<I: ~const Integral> Repr<I> {
             Sup(repr) => repr.dual().inf(),
             Add(lhs, rhs) => lhs.dual().mul(rhs.dual()),
             And(lhs, rhs) => lhs.dual().or(rhs.dual()),
-            _ => unimplemented!()
+            _ => unimplemented!(),
         }
     }
 
@@ -155,14 +156,17 @@ impl<I: ~const Integral> Repr<I> {
     pub const fn der(self, seq: Seq<I>) -> Self {
         match self {
             One(_seq) => unimplemented!(),
-            Mul(lhs, rhs) => lhs.clone().der(seq.clone()).mul(*rhs.clone())
-                                .or(lhs.mul(rhs.der(seq))),
+            Mul(lhs, rhs) => lhs
+                .clone()
+                .der(seq.clone())
+                .mul(*rhs.clone())
+                .or(lhs.mul(rhs.der(seq))),
             Or(lhs, rhs) => lhs.der(seq.clone()).or(rhs.der(seq)),
             And(lhs, rhs) => lhs.der(seq.clone()).and(rhs.der(seq)),
-            _ => unimplemented!()
+            _ => unimplemented!(),
         }
     }
- 
+
     /// ε-production, nullable
     pub const fn null(&self) -> bool {
         match self {
@@ -173,10 +177,11 @@ impl<I: ~const Integral> Repr<I> {
             Or(lhs, rhs) => lhs.null() || rhs.null(),
             Inf(_) => true,
             // And(lhs, rhs) => lhs.null() || rhs.null(),
-            _ => false
+            _ => false,
         }
     }
-    
+
+    #[allow(clippy::should_implement_trait)]
     pub const fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (True(_), True(_)) => panic!("True variant is uncomparable"),
@@ -184,30 +189,30 @@ impl<I: ~const Integral> Repr<I> {
             (One(lhs), One(rhs)) => lhs.eq(rhs),
             (Self::Interval(lhs), Self::Interval(rhs)) => lhs.eq(rhs),
             (Mul(llhs, lrhs), Mul(rlhs, rrhs)) => llhs.eq(rlhs) && lrhs.eq(rrhs),
-            (Or(llhs, lrhs), Or(rlhs, rrhs))
-                => llhs.eq(rlhs) && lrhs.eq(rrhs)
-                || llhs.eq(rrhs) && lrhs.eq(rlhs),
+            (Or(llhs, lrhs), Or(rlhs, rrhs)) => {
+                llhs.eq(rlhs) && lrhs.eq(rrhs) || llhs.eq(rrhs) && lrhs.eq(rlhs)
+            }
             (Inf(lhs), Inf(rhs)) => lhs.eq(rhs),
             (Sup(lhs), Sup(rhs)) => lhs.eq(rhs),
             (Add(llhs, lrhs), Add(rlhs, rrhs)) => llhs.eq(rlhs) && lrhs.eq(rrhs),
-            (And(llhs, lrhs), And(rlhs, rrhs))
-                => llhs.eq(rlhs) && lrhs.eq(rrhs)
-                || llhs.eq(rrhs) && lrhs.eq(rlhs),
+            (And(llhs, lrhs), And(rlhs, rrhs)) => {
+                llhs.eq(rlhs) && lrhs.eq(rrhs) || llhs.eq(rrhs) && lrhs.eq(rlhs)
+            }
             // TODO(rnarkk)
-            _ => false
+            _ => false,
         }
     }
-    
+
     pub const fn le(&self, other: &Self) -> bool {
         match (self, other) {
             (One(lhs), One(rhs)) => lhs.eq(rhs),
             (Self::Interval(lhs), Self::Interval(rhs)) => lhs.le(rhs),
-            (Or(llhs, lrhs), Or(rlhs, rrhs))
-                => llhs.le(rlhs) && lrhs.le(rrhs)
-                || llhs.le(rrhs) && lrhs.le(rlhs),
+            (Or(llhs, lrhs), Or(rlhs, rrhs)) => {
+                llhs.le(rlhs) && lrhs.le(rrhs) || llhs.le(rrhs) && lrhs.le(rlhs)
+            }
             // TODO(rnarkk)
             (lhs, Or(rlhs, rrhs)) => lhs.le(rlhs) || lhs.le(rrhs),
-            (lhs, rhs) => panic!("le not implemented between {:?} {:?}", lhs, rhs)
+            (lhs, rhs) => panic!("le not implemented between {:?} {:?}", lhs, rhs),
         }
     }
 
@@ -217,7 +222,7 @@ impl<I: ~const Integral> Repr<I> {
             Self::Interval(_) => 1,
             Mul(lhs, rhs) => lhs.len() + rhs.len(),
             Or(lhs, rhs) => lhs.len() + rhs.len(),
-            _ => unimplemented!()
+            _ => unimplemented!(),
         }
     }
 
@@ -287,9 +292,8 @@ impl<I: ~const Integral> Repr<I> {
     pub const fn is_alternation_literal(&self) -> bool {
         match self {
             One(_) => true,
-            Or(lhs, rhs)
-                => lhs.is_alternation_literal() && rhs.is_alternation_literal(),
-            _ => false
+            Or(lhs, rhs) => lhs.is_alternation_literal() && rhs.is_alternation_literal(),
+            _ => false,
         }
     }
 }
@@ -299,7 +303,7 @@ impl<I: ~const Integral> Repr<I> {
 /// The high-level intermediate representation for an anchor assertion.
 ///
 /// A matching anchor assertion is always zero-length.
-/// 
+///
 /// A word boundary assertion, which may or may not be Unicode aware. A
 /// word boundary assertion match always has zero length.
 /// The high-level intermediate representation for a word-boundary assertion.

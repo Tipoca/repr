@@ -30,8 +30,7 @@ impl Repr<char> {
     /// expression that matches any character, including `\n`, use the `any`
     /// method.
     pub const fn dot() -> Self {
-        Self::Interval(Interval('\0', '\x09'))
-        .or(Self::Interval(Interval('\x0B', '\u{10FFFF}')))
+        Self::Interval(Interval('\0', '\x09')).or(Self::Interval(Interval('\x0B', '\u{10FFFF}')))
     }
 
     // /// `(?s).` expression that matches any character, including `\n`. To build an

@@ -2,7 +2,7 @@ use core::{
     fmt::Debug,
     iter::Step,
     marker::Destruct,
-    panic::{UnwindSafe, RefUnwindSafe}
+    panic::{RefUnwindSafe, UnwindSafe},
 };
 
 use unconst::unconst;
@@ -11,13 +11,20 @@ use unconst::unconst;
 /// - `PartialEq` + `Eq`: decidability
 #[unconst]
 #[const_trait]
-pub trait Integral: Copy + ~const Clone
-                    + ~const PartialEq + Eq
-                    + ~const PartialOrd + ~const Ord
-                    + Step
-                    + ~const Destruct
-                    + Debug
-                    + Sync + Send + RefUnwindSafe + UnwindSafe
+pub trait Integral:
+    Copy
+    + ~const Clone
+    + ~const PartialEq
+    + Eq
+    + ~const PartialOrd
+    + ~const Ord
+    + Step
+    + ~const Destruct
+    + Debug
+    + Sync
+    + Send
+    + RefUnwindSafe
+    + UnwindSafe
 {
     const MIN: Self;
     const MAX: Self;
