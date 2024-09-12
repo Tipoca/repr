@@ -29,10 +29,11 @@ pub enum Repr<I: ~const Integral> {
     Add(Box<Repr<I>>, Box<Repr<I>>),
     /// a & b (additive conjunction/with)
     And(Box<Repr<I>>, Box<Repr<I>>),
-    // Map(Box<Repr<I>>, Fn(Box<Repr<I>>), Fn(Box<Repr<I>>))
+    /// TODO
+    Cap(Box<Repr<I>>),
 }
 
-use Repr::{Add, And, Inf, Mul, One, Or, Sup, True, Zero};
+use Repr::{Add, And, Cap, Inf, Mul, One, Or, Sup, True, Zero};
 
 #[unconst]
 impl<I: ~const Integral> Repr<I> {
@@ -234,15 +235,9 @@ impl<I: ~const Integral> Repr<I> {
         self.clone().and(other.mul(self))
     }
 
-    // #[inline(always)]
-    // pub const fn map<F: FnMut(Self) -> Self>(self, mut f: F) -> Self {
-    //     match self {
-    //         // One(seq) => One(f(seq)),
-    //         Mul(lhs, rhs) => f(*lhs).mul(f(*rhs)),
-    //         Or(lhs, rhs) => f(*lhs).or(f(*rhs)),
-    //         _ => unimplemented!()
-    //     }
-    // }
+    pub const fn cap(self) -> Self {
+        Cap(Box::new(self))
+    }
 }
 
 #[unconst]

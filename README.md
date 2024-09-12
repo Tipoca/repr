@@ -29,10 +29,6 @@
 - parameterise some laws as features
 - Spherical conic (tennis ball)
 
-**`Map`**
-
-- The functional equivalent to grouping and capturing.
-
 **`Xor`**
 
 - lookahead/behind, multiple futures, communication and discard, `ignore` combinator
@@ -44,9 +40,9 @@
 | - | - | - | - | - | - | - | - |
 | a ∈ L (match) | | | a : A (judgement) | |
 | $∅$ | $0$ | | | | nil, STOP |
-| | $⊤$ | True | | | | 
+| | $⊤$ | True | | | |
 | a | a | One(Seq(a)) | | len(a) | (sequential composition, prefix) |
-| $ε$ (empty) ∈ {ε} | $1$ | Seq(\[\]) | \* : 1 | 0 | SKIP | 
+| $ε$ (empty) ∈ {ε} | $1$ | Seq(\[\]) | \* : 1 | 0 | SKIP |
 | . | | Interval(MIN, MAX) | | 1 |
 | ab / $a · b$ (concatenation) | $a ⊗ b$ (multiplicative conjunction/times) | Mul(a, b) | $a ⊗ b$ (tensor product) | len(a) + len(b) | P \|\|\| Q (interleaving) |
 | a\|b (alternation),<br/>$a ∪ b$ (union) | $a ⊕ b$ (additive disjuction/plus) | Or(a, b) | $a + b$ (coproduct) | max(len(a), len(b)) | (deterministic choice) |
@@ -67,7 +63,7 @@
 | `(?<!a)b` (negative lookbehind) | | And(a, b) | | |
 | $a ⊆ b, a ≤ b$ (containmemt) | $a ≤ b (≃ a = b ⅋ a < b)$ | a.le(b) |
 | | a<sup>⊥</sup> (dual) | a.dual() |
-| a = b (equality) | | | a = b (identity type) | 
+| a = b (equality) | | | a = b (identity type) |
 
 **About symbols**
 
@@ -126,17 +122,18 @@ Linearity (which)
 - d(Mul(a, b)) = Or(Mul(d(a), b), Mul(a, d(b))  *
 - d(Inf(a)) = Mul(d(a), Inf(a))
 - a : D(a)
-- 
+-
 
 **True**
 
-- And(True, a) -> 
+- And(True, a) ->
 
 **Stream processor**
 
 - νX.μY. (A → Y) + B × X + 1
 
 **Flags (TODO)**
+
 - `i`, CaseInsensitive
 - `m`, MultiLine
 - `s`, DotMatchesNewLine
@@ -149,11 +146,6 @@ Linearity (which)
 **Interpretations**
 
 - By regarding matching as an assignment of occurrences of strings to each part of an expression, regular expressions are resource (limited occurrences of strings) consumption (exclusive assignment/matching of them).
-
-**Let's not say 'communication'**
-
-- local ↔︎ global
-- context solving/fitting/providing with each other
 
 ![Drawing Hands](https://upload.wikimedia.org/wikipedia/en/b/ba/DrawingHands.jpg)
 
