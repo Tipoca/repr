@@ -9,7 +9,6 @@
 #![feature(const_try)]
 #![feature(const_for)]
 #![feature(const_box)]
-#![feature(const_slice_index)]
 #![feature(const_mut_refs)]
 #![feature(const_option)]
 #![feature(const_refs_to_cell)]
