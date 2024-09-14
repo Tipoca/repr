@@ -1,12 +1,16 @@
-use regex::Regex;
+use regex::{Captures, Regex};
 use unconst::unconst;
 
 use crate::{wrappers::empty, Repr};
 
 #[unconst]
 impl Repr<char> {
+    pub fn captures<'h>(&self, haystack: &'h str) -> Option<Captures<'h>> {
+        self.to_regex().captures(haystack)
+    }
+
     pub fn to_regex(&self) -> Regex {
-        Regex::new(&self.to_regex_string()).unwrap()
+        Regex::new(&format!("^{}$", self.to_regex_string())).unwrap()
     }
 
     pub fn to_regex_string(&self) -> String {
