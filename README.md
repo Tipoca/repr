@@ -1,3 +1,7 @@
+# About
+
+By regarding matching as an assignment of occurrences of strings to each part of an expression, regular expressions are resource (limited occurrences of strings) consumption (exclusive assignment/matching of them).
+
 **Kind**
 
 - Decidable (or only complete?)
@@ -34,7 +38,7 @@
 - lookahead/behind, multiple futures, communication and discard, `ignore` combinator
 - Split, subspace
 
-**Comparisons**
+## Correspondence
 
 | regular&nbsp;expressions&nbsp;/<br/>set theory | linear logic | repr | type theory&nbsp;/<br/>category&nbsp;theory&nbsp;/<br/>coalgebra | len | process calculus | probability&nbsp;theory&nbsp;/<br/>learning&nbsp;theory | quantum&nbsp;theory |
 | - | - | - | - | - | - | - | - |
@@ -65,7 +69,7 @@
 | | a<sup>⊥</sup> (dual) | a.dual() |
 | a = b (equality) | | | a = b (identity type) |
 
-**About symbols**
+### About symbols
 
 Symbols are grouped and assigned primarily by additive/multiplicative distinciton. They are corresponding to whether computation exits or rather continues; though concatenation `⊗`/`Mul`/`*` has conjunctive meaning, computation doesn't complete/exit at not satisfying one criterion for there are still different ways of partition to try (backtracking). Though RegexSet `⅋`/`Add`/`+` has disjunctive meaning, computation doesn't complete/exit at satisfying one criterion to return which regex has match. On the other hand, alternation `⊕`/`Or`/`|` and intersection `&`/`And`/`&` early-break, hence order-dependent. When I add `Map` variant to `Repr` to execute arbitrary functions, this order-dependency suddenly becomes to matter for those arbitrary functions can have effects, for example, modification/replacement of input string. (*Effects are additive.*)
 
@@ -74,7 +78,7 @@ Symbols are grouped and assigned primarily by additive/multiplicative distincito
 | positive/extensional | $⊕$ $0$ Or | $⊗$ $1$ Mul | ! |
 | negative/intensional | & ⊤ And | ⅋ ⊥ Add | ? |
 
-**Laws/Coherence**
+## Properties/Coherence
 
 - All connectives are associative
 - Additive connectives are commutative and idempotent
@@ -84,21 +88,21 @@ TODO:
 - Seq::empty(), ε - can be empty because negative
 - Interval::full() - can't be empty because positive
 
-| regular expressions | linear logic/quantale | repr | title |
+| name | regular expressions | linear logic/quantale | repr |
 | - | - | - | - |
-| $a \| (b \| c) = (a \| b) \| c$ | $a ⊕ (b ⊕ c) = (a ⊕ b) ⊕ c$ | Or(a, Or(b, c)) = Or(Or(a, b), c) | Or-associativity |
+| or-associativity | $a \| (b \| c) = (a \| b) \| c$ | $a ⊕ (b ⊕ c) = (a ⊕ b) ⊕ c$ | Or(a, Or(b, c)) = Or(Or(a, b), c) |
 | | | |
-| a \| a = a | $a ⊕ a = a$ | Or(a, a) = a | Or-idempotence |
-| | $a ⊕ 0 = 0 ⊕ a = a$ | Or(a, Zero) = Or(Zero, a) = a | Zero, Or-unit |
-| $a · ε = ε · a = a$ | $a ⊗ 1 = 1 ⊗ a = a$ | Mul(a, One('')) = Mul(One(''), a) = a | One(''), Mul-unit |
-| $a · (b \| c)$ | $a ⊗ (b ⊕ c) = (a ⊗ b) ⊕ (a ⊗ c)$ | Mul(a, Or(b, c)) = Or(Mul(a, b), Mul(a, c)) | right-distributivity |
-| | $(a ⊕ b) ⊗ c = (a ⊗ c) ⊕ (b ⊗ c)$ | Mul(Or(a, b), c) = Or(Mul(a, c), Mul(b, c)) | left-distributivity |
-| $ε^† = ε$ | | | |
-| | (a & b)<sup>†</sup> = (b<sup>†</sup>) & (a<sup>†</sup>)| Rev(Mul(a, b)) = Mul(Rev(b), Rev(a)) | |
-| | | Mul(One(a), One(b)) = One(ab) | |
-| | a ⅋ (b & c) = (a ⅋ b) & (a ⅋ c) | Add(a, And(b, c)) = And(Add(a, b), Add(a, c)) | right-distributivity |
-| | (a & b) ⅋ c = (a ⅋ c) & (b ⅋ c) | Add(And(a, b), c) = And(Add(a, c), Add(b, c)) | left-distributivity |
-| | a & a = a | And(a, a) = a | And-idempotence |
+| or-idempotence | a \| a = a | $a ⊕ a = a$ | Or(a, a) = a |
+| or-unit | | $a ⊕ 0 = 0 ⊕ a = a$ | Or(a, Zero) = Or(Zero, a) = a |
+| mul-unit | $a · ε = ε · a = a$ | $a ⊗ 1 = 1 ⊗ a = a$ | Mul(a, One('')) = Mul(One(''), a) = a |
+| right-distributivity| $a · (b \| c)$ | $a ⊗ (b ⊕ c) = (a ⊗ b) ⊕ (a ⊗ c)$ | Mul(a, Or(b, c)) = Or(Mul(a, b), Mul(a, c)) |
+| left-distributivity | | $(a ⊕ b) ⊗ c = (a ⊗ c) ⊕ (b ⊗ c)$ | Mul(Or(a, b), c) = Or(Mul(a, c), Mul(b, c)) |
+| | $ε^† = ε$ | | |
+| | | (a & b)<sup>†</sup> = (b<sup>†</sup>) & (a<sup>†</sup>)| Rev(Mul(a, b)) = Mul(Rev(b), Rev(a)) |
+| | | | Mul(One(a), One(b)) = One(ab) |
+| right-distributivity | | a ⅋ (b & c) = (a ⅋ b) & (a ⅋ c) | Add(a, And(b, c)) = And(Add(a, b), Add(a, c)) |
+| left-distributivity | | (a & b) ⅋ c = (a ⅋ c) & (b ⅋ c) | Add(And(a, b), c) = And(Add(a, c), Add(b, c)) |
+| and-idempotence| | a & a = a | And(a, a) = a |
 
 Relationship among additive, multiplicative and exponential
 
@@ -142,12 +146,6 @@ Linearity (which)
 - `x`, IgnoreWhitespace
 
 - Recouse non-greedy pattern to _
-
-**Interpretations**
-
-- By regarding matching as an assignment of occurrences of strings to each part of an expression, regular expressions are resource (limited occurrences of strings) consumption (exclusive assignment/matching of them).
-
-![Drawing Hands](https://upload.wikimedia.org/wikipedia/en/b/ba/DrawingHands.jpg)
 
 **Algorithms (TODO)**
 
