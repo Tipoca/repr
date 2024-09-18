@@ -50,8 +50,10 @@ By regarding matching as an assignment of occurrences of strings to each part of
 | . | | Interval(MIN, MAX) | | 1 |
 | ab / $a · b$ (concatenation) | $a ⊗ b$ (multiplicative conjunction/times) | Mul(a, b) | $a ⊗ b$ (tensor product) | len(a) + len(b) | P \|\|\| Q (interleaving) |
 | a\|b (alternation),<br/>$a ∪ b$ (union) | $a ⊕ b$ (additive disjuction/plus) | Or(a, b) | $a + b$ (coproduct) | max(len(a), len(b)) | (deterministic choice) |
-| a* (kleen star),<br/>..\|aa\|a\|ε | $!a$ (exponential conjunction/of course),<br/>νX.1 & a & (X ⊗ X) | Inf(a) | ν (fixed point/trace, comonad, final coalgebra) | | (replication) |
-| a*? (non greedy),<br/>ε\|a\|aa\|.. | $?a$ (exponential disjunction/why not),<br/>$µX.⊥ ⊕ a ⊕ (X ⅋ X)$ | Sup(a) | μ (monad, initial algebra) | |
+| a* (kleen star),<br/>..\|aa\|a\|ε | | | $μX.𝟏 + (L(a) ⊗ X)$ | | |
+| TODO | $!a$ (exponential conjunction/of course),<br/>νX.1 & a & (X ⊗ X) | Inf(a) | ν (fixed point/trace, comonad, final coalgebra) | | (replication) |
+| a*? (non greedy) | | | | |
+| TODO | $?a$ (exponential disjunction/why not),<br/>$µX.⊥ ⊕ a ⊕ (X ⅋ X)$ | Sup(a) | μ (monad, initial algebra) | |
 | a? | a + 1 | Or(Zero, a) | |
 | a{n,m} (repetition) | a | Or(Mul(a, Mul(a, ..)), Or(..)) | |
 | \[a-z\] (class) | | Interval(a, z) | | |
