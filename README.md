@@ -92,7 +92,7 @@ TODO:
 | - | - | - | - | - |
 | or-associativity | $a \| (b \| c) = (a \| b) \| c$ | $a ⊕ (b ⊕ c) = (a ⊕ b) ⊕ c$ | | Or(a, Or(b, c)) = Or(Or(a, b), c) |
 | | | | |
-| or-idempotence | a \| a = a | $a ⊕ a = a$ | | Or(a, a) = a |
+| or-idempotence | $a \| a = a$ | $a ⊕ a = a$ | | Or(a, a) = a |
 | or-unit | | $a ⊕ 0 = 0 ⊕ a = a$ | | Or(a, Zero) = Or(Zero, a) = a |
 | mul-unit | $a · ε = ε · a = a$ | $a ⊗ 1 = 1 ⊗ a = a$ | | Mul(a, One('')) = Mul(One(''), a) = a |
 | right-distributivity| $a · (b \| c) = (a · b) \| (a · c)$ | $a ⊗ (b ⊕ c) = (a ⊗ b) ⊕ (a ⊗ c)$ | | Mul(a, Or(b, c)) = Or(Mul(a, b), Mul(a, c)) |
@@ -101,8 +101,10 @@ TODO:
 | | | (a & b)<sup>†</sup> = (b<sup>†</sup>) & (a<sup>†</sup>)| | Rev(Mul(a, b)) = Mul(Rev(b), Rev(a)) |
 | | | | | Mul(One(a), One(b)) = One(ab) |
 | right-distributivity | | a ⅋ (b & c) = (a ⅋ b) & (a ⅋ c) | | Add(a, And(b, c)) = And(Add(a, b), Add(a, c)) |
-| left-distributivity | | (a & b) ⅋ c = (a ⅋ c) & (b ⅋ c) | | Add(And(a, b), c) = And(Add(a, c), Add(b, c)) |
-| and-idempotence| | a & a = a | | And(a, a) = a |
+| left-distributivity | | $(a \& b) ⅋ c = (a ⅋ c) \& (b ⅋ c)$ | | Add(And(a, b), c) = And(Add(a, c), Add(b, c)) |
+| and-idempotence | | $a \& a = a$ | | And(a, a) = a |
+| exponential | $(a \& b)* = a* · b*$ | $!(A \& B) ≣ !A ⊗ !B$ | | | |
+| exponential | $(a \| b)? = a? ⅋ b?$ | $?(A ⊕ B) ≣ ?A ⅋ ?B$ | | | |
 
 Relationship among additive, multiplicative and exponential
 
