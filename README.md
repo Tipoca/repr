@@ -40,7 +40,7 @@ By regarding matching as an assignment of occurrences of strings to each part of
 
 ## Correspondence
 
-| regular&nbsp;expressions&nbsp;/<br/>set theory | linear logic | repr | type theory&nbsp;/<br/>category&nbsp;theory&nbsp;/<br/>coalgebra | len | process calculus | probability&nbsp;theory&nbsp;/<br/>learning&nbsp;theory | quantum&nbsp;theory |
+| formal&nbsp;language&nbsp;theory&nbsp;/<br/>automata theory&nbsp;/<br/>set theory | linear logic | repr | type theory&nbsp;/<br/>category&nbsp;theory&nbsp;/<br/>coalgebra | len | process calculus | probability&nbsp;theory&nbsp;/<br/>learning&nbsp;theory | quantum&nbsp;theory |
 | - | - | - | - | - | - | - | - |
 | a ∈ L (match) | | | a : A (judgement) | |
 | $∅$ | $0$ (additive falsity) | Zero | 𝟎 (empty type) | | nil, STOP |
