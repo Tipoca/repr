@@ -39,10 +39,10 @@
 | regular&nbsp;expressions&nbsp;/<br/>set theory | linear logic | repr | type theory&nbsp;/<br/>category&nbsp;theory&nbsp;/<br/>coalgebra | len | process calculus | probability&nbsp;theory&nbsp;/<br/>learning&nbsp;theory | quantum&nbsp;theory |
 | - | - | - | - | - | - | - | - |
 | a ∈ L (match) | | | a : A (judgement) | |
-| $∅$ | $0$ (additive falsity) | | | | nil, STOP |
+| $∅$ | $0$ (additive falsity) | Zero | 𝟎 (empty type) | | nil, STOP |
 | | $⊤$ (additive truth) | True | | | |
 | a | a | One(Seq(a)) | | len(a) | (sequential composition, prefix) |
-| $ε$ (empty) ∈ {ε} | $1$ (multiplicative truth) | Seq(\[\]) | \* : 1 | 0 | SKIP |
+| $ε$ (empty) ∈ {ε} | $1$ (multiplicative truth) | Seq(\[\]) | \* : 𝟏 (unit type) | 0 | SKIP |
 | . | | Interval(MIN, MAX) | | 1 |
 | ab / $a · b$ (concatenation) | $a ⊗ b$ (multiplicative conjunction/times) | Mul(a, b) | $a ⊗ b$ (tensor product) | len(a) + len(b) | P \|\|\| Q (interleaving) |
 | a\|b (alternation),<br/>$a ∪ b$ (union) | $a ⊕ b$ (additive disjuction/plus) | Or(a, b) | $a + b$ (coproduct) | max(len(a), len(b)) | (deterministic choice) |
