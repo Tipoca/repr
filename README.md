@@ -36,7 +36,7 @@
 
 **Comparisons**
 
-| regular&nbsp;expressions&nbsp;/<br/>set theory | linear logic | repr | type theory&nbsp;/<br/>category&nbsp;theory | len | process calculus | probability&nbsp;theory&nbsp;/<br/>learning&nbsp;theory | quantum&nbsp;theory |
+| regular&nbsp;expressions&nbsp;/<br/>set theory | linear logic | repr | type theory&nbsp;/<br/>category&nbsp;theory&nbsp;/<br/>coalgebra | len | process calculus | probability&nbsp;theory&nbsp;/<br/>learning&nbsp;theory | quantum&nbsp;theory |
 | - | - | - | - | - | - | - | - |
 | a ∈ L (match) | | | a : A (judgement) | |
 | $∅$ | $0$ | | | | nil, STOP |
