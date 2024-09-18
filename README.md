@@ -61,12 +61,12 @@ By regarding matching as an assignment of occurrences of strings to each part of
 | a<sup>†</sup> (reverse) | right law vs left law | a.rev() | | len(a) |
 | $a / b$ (right quotient) | $a ⊸ b$ | Div(a, b) | | len(a) - len(b) | (hiding) |
 | a \ b (left quotient) | | `Div(a, b)` | | | (hiding) |
-| RegexSet | a ⅋ b (multiplicative disjunction/par) | Add(a, b) | $a ⊕ b$ (direct sum) | | (nondeterministic choice) |
+| | a ⅋ b (multiplicative disjunction/par) | Add(a, b) | $a ⊕ b$ (direct sum) | | (nondeterministic choice) |
 | $a ∩ b$ (intersection) | a & b (additive conjunction/with) | And(a, b) | $a × b$ (product) | | (interface parallel) |
-| `a(?=b)` (positive lookahead) | | And(a, b) | | |
-| `a(?!b)` (negative lookahead) | | And(a, Not(b)) | | |
-| `(?<=a)b` (positive lookbehind) | | And(a, b) | | |
-| `(?<!a)b` (negative lookbehind) | | And(a, b) | | |
+| `a(?=b)` (positive lookahead) | | | | |
+| `a(?!b)` (negative lookahead) | | | | |
+| `(?<=a)b` (positive lookbehind) | | | | |
+| `(?<!a)b` (negative lookbehind) | | | | |
 | $a ⊆ b, a ≤ b$ (containmemt) | $a ≤ b (≃ a = b ⅋ a < b)$ | a.le(b) |
 | | a<sup>⊥</sup> (dual) | a.dual() |
 | a = b (equality) | | | a = b (identity type) |
