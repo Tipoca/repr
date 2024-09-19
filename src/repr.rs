@@ -14,7 +14,7 @@ pub enum Repr<I: ~const Integral> {
     /// 0 (additive disjuction unit)
     Zero,
     ///
-    One(Seq<I>),
+    Seq(Seq<I>),
     ///
     Interval(Interval<I>),
     /// a ⊗ b (multiplicative conjunction/times)
@@ -33,7 +33,7 @@ pub enum Repr<I: ~const Integral> {
     Cap(Box<Repr<I>>),
 }
 
-use Repr::{Add, And, Cap, Inf, Mul, One, Or, Sup, True, Zero};
+use Repr::{Add, And, Cap, Inf, Mul, Or, Sup, True, Zero};
 
 #[unconst]
 impl<I: ~const Integral> Repr<I> {
@@ -41,12 +41,12 @@ impl<I: ~const Integral> Repr<I> {
         Zero
     }
 
-    pub const fn one(i: I) -> Self {
-        One(Seq::one(i))
-    }
+    // pub const fn one(i: I) -> Self {
+    //     Repr::Seq(Seq::one(i))
+    // }
 
     pub const fn seq<M: ~const IntoIterator<Item = I>>(is: M) -> Self {
-        One(Seq::new(is))
+        Repr::Seq(Seq::new(is))
     }
 
     pub const fn interval(from: I, to: I) -> Repr<I> {
@@ -58,7 +58,7 @@ impl<I: ~const Integral> Repr<I> {
         match (self, other) {
             (Zero, _) => Zero,
             (_, Zero) => Zero,
-            (One(lhs), One(rhs)) => One(lhs.mul(rhs)),
+            (Repr::Seq(lhs), Repr::Seq(rhs)) => Repr::Seq(lhs.mul(rhs)),
             (Mul(llhs, lrhs), rhs) => Mul(llhs, Box::new(Mul(lrhs, Box::new(rhs)))),
             (Inf(lhs), Inf(rhs)) if lhs.eq(&rhs) => Inf(lhs),
             (lhs, rhs) => Mul(Box::new(lhs), Box::new(rhs)),
@@ -127,7 +127,7 @@ impl<I: ~const Integral> Repr<I> {
     pub const fn rev(self) -> Self {
         match self {
             Zero => Zero,
-            One(seq) => One(seq.rev()),
+            Repr::Seq(seq) => Repr::Seq(seq.rev()),
             Self::Interval(i) => Self::Interval(i),
             Mul(lhs, rhs) => rhs.rev().mul(lhs.rev()),
             Or(lhs, rhs) => lhs.rev().or(rhs.rev()),
@@ -142,7 +142,7 @@ impl<I: ~const Integral> Repr<I> {
         match self {
             // Self::Interval(i) => {
             // },
-            One(repr) => One(repr),
+            Repr::Seq(repr) => Repr::Seq(repr),
             Mul(lhs, rhs) => lhs.dual().add(rhs.dual()),
             Or(lhs, rhs) => lhs.dual().and(rhs.dual()),
             Inf(repr) => repr.dual().sup(),
@@ -156,7 +156,7 @@ impl<I: ~const Integral> Repr<I> {
     /// 𝜕, derivation, linear endofunctor
     pub const fn der(self, seq: Seq<I>) -> Self {
         match self {
-            One(_seq) => unimplemented!(),
+            Repr::Seq(_seq) => unimplemented!(),
             Mul(lhs, rhs) => lhs
                 .clone()
                 .der(seq.clone())
@@ -172,7 +172,7 @@ impl<I: ~const Integral> Repr<I> {
     pub const fn null(&self) -> bool {
         match self {
             Zero => false,
-            One(seq) => seq.null(),
+            Repr::Seq(seq) => seq.null(),
             Self::Interval(_) => false,
             Mul(lhs, rhs) => lhs.null() && rhs.null(),
             Or(lhs, rhs) => lhs.null() || rhs.null(),
@@ -187,7 +187,7 @@ impl<I: ~const Integral> Repr<I> {
         match (self, other) {
             (True(_), True(_)) => panic!("True variant is uncomparable"),
             (Zero, Zero) => true,
-            (One(lhs), One(rhs)) => lhs.eq(rhs),
+            (Repr::Seq(lhs), Repr::Seq(rhs)) => lhs.eq(rhs),
             (Self::Interval(lhs), Self::Interval(rhs)) => lhs.eq(rhs),
             (Mul(llhs, lrhs), Mul(rlhs, rrhs)) => llhs.eq(rlhs) && lrhs.eq(rrhs),
             (Or(llhs, lrhs), Or(rlhs, rrhs)) => {
@@ -206,7 +206,7 @@ impl<I: ~const Integral> Repr<I> {
 
     pub const fn le(&self, other: &Self) -> bool {
         match (self, other) {
-            (One(lhs), One(rhs)) => lhs.eq(rhs),
+            (Repr::Seq(lhs), Repr::Seq(rhs)) => lhs.eq(rhs),
             (Self::Interval(lhs), Self::Interval(rhs)) => lhs.le(rhs),
             (Or(llhs, lrhs), Or(rlhs, rrhs)) => {
                 llhs.le(rlhs) && lrhs.le(rrhs) || llhs.le(rrhs) && lrhs.le(rlhs)
@@ -219,7 +219,7 @@ impl<I: ~const Integral> Repr<I> {
 
     pub const fn len(&self) -> usize {
         match self {
-            One(seq) => seq.len(),
+            Repr::Seq(seq) => seq.len(),
             Self::Interval(_) => 1,
             Mul(lhs, rhs) => lhs.len() + rhs.len(),
             Or(lhs, rhs) => lhs.len() + rhs.len(),
@@ -286,7 +286,7 @@ impl<I: ~const Integral> Repr<I> {
 
     pub const fn is_alternation_literal(&self) -> bool {
         match self {
-            One(_) => true,
+            Repr::Seq(_) => true,
             Or(lhs, rhs) => lhs.is_alternation_literal() && rhs.is_alternation_literal(),
             _ => false,
         }

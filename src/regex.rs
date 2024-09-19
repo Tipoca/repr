@@ -15,7 +15,7 @@ impl Repr<char> {
 
     pub fn to_regex_string(&self) -> String {
         match self {
-            Repr::One(s) => match s.as_ref() {
+            Repr::Seq(s) => match s.as_ref() {
                 ['+']
                 | ['*']
                 | ['?']

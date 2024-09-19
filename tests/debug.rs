@@ -1,4 +1,4 @@
-use repr::wrappers::one;
+use repr::wrappers::seq;
 
 macro_rules! debug {
     ($expr:expr, $rhs:literal) => {
@@ -8,11 +8,11 @@ macro_rules! debug {
 
 #[test]
 fn debug() {
-    debug!(one('a'), "One(Seq(['a']))");
-    debug!(one('a').mul(one('b')), "One(Seq(['a', 'b']))");
+    debug!(seq(['a']), "One(Seq(['a']))");
+    debug!(seq(['a']).mul(seq(['b'])), "One(Seq(['a', 'b']))");
     debug!(
-        one('a').or(one('b')),
+        seq(['a']).or(seq(['b'])),
         "Or(One(Seq(['a'])), One(Seq(['b'])))"
     );
-    debug!(one('a').inf(), "Inf(One(Seq(['a'])))");
+    debug!(seq(['a']).inf(), "Inf(One(Seq(['a'])))");
 }
