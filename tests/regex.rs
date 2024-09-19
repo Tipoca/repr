@@ -1,7 +1,4 @@
-use repr::{
-    wrappers::{empty, interval, seq},
-    Repr,
-};
+use repr::wrappers::seq;
 
 macro_rules! assert_regex_eq {
     ($expr:expr, $rhs:literal) => {

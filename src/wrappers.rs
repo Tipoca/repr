@@ -8,23 +8,19 @@ pub const fn zero<I: ~const Integral>() -> Repr<I> {
     Repr::zero()
 }
 
-// #[unconst]
-// pub const fn one<I: ~const Integral>(i: I) -> Repr<I> {
-//     Repr::Seq(i)
-// }
+#[unconst]
+pub const fn one<I: ~const Integral>() -> Repr<I> {
+    Repr::one()
+}
 
 #[unconst]
 pub const fn seq<I, M>(is: M) -> Repr<I>
 where
     I: ~const Integral,
     M: ~const IntoIterator<Item = I>,
+    M::IntoIter: ExactSizeIterator,
 {
     Repr::seq(is)
-}
-
-#[unconst]
-pub const fn empty<I: ~const Integral>() -> Repr<I> {
-    seq([])
 }
 
 #[unconst]

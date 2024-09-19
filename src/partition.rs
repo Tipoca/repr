@@ -1,7 +1,7 @@
 //! <https://en.m.wikipedia.org/wiki/Partition_of_a_set>
 //! <https://en.m.wikipedia.org/wiki/Covering_problems>
 //! <https://en.m.wikipedia.org/wiki/Exact_cover>
-//! 
+//!
 //! <https://en.wikipedia.org/wiki/Interval_tree>
 //! <https://en.wikipedia.org/wiki/Segment_tree>
 //! <https://en.wikipedia.org/wiki/Range_tree>
@@ -11,8 +11,8 @@
 //! <https://en.wikipedia.org/wiki/Suffix_tree>
 //! <https://en.wikipedia.org/wiki/Suffix_automaton>
 //! <https://en.wikipedia.org/wiki/LCP_array>
-//! 
-//! TODO(rnarkk)
+//!
+//! TODO(rinarakaki)
 //! - Uniqueness
 
 use core::iter::FusedIterator;

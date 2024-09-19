@@ -1,4 +1,4 @@
-use repr::wrappers::{empty, seq, zero};
+use repr::wrappers::{one, seq, zero};
 
 #[test]
 fn reflexivity() {
@@ -25,8 +25,8 @@ fn mul_linearity() {
 
 #[test]
 fn mul_unit() {
-    assert_eq!(seq(['a']).mul(empty()), seq(['a']));
-    assert_eq!(empty().mul(seq(['a'])), seq(['a']));
+    assert_eq!(seq(['a']).mul(one()), seq(['a']));
+    assert_eq!(one().mul(seq(['a'])), seq(['a']));
 }
 
 #[test]
@@ -131,4 +131,27 @@ fn dual_involution() {
         seq(['a']).or(seq(['b'])).dual().dual(),
         seq(['a']).or(seq(['b']))
     );
+}
+
+#[test]
+fn nullability() {
+    assert_eq!(zero::<char>().is_nullable(), false);
+    assert_eq!(one::<char>().is_nullable(), true);
+    assert_eq!(seq::<char, [_; 0]>([]).is_nullable(), true);
+    assert_eq!(seq(['a']).is_nullable(), false);
+    assert_eq!(one().mul(seq(['b'])).is_nullable(), false);
+    assert_eq!(seq(['a']).mul(one()).is_nullable(), false);
+    assert_eq!(seq(['a']).mul(seq(['b'])).is_nullable(), false);
+    assert_eq!(one().or(seq(['b'])).is_nullable(), true);
+    assert_eq!(seq(['a']).or(one()).is_nullable(), true);
+    assert_eq!(seq(['a']).or(seq(['b'])).is_nullable(), false);
+}
+
+#[test]
+fn derivatives() {
+    assert_eq!(zero::<char>().der(seq(['a'])), zero());
+    assert_eq!(one::<char>().der(seq(['a'])), zero());
+    assert_eq!(seq::<char, [_; 0]>([]).der(seq(['a'])), zero());
+    assert_eq!(seq(['a']).der(seq(['a'])), one());
+    assert_eq!(seq(['a']).der(seq(['b'])), zero());
 }
