@@ -14,7 +14,7 @@ use crate::repr::Repr::{self, Or, Zero};
 use crate::traits::Integral;
 
 #[unconst]
-// TODO(rnarkk) Does negative Interval (self.1 < self.0) have use case?
+// TODO(rinarakaki) Does negative Interval (self.1 < self.0) have use case?
 #[derive_const(Clone, Default, PartialEq, PartialOrd, Ord)]
 #[derive(Copy, Debug, Eq)]
 pub struct Interval<I: ~const Integral>(pub I, pub I);
@@ -116,7 +116,7 @@ impl<I: ~const Integral> Interval<I> {
     //     Self::full().sub(self)
     // }
 
-    // TODO(rnarkk) Why not simply `other.0 <= self.0 && self.1 <= other.1`
+    // TODO(rinarakaki) Why not simply `other.0 <= self.0 && self.1 <= other.1`
     /// a ⊆ b
     pub const fn le(&self, other: &Self) -> bool {
         (other.0 <= self.0 && self.0 <= other.1) && (other.0 <= self.1 && self.1 <= other.1)

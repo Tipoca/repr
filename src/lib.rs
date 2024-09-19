@@ -1,4 +1,5 @@
 // #![no_std]
+#![feature(exact_size_is_empty)]
 #![feature(pattern)]
 #![feature(step_trait)]
 #![feature(stmt_expr_attributes)]
@@ -22,9 +23,7 @@ mod context;
 mod conversion;
 mod functor;
 mod interval;
-mod operators;
 // mod partition;
-// mod pattern;
 // mod pool;
 // mod process;
 mod regex;

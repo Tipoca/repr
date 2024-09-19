@@ -16,7 +16,8 @@ impl<I: ~const Integral> const Debug for Repr<I> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Repr::True(_) => panic!("True variant cannot be cloned"),
-            Repr::Seq(seq) => write!(f, "One({:?})", seq),
+            Repr::One => write!(f, "One"),
+            Repr::Seq(seq) => write!(f, "Seq({:?})", seq),
             Repr::Interval(interval) => write!(f, "Interval({:?})", interval),
             Repr::Mul(lhs, rhs) => write!(f, "Mul({:?}, {:?})", lhs, rhs),
             Repr::Or(lhs, rhs) => write!(f, "Or({:?}, {:?})", lhs, rhs),
@@ -48,7 +49,25 @@ impl<I: ~const Integral> const Clone for Repr<I> {
 #[unconst]
 impl<I: ~const Integral> const PartialEq for Repr<I> {
     fn eq(&self, other: &Self) -> bool {
-        self.eq(other)
+        match (self, other) {
+            (Repr::True(_), Repr::True(_)) => panic!("True variant is uncomparable"),
+            (Repr::Zero, Repr::Zero) => true,
+            (Repr::One, Repr::One) => true,
+            (Repr::Seq(lhs), Repr::Seq(rhs)) => lhs.eq(rhs),
+            (Repr::Interval(lhs), Repr::Interval(rhs)) => lhs.eq(rhs),
+            (Repr::Mul(llhs, lrhs), Repr::Mul(rlhs, rrhs)) => llhs.eq(rlhs) && lrhs.eq(rrhs),
+            (Repr::Or(llhs, lrhs), Repr::Or(rlhs, rrhs)) => {
+                llhs.eq(rlhs) && lrhs.eq(rrhs) || llhs.eq(rrhs) && lrhs.eq(rlhs)
+            }
+            (Repr::Inf(lhs), Repr::Inf(rhs)) => lhs.eq(rhs),
+            (Repr::Sup(lhs), Repr::Sup(rhs)) => lhs.eq(rhs),
+            (Repr::Add(llhs, lrhs), Repr::Add(rlhs, rrhs)) => llhs.eq(rlhs) && lrhs.eq(rrhs),
+            (Repr::And(llhs, lrhs), Repr::And(rlhs, rrhs)) => {
+                llhs.eq(rlhs) && lrhs.eq(rrhs) || llhs.eq(rrhs) && lrhs.eq(rlhs)
+            }
+            // TODO(rinarakaki)
+            _ => false,
+        }
     }
 }
 

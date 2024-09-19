@@ -8,11 +8,11 @@ macro_rules! debug {
 
 #[test]
 fn debug() {
-    debug!(seq(['a']), "One(Seq(['a']))");
-    debug!(seq(['a']).mul(seq(['b'])), "One(Seq(['a', 'b']))");
+    debug!(seq(['a']), "Seq(Seq(['a']))");
+    debug!(seq(['a']).mul(seq(['b'])), "Seq(Seq(['a', 'b']))");
     debug!(
         seq(['a']).or(seq(['b'])),
-        "Or(One(Seq(['a'])), One(Seq(['b'])))"
+        "Or(Seq(Seq(['a'])), Seq(Seq(['b'])))"
     );
-    debug!(seq(['a']).inf(), "Inf(One(Seq(['a'])))");
+    debug!(seq(['a']).inf(), "Inf(Seq(Seq(['a'])))");
 }

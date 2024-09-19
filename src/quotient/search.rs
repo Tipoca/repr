@@ -13,7 +13,7 @@ fn build_aho_corasick(parsed: &Parsed<I>) -> Option<AhoCorasick<u32>> {
     if parsed.reprs.len() != 1 {
         return None;
     }
-    // TODO(rnarkk)
+    // TODO(rinarakaki)
     // let lits = match or_constants(&parsed.reprs[0]) {
     //     None => return None,
     //     Some(lits) => lits,
