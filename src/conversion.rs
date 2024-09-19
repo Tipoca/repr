@@ -30,7 +30,7 @@ impl<I: ~const Integral> const From<Range<I>> for Interval<I> {
 #[unconst]
 impl<I: ~const Integral> const From<I> for Repr<I> {
     fn from(value: I) -> Repr<I> {
-        Self::One(Seq::one(value))
+        Repr::Seq(Seq::one(value))
     }
 }
 

@@ -1,17 +1,17 @@
-use repr::wrappers::one;
+use repr::wrappers::seq;
 
 #[test]
 fn inclusion() {
-    assert!(one('a').le(&one('a').or(one('b'))));
-    assert!(one('b').le(&one('a').or(one('b'))));
-    assert!(one('a')
-        .or(one('b'))
-        .le(&one('a').or(one('b')).or(one('c'))));
-    // TODO(rnarkk)
-    // assert!(one('b').or(one('c')).le(&one('a').or(one('b')).or(one('c'))));
+    assert!(seq(['a']).le(&seq(['a']).or(seq(['b']))));
+    assert!(seq(['b']).le(&seq(['a']).or(seq(['b']))));
+    assert!(seq(['a'])
+        .or(seq(['b']))
+        .le(&seq(['a']).or(seq(['b'])).or(seq(['c']))));
+    // TODO(rinarakaki)
+    // assert!(seq(['b']).or(seq(['c'])).le(&seq(['a']).or(seq(['b'])).or(seq(['c']))));
 }
 
 #[test]
 fn le_reflexivity() {
-    assert!(one('a').le(&one('a')));
+    assert!(seq(['a']).le(&seq(['a'])));
 }

@@ -16,7 +16,7 @@ impl<I: ~const Integral> const Debug for Repr<I> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Repr::True(_) => panic!("True variant cannot be cloned"),
-            Repr::One(seq) => write!(f, "One({:?})", seq),
+            Repr::Seq(seq) => write!(f, "One({:?})", seq),
             Repr::Interval(interval) => write!(f, "Interval({:?})", interval),
             Repr::Mul(lhs, rhs) => write!(f, "Mul({:?}, {:?})", lhs, rhs),
             Repr::Or(lhs, rhs) => write!(f, "Or({:?}, {:?})", lhs, rhs),
@@ -33,7 +33,7 @@ impl<I: ~const Integral> const Clone for Repr<I> {
     fn clone(&self) -> Self {
         match self {
             Repr::True(_) => panic!("True variant cannot be cloned"),
-            Repr::One(seq) => Repr::One(seq.clone()),
+            Repr::Seq(seq) => Repr::Seq(seq.clone()),
             Repr::Interval(interval) => Repr::Interval(*interval),
             Repr::Mul(lhs, rhs) => Repr::Mul(lhs.clone(), rhs.clone()),
             Repr::Or(lhs, rhs) => Repr::Or(lhs.clone(), rhs.clone()),
@@ -82,7 +82,7 @@ impl<I: ~const Integral> const BitAnd<I> for Repr<I> {
     type Output = Self;
 
     fn bitand(self, rhs: I) -> Self {
-        self.and(Repr::One(rhs.into()))
+        self.and(Repr::Seq(rhs.into()))
     }
 }
 
@@ -118,7 +118,7 @@ impl<I: ~const Integral> const BitOr<I> for Repr<I> {
     type Output = Self;
 
     fn bitor(self, rhs: I) -> Self {
-        self.or(Self::One(rhs.into()))
+        self.or(Repr::Seq(rhs.into()))
     }
 }
 
