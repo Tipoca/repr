@@ -40,8 +40,8 @@ By regarding matching as an assignment of occurrences of strings to each part of
 
 ## Correspondence
 
-| formal&nbsp;language&nbsp;theory&nbsp;/<br/>automata theory&nbsp;/<br/>set theory | linear logic | repr | type theory&nbsp;/<br/>category&nbsp;theory&nbsp;/<br/>coalgebra | len | process calculus | probability&nbsp;theory&nbsp;/<br/>learning&nbsp;theory | quantum&nbsp;theory |
-| - | - | - | - | - | - | - | - |
+| formal&nbsp;language&nbsp;theory&nbsp;/<br/>automata theory&nbsp;/<br/>set theory | linear logic | repr | type theory&nbsp;/<br/>category&nbsp;theory&nbsp;/<br/>coalgebra | len | process calculus |
+| - | - | - | - | - | - |
 | a ∈ L (match) | | | a : A (judgement) | |
 | $∅$ | $0$ (additive falsity) | Zero | 𝟎 (empty type) | | nil, STOP |
 | | $⊤$ (additive truth) | True | | | |
@@ -77,8 +77,8 @@ Symbols are grouped and assigned primarily by additive/multiplicative distincito
 
 | | additive | multiplicative | exponential |
 | - | - | - | - |
-| positive/extensional | $⊕$ $0$ Or | $⊗$ $1$ Mul | ! |
-| negative/intensional | & ⊤ And | ⅋ ⊥ Add | ? |
+| positive | $⊕$ $0$ Or | $⊗$ $1$ Mul | $!$ |
+| negative | $\&$ $⊤$ And | $⅋$ $⊥$ Add | $?$ |
 
 ## Properties/Coherence
 
@@ -90,47 +90,30 @@ TODO:
 - Seq::empty(), ε - can be empty because negative
 - Interval::full() - can't be empty because positive
 
-| name | regular expressions | linear logic | type theory | repr |
-| - | - | - | - | - |
-| or-associativity | $a \| (b \| c) = (a \| b) \| c$ | $a ⊕ (b ⊕ c) = (a ⊕ b) ⊕ c$ | | Or(a, Or(b, c)) = Or(Or(a, b), c) |
-| | | | |
-| or-idempotence | $a \| a = a$ | $a ⊕ a = a$ | | Or(a, a) = a |
-| or-unit | | $a ⊕ 0 = 0 ⊕ a = a$ | | Or(a, Zero) = Or(Zero, a) = a |
-| mul-unit | $a · ε = ε · a = a$ | $a ⊗ 1 = 1 ⊗ a = a$ | | Mul(a, One('')) = Mul(One(''), a) = a |
-| right-distributivity| $a · (b \| c) = (a · b) \| (a · c)$ | $a ⊗ (b ⊕ c) = (a ⊗ b) ⊕ (a ⊗ c)$ | | Mul(a, Or(b, c)) = Or(Mul(a, b), Mul(a, c)) |
-| left-distributivity | $(a \| b) · c = (a · c) \| (b · c)$ | $(a ⊕ b) ⊗ c = (a ⊗ c) ⊕ (b ⊗ c)$ | | Mul(Or(a, b), c) = Or(Mul(a, c), Mul(b, c)) |
-| | $ε^† = ε$ | | | |
-| | | (a & b)<sup>†</sup> = (b<sup>†</sup>) & (a<sup>†</sup>)| | Rev(Mul(a, b)) = Mul(Rev(b), Rev(a)) |
-| | | | | Mul(One(a), One(b)) = One(ab) |
+| name                 | regular expressions             | linear logic | type theory | repr |
+| -                    | -                               | - | - | - |
+| or-associativity     | $a \| (b \| c) = (a \| b) \| c$ | $a ⊕ (b ⊕ c) = (a ⊕ b) ⊕ c$ | | Or(a, Or(b, c)) = Or(Or(a, b), c) |
+|                      |                                 | | |
+| or-idempotence       | $a \| a = a$ | $a ⊕ a = a$      | | Or(a, a) = a |
+| or-unit              |                                 | $a ⊕ 0 = 0 ⊕ a = a$           | | Or(a, Zero) = Or(Zero, a) = a |
+| mul-unit             | $a · ε = ε · a = a$             | $a ⊗ 1 = 1 ⊗ a = a$ | | Mul(a, One('')) = Mul(One(''), a) = a |
+| right-distributivity | $a · (b \| c) = (a · b) \| (a · c)$ | $a ⊗ (b ⊕ c) = (a ⊗ b) ⊕ (a ⊗ c)$ | | Mul(a, Or(b, c)) = Or(Mul(a, b), Mul(a, c)) |
+| left-distributivity  | $(a \| b) · c = (a · c) \| (b · c)$ | $(a ⊕ b) ⊗ c = (a ⊗ c) ⊕ (b ⊗ c)$ | | Mul(Or(a, b), c) = Or(Mul(a, c), Mul(b, c)) |
+|                      | $ε^† = ε$                           | | | |
+|                      | | (a & b)<sup>†</sup> = (b<sup>†</sup>) & (a<sup>†</sup>)| | Rev(Mul(a, b)) = Mul(Rev(b), Rev(a)) |
+|                      | | | | Mul(One(a), One(b)) = One(ab) |
 | right-distributivity | | a ⅋ (b & c) = (a ⅋ b) & (a ⅋ c) | | Add(a, And(b, c)) = And(Add(a, b), Add(a, c)) |
-| left-distributivity | | $(a \& b) ⅋ c = (a ⅋ c) \& (b ⅋ c)$ | | Add(And(a, b), c) = And(Add(a, c), Add(b, c)) |
-| and-idempotence | | $a \& a = a$ | | And(a, a) = a |
-| exponential | $(a \& b)* = a* · b*$ | $!(A \& B) ≣ !A ⊗ !B$ | | | |
-| exponential | $(a \| b)? = a? ⅋ b?$ | $?(A ⊕ B) ≣ ?A ⅋ ?B$ | | | |
+| left-distributivity  | | $(a \& b) ⅋ c = (a ⅋ c) \& (b ⅋ c)$ | | Add(And(a, b), c) = And(Add(a, c), Add(b, c)) |
+| and-idempotence      | | $a \& a = a$ | | And(a, a) = a |
+| exponential          | $(a \& b)* = a* · b*$ | $!(A \& B) ≣ !A ⊗ !B$ | | | |
+| exponential          | $(a \| b)? = a? ⅋ b?$ | $?(A ⊕ B) ≣ ?A ⅋ ?B$ | | | |
 
-Relationship among additive, multiplicative and exponential
-
-- exp(a + b) = exp(a) * exp(b)
-
-Linearity (which)
+Linearity (which) (TODO)
 
 - f(a + b) = f(a) + f(b)
 - (a → b) + (b → a)  (non-constructive)
 - functions take only one argument
 - presheaves of modules
-
-**𝜕, derivation**
-
-| math | repr |
-| - | - |
-| $𝜕(a ⊗ b) ≃ 𝜕(a) ⊗ b + a ⊗ 𝜕(b)$ | der(Mul(a, b)) = Or(Mul(der(a), b), Mul(a, d(b))) |
-
-- d(Zero) = Zero
-- d(Or(a, b)) = Or(d(a), d(b))
-- d(Mul(a, b)) = Or(Mul(d(a), b), Mul(a, d(b))  *
-- d(Inf(a)) = Mul(d(a), Inf(a))
-- a : D(a)
--
 
 **True**
 
@@ -139,17 +122,6 @@ Linearity (which)
 **Stream processor**
 
 - νX.μY. (A → Y) + B × X + 1
-
-**Flags (TODO)**
-
-- `i`, CaseInsensitive
-- `m`, MultiLine
-- `s`, DotMatchesNewLine
-- `U`, SwapGreed
-- `u`, Unicode
-- `x`, IgnoreWhitespace
-
-- Recouse non-greedy pattern to _
 
 **Algorithms (TODO)**
 
@@ -162,7 +134,7 @@ Linearity (which)
 
 - Coherent space
 
-**References**
+# References
 
 - Monadic Expressions and their Derivatives [extended version], Samira Attou, Ludovic Mignot, Clément Miklarz, Florent Nicart, 2023 [[arXiv](https://arxiv.org/abs/2301.13054)]
 - Completeness for Categories of Generalized Automata, Guido Boccali, Andrea Laretto, Fosco Loregian, Stefano Luneia, 2023 [[arXiv](https://arxiv.org/abs/2303.03867)]
@@ -170,6 +142,7 @@ Linearity (which)
 - The Functional Machine Calculus, Willem Heijltjes, 2023 [[arXiv](https://arxiv.org/abs/2212.08177)]
 - The Functional Machine Calculus II: Semantics, Chris Barrett, Willem Heijltjes, Guy McCusker, 2023 [[arXiv](https://arxiv.org/abs/2211.13140)]
 - Coend Calculus, Fosco Loregian, 2020 [[arXiv](https://arxiv.org/abs/1501.02503)]
+- A Computational Interpretation of Context-Free Expressions, Martin Sulzmann, Peter Thiemann, 2017 [[arXiv](https://arxiv.org/abs/1708.07366)]
 - Partial Derivatives for Context-Free Languages: From μ-Regular Expressions to Pushdown Automata, Peter Thiemann, 2017 [[arXiv](https://arxiv.org/abs/1610.06832)]
 - Proof Equivalence in MLL Is PSPACE-Complete, Willem Heijltjes, Robin Houston, 2016 [[arXiv](https://arxiv.org/abs/1510.06178)]
 - Linear Logic Without Units, Robin Houston, 2013 [[arXiv](https://arxiv.org/abs/1305.2231)]
