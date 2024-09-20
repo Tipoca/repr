@@ -136,6 +136,7 @@ Linearity (which) (TODO)
 
 # References
 
+- The Quantum Monadology, Hisham Sati, Urs Schreiber, 2023 [[arXiv](https://arxiv.org/abs/2310.15735)]
 - Monadic Expressions and their Derivatives [extended version], Samira Attou, Ludovic Mignot, Clément Miklarz, Florent Nicart, 2023 [[arXiv](https://arxiv.org/abs/2301.13054)]
 - Completeness for Categories of Generalized Automata, Guido Boccali, Andrea Laretto, Fosco Loregian, Stefano Luneia, 2023 [[arXiv](https://arxiv.org/abs/2303.03867)]
 - Beyond Initial Algebras and Final Coalgebras, Ezra Schoen, Jade Master, Clemens Kupke, 2023 [[arXiv](https://arxiv.org/abs/2303.02065)]
